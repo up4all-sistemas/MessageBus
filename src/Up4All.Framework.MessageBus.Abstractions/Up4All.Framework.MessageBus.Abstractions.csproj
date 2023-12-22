@@ -7,9 +7,9 @@
     <PackageTags>amqp bus client messagebus</PackageTags>
     <PackageLicenseFile>license.txt</PackageLicenseFile>    
     <PackageIcon>icon.png</PackageIcon>
-    <RepositoryUrl>https://github.com/up4all-sistemas/messagebus-abstractions</RepositoryUrl>
+    <RepositoryUrl>https://github.com/up4all-sistemas/Up4All.MessageBus</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageProjectUrl>https://github.com/up4all-sistemas/messagebus-abstractions</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/up4all-sistemas/Up4All.MessageBus</PackageProjectUrl>
   </PropertyGroup>
 
   <ItemGroup>
