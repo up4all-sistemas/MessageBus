@@ -114,7 +114,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus
                     received.AddBody(arg.Message.Body.ToArray());
 
                 if (arg.Message.ApplicationProperties.Any())
-                    received.AddUserProperties(arg.Message.ApplicationProperties.ToDictionary(x => x.Key, x => x.Value.ToString()));
+                    received.AddUserProperties(arg.Message.ApplicationProperties.ToDictionary(x => x.Key, x => x.Value));
 
                 try
                 {
@@ -165,7 +165,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus
                     received.AddBody(arg.Message.Body.ToArray());
 
                 if (arg.Message.ApplicationProperties.Any())
-                    received.AddUserProperties(arg.Message.ApplicationProperties.ToDictionary(x => x.Key, x => x.Value.ToString()));
+                    received.AddUserProperties(arg.Message.ApplicationProperties.ToDictionary(x => x.Key, x => x.Value));
 
                 try
                 {
