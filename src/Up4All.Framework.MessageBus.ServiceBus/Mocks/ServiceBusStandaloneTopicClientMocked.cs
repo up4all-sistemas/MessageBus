@@ -1,0 +1,41 @@
+﻿
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+
+using Up4All.Framework.MessageBus.Abstractions.Interfaces;
+using Up4All.Framework.MessageBus.Abstractions.Messages;
+using Up4All.Framework.MessageBus.Abstractions.Mocks;
+
+namespace Up4All.Framework.MessageBus.ServiceBus
+{
+    public class ServiceBusStandaloneTopicClientMocked : MessageBusStandaloneTopicClientMock, IMessageBusStandalonePublisher, IServiceBusClient
+    {
+        public ServiceBusStandaloneTopicClientMocked() : base()
+        {
+        }
+
+        public override Task SendAsync(MessageBusMessage message, CancellationToken cancellationToken = default)
+        {
+
+
+            return Task.CompletedTask;
+        }
+
+        public override Task SendAsync(IEnumerable<MessageBusMessage> messages, CancellationToken cancellationToken = default)
+        {
+
+            return Task.CompletedTask;
+        }
+
+        public override Task SendAsync<TModel>(TModel message, CancellationToken cancellationToken = default)
+        {
+            return Task.CompletedTask;
+        }
+
+        public override Task SendManyAsync<TModel>(IEnumerable<TModel> message, CancellationToken cancellationToken = default)
+        {
+            return Task.CompletedTask;
+        }
+    }
+}

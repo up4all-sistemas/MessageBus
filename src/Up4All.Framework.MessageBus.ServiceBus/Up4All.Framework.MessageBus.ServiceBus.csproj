@@ -1,0 +1,42 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <Authors>Up4All Sistemas</Authors>
+    <Description>Implementation of Up4All MessageBus for Azure ServiceBus</Description>
+    <PackageTags>Azure ServiceBus amqp bus client messagebus</PackageTags>
+    <PackageLicenseFile>license.txt</PackageLicenseFile>
+    <PackageIcon>icon.png</PackageIcon>    
+    <RepositoryUrl>https://github.com/up4all-sistemas/messagebus-servicebus</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageProjectUrl>https://github.com/up4all-sistemas/messagebus-servicebus</PackageProjectUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.17.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
+    <PackageReference Include="Polly" Version="8.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="icon.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="license.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="license.txt" Pack="true" PackagePath="" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="icon.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Up4All.Framework.MessageBus.Abstractions\Up4All.Framework.MessageBus.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>
