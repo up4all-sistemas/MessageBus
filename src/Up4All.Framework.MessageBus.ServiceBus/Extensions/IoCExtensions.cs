@@ -9,27 +9,27 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Extensions
     {
         public static IServiceCollection AddMessageBusNamedQueueClient(this IServiceCollection services, string key, IConfiguration configuration)
         {
-            services.AddMessageBusNamedQueueClient(key, (provider) =>
+            services.AddMessageBusNamedQueueClient(key, (provider, opts) =>
             {
-                return new ServiceBusStandaloneQueueClient(configuration.GetValue<string>("MessageBusOptions:ConnectionString"), key);
+                return new ServiceBusStandaloneQueueClient(opts.ConnectionString, key);
             });
             return services;
         }
 
         public static IServiceCollection AddMessageBusNamedTopicClient(this IServiceCollection services, string key, IConfiguration configuration)
         {
-            services.AddMessageBusNamedTopicClient(key, (provider) =>
+            services.AddMessageBusNamedTopicClient(key, (provider, opts) =>
             {
-                return new ServiceBusStandaloneTopicClient(configuration.GetValue<string>("MessageBusOptions:ConnectionString"), key);
+                return new ServiceBusStandaloneTopicClient(opts.ConnectionString, key);
             });
             return services;
         }
 
         public static IServiceCollection AddMessageBusNamedSubscriptionClient(this IServiceCollection services, string key, IConfiguration configuration)
         {
-            services.AddMessageBusNamedSubscriptionClient(key, (provider) =>
+            services.AddMessageBusNamedSubscriptionClient(key, (provider, opts) =>
             {
-                return new ServiceBusStandaloneSubscribeClient(configuration.GetValue<string>("MessageBusOptions:ConnectionString"), configuration.GetValue<string>("MessageBusOptions:TopicName"), key);
+                return new ServiceBusStandaloneSubscribeClient(opts.ConnectionString, opts.TopicName, key);
             });
             return services;
         }

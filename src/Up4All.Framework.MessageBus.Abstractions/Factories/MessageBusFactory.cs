@@ -19,21 +19,21 @@ namespace Up4All.Framework.MessageBus.Abstractions.Factories
         public IMessageBusStandaloneQueueClient GetQueueClient(string key)
         {
             var namedInstances = _provider.GetServices<NamedInstanceClient<IMessageBusStandaloneQueueClient>>();
-            return namedInstances.FirstOrDefault(x => x.Key == key)?.Instance.Invoke(_provider);
+            return namedInstances.FirstOrDefault(x => x.Key == key)?.Instance;
 
         }
 
         public IMessageBusStandalonePublisher GetTopicClient(string key)
         {
             var namedInstances = _provider.GetServices<NamedInstanceClient<IMessageBusStandalonePublisher>>();
-            return namedInstances.FirstOrDefault(x => x.Key == key)?.Instance.Invoke(_provider);
+            return namedInstances.FirstOrDefault(x => x.Key == key)?.Instance;
 
         }
 
         public IMessageBusStandaloneConsumer GetSubscriptionClient(string key)
         {
             var namedInstances = _provider.GetServices<NamedInstanceClient<IMessageBusStandaloneConsumer>>();
-            return namedInstances.FirstOrDefault(x => x.Key == key)?.Instance.Invoke(_provider);
+            return namedInstances.FirstOrDefault(x => x.Key == key)?.Instance;
 
         }
     }

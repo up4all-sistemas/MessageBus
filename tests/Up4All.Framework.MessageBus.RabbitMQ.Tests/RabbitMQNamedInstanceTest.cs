@@ -34,31 +34,31 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Tests
 
             services.AddLogging();
 
-            services.AddMessageBusNamedQueueClient("queue1", provider =>
+            services.AddMessageBusNamedQueueClient("queue1", (provider, opts) =>
             {
                 var logger = provider.GetRequiredService<ILogger<RabbitMQStandaloneQueueClient>>();
 
-                return new RabbitMQStandaloneQueueClient(_configuration.GetValue<string>("MessageBusOptions:ConnectionString")
-                    ,_configuration.GetValue<string>("MessageBusOptions:QueueName"), 8);
+                return new RabbitMQStandaloneQueueClient(opts.ConnectionString
+                    ,opts.QueueName, 8);
             });
 
-            services.AddMessageBusNamedTopicClient("topic1", provider =>
+            services.AddMessageBusNamedTopicClient("topic1", (provider, opts) =>
             {
                 var logger = provider.GetRequiredService<ILogger<RabbitMQStandaloneTopicClient>>();
 
                 return new RabbitMQStandaloneTopicClient(
-                      _configuration.GetValue<string>("MessageBusOptions:ConnectionString")                     
-                    , _configuration.GetValue<string>("MessageBusOptions:TopicName")
+                      opts.ConnectionString
+                    , opts.TopicName
                     , 8);
             });
 
-            services.AddMessageBusNamedSubscriptionClient("sub1", provider =>
+            services.AddMessageBusNamedSubscriptionClient("sub1", (provider, opts) =>
             {
                 var logger = provider.GetRequiredService<ILogger<RabbitMQStandaloneSubscriptionClient>>();
 
                 return new RabbitMQStandaloneSubscriptionClient(
-                      _configuration.GetValue<string>("MessageBusOptions:ConnectionString")
-                    , _configuration.GetValue<string>("MessageBusOptions:SubscriptionName")
+                      opts.ConnectionString
+                    , opts.SubscriptionName
                     , 8);
             });
 
