@@ -19,8 +19,9 @@ namespace Up4All.Framework.MessageBus.Abstractions.Configurations
             services.Configure<MessageBusOptions>(config => configuration.GetSection("MessageBusOptions").Bind(config));
         }
 
-        private static void AddInstanceFactory(this IServiceCollection services)
+        private static void AddInstanceFactory(this IServiceCollection services, IConfiguration configuration)
         {
+            services.AddConfigurationBinder(configuration);
             services.AddSingleton<MessageBusFactory>();
         }
 
@@ -113,25 +114,25 @@ namespace Up4All.Framework.MessageBus.Abstractions.Configurations
             services.AddSingleton<IMessageBusStandaloneConsumer, T>();
         }
 
-        public static void AddMessageBusNamedQueueClient(this IServiceCollection services, string key, Func<IServiceProvider, MessageBusOptions, IMessageBusStandaloneQueueClient> createInstance)
+        public static void AddMessageBusNamedQueueClient(this IServiceCollection services, IConfiguration configuration, string key, Func<IServiceProvider, MessageBusOptions, IMessageBusStandaloneQueueClient> createInstance)
         {
-            services.AddMessageBusNamedClient(key, createInstance);
+            services.AddMessageBusNamedClient(configuration, key, createInstance);
         }
 
-        public static void AddMessageBusNamedTopicClient(this IServiceCollection services, string key, Func<IServiceProvider, MessageBusOptions, IMessageBusStandalonePublisher> createInstance)
+        public static void AddMessageBusNamedTopicClient(this IServiceCollection services, IConfiguration configuration, string key, Func<IServiceProvider, MessageBusOptions, IMessageBusStandalonePublisher> createInstance)
         {
-            services.AddMessageBusNamedClient(key, createInstance);
+            services.AddMessageBusNamedClient(configuration, key, createInstance);
         }
 
-        public static void AddMessageBusNamedSubscriptionClient(this IServiceCollection services, string key, Func<IServiceProvider, MessageBusOptions, IMessageBusStandaloneConsumer> createInstance)
+        public static void AddMessageBusNamedSubscriptionClient(this IServiceCollection services, IConfiguration configuration, string key, Func<IServiceProvider, MessageBusOptions, IMessageBusStandaloneConsumer> createInstance)
         {
-            services.AddMessageBusNamedClient(key, createInstance);
+            services.AddMessageBusNamedClient(configuration, key, createInstance);
         }
 
-        private static void AddMessageBusNamedClient<TClient>(this IServiceCollection services, string key, Func<IServiceProvider, MessageBusOptions, TClient> createInstance)
+        private static void AddMessageBusNamedClient<TClient>(this IServiceCollection services, IConfiguration configuration, string key, Func<IServiceProvider, MessageBusOptions, TClient> createInstance)
             where TClient : class
         {
-            services.AddInstanceFactory();
+            services.AddInstanceFactory(configuration);
 
             services.AddSingleton(p =>
             {
