@@ -9,7 +9,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Extensions
     {
         public static IServiceCollection AddMessageBusNamedQueueClient(this IServiceCollection services, string key, IConfiguration configuration)
         {
-            services.AddMessageBusNamedQueueClient(key, (provider, opts) =>
+            services.AddMessageBusNamedQueueClient(configuration, key, (provider, opts) =>
             {
                 return new ServiceBusStandaloneQueueClient(opts.ConnectionString, key);
             });
@@ -18,7 +18,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Extensions
 
         public static IServiceCollection AddMessageBusNamedTopicClient(this IServiceCollection services, string key, IConfiguration configuration)
         {
-            services.AddMessageBusNamedTopicClient(key, (provider, opts) =>
+            services.AddMessageBusNamedTopicClient(configuration, key, (provider, opts) =>
             {
                 return new ServiceBusStandaloneTopicClient(opts.ConnectionString, key);
             });
@@ -27,7 +27,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Extensions
 
         public static IServiceCollection AddMessageBusNamedSubscriptionClient(this IServiceCollection services, string key, IConfiguration configuration)
         {
-            services.AddMessageBusNamedSubscriptionClient(key, (provider, opts) =>
+            services.AddMessageBusNamedSubscriptionClient(configuration, key, (provider, opts) =>
             {
                 return new ServiceBusStandaloneSubscribeClient(opts.ConnectionString, opts.TopicName, key);
             });

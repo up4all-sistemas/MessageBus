@@ -3,15 +3,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Text;
 using System.Threading;
 
 using Up4All.Framework.MessageBus.Abstractions.Configurations;
 using Up4All.Framework.MessageBus.Abstractions.Factories;
-using Up4All.Framework.MessageBus.Abstractions.Interfaces;
 using Up4All.Framework.MessageBus.Abstractions.Messages;
 
 using Xunit;
@@ -34,7 +31,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Tests
 
             services.AddLogging();
 
-            services.AddMessageBusNamedQueueClient("queue1", (provider, opts) =>
+            services.AddMessageBusNamedQueueClient(_configuration, "queue1", (provider, opts) =>
             {
                 var logger = provider.GetRequiredService<ILogger<RabbitMQStandaloneQueueClient>>();
 
@@ -42,7 +39,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Tests
                     ,opts.QueueName, 8);
             });
 
-            services.AddMessageBusNamedTopicClient("topic1", (provider, opts) =>
+            services.AddMessageBusNamedTopicClient(_configuration, "topic1", (provider, opts) =>
             {
                 var logger = provider.GetRequiredService<ILogger<RabbitMQStandaloneTopicClient>>();
 
@@ -52,7 +49,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Tests
                     , 8);
             });
 
-            services.AddMessageBusNamedSubscriptionClient("sub1", (provider, opts) =>
+            services.AddMessageBusNamedSubscriptionClient(_configuration, "sub1", (provider, opts) =>
             {
                 var logger = provider.GetRequiredService<ILogger<RabbitMQStandaloneSubscriptionClient>>();
 
