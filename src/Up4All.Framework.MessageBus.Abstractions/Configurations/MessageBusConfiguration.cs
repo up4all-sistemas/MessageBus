@@ -14,7 +14,7 @@ namespace Up4All.Framework.MessageBus.Abstractions.Configurations
 {
     public static class MessageBusConfiguration
     {
-        private static void AddConfigurationBinder(this IServiceCollection services, IConfiguration configuration)
+        public static void AddConfigurationBinder(this IServiceCollection services, IConfiguration configuration)
         {
             services.Configure<MessageBusOptions>(config => configuration.GetSection("MessageBusOptions").Bind(config));
         }
@@ -115,6 +115,11 @@ namespace Up4All.Framework.MessageBus.Abstractions.Configurations
         }
 
         public static void AddMessageBusNamedQueueClient(this IServiceCollection services, IConfiguration configuration, string key, Func<IServiceProvider, MessageBusOptions, IMessageBusStandaloneQueueClient> createInstance)
+        {
+            services.AddMessageBusNamedClient(configuration, key, createInstance);
+        }
+
+        public static void AddMessageBusNamedStreamClient(this IServiceCollection services, IConfiguration configuration, string key, Func<IServiceProvider, MessageBusOptions, IMessageBusStandaloneStreamClient> createInstance)
         {
             services.AddMessageBusNamedClient(configuration, key, createInstance);
         }

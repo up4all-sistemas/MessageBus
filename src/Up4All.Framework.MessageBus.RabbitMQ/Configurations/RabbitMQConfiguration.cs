@@ -29,13 +29,6 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Configurations
             return services;
         }
 
-        public static IServiceCollection AddMessageBusSubscriptionClient(this IServiceCollection services, IConfiguration configuration)
-        {
-            services.AddConfigurationBinder(configuration);
-            services.AddSingleton<IMessageBusConsumer, RabbitMQSubscriptionClient>();
-            return services;
-        }
-
         private static IServiceCollection AddConfigurationBinder(this IServiceCollection services, IConfiguration configuration)
         {
             services.Configure<MessageBusOptions>(config => configuration.GetSection(nameof(MessageBusOptions)).Bind(config));

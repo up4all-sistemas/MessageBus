@@ -111,7 +111,18 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
         }
         public static IModel CreateChannel(this IRabbitMQClient client, IConnection conn)
         {
-            return conn.CreateModel();
+            var channel = conn.CreateModel();
+            return channel;
+        }
+
+        public static void QueueDeclare(this IModel channel, string queueName, bool durable, bool exclusive, bool autoDelete, IDictionary<string, object> arguments)
+        {
+            channel.QueueDeclare(queue: queueName, durable: durable, exclusive: exclusive, autoDelete: autoDelete, arguments: arguments);
+        }
+
+        public static void ExchangeDeclare(this IModel channel, string exchangeName, string exchangeType, bool durable, bool autoDelete, IDictionary<string, object> arguments)
+        {
+            channel.ExchangeDeclare(exchange: exchangeName, type: exchangeType, durable: durable, autoDelete: autoDelete, arguments: arguments);
         }
     }
 }

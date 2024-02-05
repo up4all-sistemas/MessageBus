@@ -16,11 +16,19 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
     {
         private readonly string _topicName;
         private readonly int _connectionAttempts;
+        private readonly bool _durable;
+        private readonly bool _autoDelete;
+        private readonly Dictionary<string, object> _args;
+        private readonly string _type;
 
-        public RabbitMQStandaloneTopicClient(string connectionString, string topicName, int connectionAttemps = 8) : base(connectionString, topicName)
+        public RabbitMQStandaloneTopicClient(string connectionString, string topicName, int connectionAttemps = 8, string type = "topic", bool durable = true, bool autoDelete = false, Dictionary<string,object> args = null) : base(connectionString, topicName)
         {
             _topicName = topicName;
             _connectionAttempts = connectionAttemps;
+            _autoDelete = autoDelete;
+            _durable = durable;
+            _args = args;
+            _type = type;
         }
 
         public IConnection Connection { get; set; }
@@ -33,7 +41,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
 
         public override Task SendAsync(MessageBusMessage message, CancellationToken cancellation = default)
         {
-            using (var channel = this.CreateChannel(this.GetConnection(ConnectionString, _connectionAttempts)))
+            using (var channel = ConfigureChannel(this.GetConnection(ConnectionString, _connectionAttempts)))
                 channel.SendMessage(_topicName, string.Empty, message, cancellation);
 
             return Task.CompletedTask;
@@ -41,7 +49,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
 
         public override Task SendAsync(IEnumerable<MessageBusMessage> messages, CancellationToken cancellation = default)
         {
-            using (var channel = this.CreateChannel(this.GetConnection(ConnectionString, _connectionAttempts)))
+            using (var channel = ConfigureChannel(this.GetConnection(ConnectionString, _connectionAttempts)))
             {
                 foreach (var message in messages)
                     channel.SendMessage(_topicName, string.Empty, message, cancellation);
@@ -53,6 +61,13 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
         public override async Task SendManyAsync<TModel>(IEnumerable<TModel> list, CancellationToken cancellation = default)
         {
             await SendAsync(list.Select(x => x.CreateMessagebusMessage()), cancellation);
+        }
+
+        private IModel ConfigureChannel(IConnection connection)
+        {
+            var channel = this.CreateChannel(connection);
+            channel.ExchangeDeclare(exchange: _topicName, type: _type, durable: _durable, autoDelete: _autoDelete, arguments: _args);
+            return channel;
         }
     }
 }

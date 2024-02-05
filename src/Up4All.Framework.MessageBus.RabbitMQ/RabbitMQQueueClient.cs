@@ -28,11 +28,12 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
 
         public IConnection Connection { get; set; }
 
-        public RabbitMQQueueClient(IOptions<MessageBusOptions> messageOptions, ILogger<RabbitMQQueueClient> logger, object offset = null) : base(messageOptions)
+        public RabbitMQQueueClient(IOptions<MessageBusOptions> messageOptions, ILogger<RabbitMQQueueClient> logger, object offset = null, bool exclusive = false, bool durable = true, bool autoDelete = false, Dictionary<string, object> args = null) : base(messageOptions)
         {
             _offset = offset;
             _logger = logger;
             _channel = this.CreateChannel(this.GetConnection(MessageBusOptions, logger));
+            _channel.QueueDeclare(queue: MessageBusOptions.QueueName, durable: durable, exclusive: exclusive, autoDelete: autoDelete, arguments: args);
         }
 
         public override void RegisterHandler(Func<ReceivedMessage, MessageReceivedStatusEnum> handler, Action<Exception> errorHandler, Action onIdle = null, bool autoComplete = false)
