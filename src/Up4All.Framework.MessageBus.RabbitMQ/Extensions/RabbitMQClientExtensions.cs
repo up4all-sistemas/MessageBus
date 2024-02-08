@@ -7,12 +7,14 @@ using RabbitMQ.Client.Exceptions;
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using System.Threading;
 
 using Up4All.Framework.MessageBus.Abstractions.Messages;
 using Up4All.Framework.MessageBus.Abstractions.Options;
 using Up4All.Framework.MessageBus.RabbitMQ.Consumers;
+using Up4All.Framework.MessageBus.RabbitMQ.Options;
 
 namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
 {
@@ -115,14 +117,16 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             return channel;
         }
 
-        public static void QueueDeclare(this IModel channel, string queueName, bool durable, bool exclusive, bool autoDelete, IDictionary<string, object> arguments)
+        public static void ConfigureQueueDeclare(this IModel channel, string queueName, QueueDeclareOptions declareOpts)
         {
-            channel.QueueDeclare(queue: queueName, durable: durable, exclusive: exclusive, autoDelete: autoDelete, arguments: arguments);
-        }
+            if (declareOpts == null) return;
 
-        public static void ExchangeDeclare(this IModel channel, string exchangeName, string exchangeType, bool durable, bool autoDelete, IDictionary<string, object> arguments)
-        {
-            channel.ExchangeDeclare(exchange: exchangeName, type: exchangeType, durable: durable, autoDelete: autoDelete, arguments: arguments);
+            channel.QueueDeclare(queue: queueName, durable: declareOpts.Durable, exclusive: declareOpts.Exclusive, autoDelete: declareOpts.AutoComplete, arguments: declareOpts.Args);
+
+            if (declareOpts.Bindings.Any())
+                foreach (var bind in declareOpts.Bindings)
+                    channel.QueueBind(queueName, bind.ExchangeName, bind.RoutingKey ?? "", bind.Args);
+
         }
     }
 }

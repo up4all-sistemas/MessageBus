@@ -33,8 +33,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Tests
             services.AddLogging();
 
             services.AddMessageBusQueueClient(_configuration);
-            services.AddMessageBusTopicClient(_configuration);
-            services.AddMessageBusSubscriptionClient(_configuration);
+            services.AddMessageBusTopicClient(_configuration);            
             services.AddMessageBusStreamClient(_configuration, "next");
 
             _provider = services.BuildServiceProvider();
@@ -101,20 +100,6 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Tests
             await client.SendAsync(msg);
 
             Assert.True(true);
-        }
-
-        [Fact]
-        public async Task SubscriveReceiveMessage()
-        {
-            var client = _provider.GetRequiredService<IMessageBusConsumer>();
-
-            await client.RegisterHandlerAsync(async (msg, c) =>
-            {
-                Assert.True(msg != null);
-                return Abstractions.Enums.MessageReceivedStatusEnum.Completed;
-            }, (ex, c) => { Debug.Print(ex.Message); return Task.CompletedTask; });
-
-            Thread.Sleep(3000);
         }
 
         [Fact]

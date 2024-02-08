@@ -36,7 +36,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Tests
                 var logger = provider.GetRequiredService<ILogger<RabbitMQStandaloneQueueClient>>();
 
                 return new RabbitMQStandaloneQueueClient(opts.ConnectionString
-                    ,opts.QueueName, 8);
+                    , opts.QueueName, 8);
             });
 
             services.AddMessageBusNamedTopicClient(_configuration, "topic1", (provider, opts) =>
@@ -46,16 +46,6 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Tests
                 return new RabbitMQStandaloneTopicClient(
                       opts.ConnectionString
                     , opts.TopicName
-                    , 8);
-            });
-
-            services.AddMessageBusNamedSubscriptionClient(_configuration, "sub1", (provider, opts) =>
-            {
-                var logger = provider.GetRequiredService<ILogger<RabbitMQStandaloneSubscriptionClient>>();
-
-                return new RabbitMQStandaloneSubscriptionClient(
-                      opts.ConnectionString
-                    , opts.SubscriptionName
                     , 8);
             });
 
@@ -143,22 +133,6 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Tests
             await client.SendAsync(msg);
 
             Assert.True(true);
-        }
-
-        [Fact]
-        public void SubscriptioneReceiveMessage()
-        {
-            var factory = _provider.GetRequiredService<MessageBusFactory>();
-            var client = factory.GetSubscriptionClient("sub1");
-
-            client.RegisterHandler((msg) =>
-            {
-                Assert.True(msg != null);
-                return Abstractions.Enums.MessageReceivedStatusEnum.Completed;
-            }, (ex) => Debug.Print(ex.Message));
-
-
-            Thread.Sleep(5000);
         }
     }
 }

@@ -12,6 +12,7 @@ using Up4All.Framework.MessageBus.Abstractions.Interfaces;
 using Up4All.Framework.MessageBus.Abstractions.Messages;
 using Up4All.Framework.MessageBus.RabbitMQ.Consumers;
 using Up4All.Framework.MessageBus.RabbitMQ.Extensions;
+using Up4All.Framework.MessageBus.RabbitMQ.Options;
 
 namespace Up4All.Framework.MessageBus.RabbitMQ
 {
@@ -24,19 +25,13 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
         public IConnection Connection { get; set; }
 
         public RabbitMQStandaloneStreamClient(string connectionString, string streamname, object offset, int connectionAttempts = 8
-            , bool exclusive = false, bool durable = true, bool autoDelete = false, Dictionary<string, object> args = null) : base(connectionString, streamname, offset)
+            , StreamDeclareOptions declareOpts = null)
+            : base(connectionString, streamname, offset)
         {
             _streamname = streamname;
             _connectionAttempts = connectionAttempts;
             _channel = this.CreateChannel(this.GetConnection(ConnectionString, _connectionAttempts));
-
-            if (args == null)
-                args = new Dictionary<string, object>();
-
-            if (!args.ContainsKey("x-stream-type"))
-                args.Add("x-stream-type", "stream");
-
-            _channel.QueueDeclare(streamname, durable, exclusive, autoDelete, args);
+            _channel.ConfigureQueueDeclare(streamname, declareOpts);
         }
 
         public override void RegisterHandler(Func<ReceivedMessage, MessageReceivedStatusEnum> handler, Action<Exception> errorHandler, Action onIdle = null, bool autoComplete = false)

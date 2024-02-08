@@ -9,6 +9,7 @@ using Up4All.Framework.MessageBus.Abstractions;
 using Up4All.Framework.MessageBus.Abstractions.Interfaces;
 using Up4All.Framework.MessageBus.Abstractions.Messages;
 using Up4All.Framework.MessageBus.RabbitMQ.Extensions;
+using Up4All.Framework.MessageBus.RabbitMQ.Options;
 
 namespace Up4All.Framework.MessageBus.RabbitMQ
 {
@@ -16,18 +17,15 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
     {
         private readonly string _topicName;
         private readonly int _connectionAttempts;
-        private readonly bool _durable;
-        private readonly bool _autoDelete;
-        private readonly Dictionary<string, object> _args;
+        private readonly ExchangeDeclareOptions _declareOpts;
         private readonly string _type;
 
-        public RabbitMQStandaloneTopicClient(string connectionString, string topicName, int connectionAttemps = 8, string type = "topic", bool durable = true, bool autoDelete = false, Dictionary<string,object> args = null) : base(connectionString, topicName)
+        public RabbitMQStandaloneTopicClient(string connectionString, string topicName, int connectionAttemps = 8, string type = "topic"
+            , ExchangeDeclareOptions declareOpts = null) : base(connectionString, topicName)
         {
             _topicName = topicName;
             _connectionAttempts = connectionAttemps;
-            _autoDelete = autoDelete;
-            _durable = durable;
-            _args = args;
+            _declareOpts = declareOpts;
             _type = type;
         }
 
@@ -66,7 +64,10 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
         private IModel ConfigureChannel(IConnection connection)
         {
             var channel = this.CreateChannel(connection);
-            channel.ExchangeDeclare(exchange: _topicName, type: _type, durable: _durable, autoDelete: _autoDelete, arguments: _args);
+
+            if (_declareOpts == null) return channel;
+
+            channel.ExchangeDeclare(exchange: _topicName, type: _type, durable: _declareOpts.Durable, _declareOpts.AutoComplete, _declareOpts.Args);
             return channel;
         }
     }

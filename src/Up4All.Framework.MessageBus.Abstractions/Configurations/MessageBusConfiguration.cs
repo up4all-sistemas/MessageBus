@@ -34,7 +34,7 @@ namespace Up4All.Framework.MessageBus.Abstractions.Configurations
         public static void AddMessageBusStreamClient<T>(this IServiceCollection services, IConfiguration configuration, object offset, Func<ILogger<T>, IOptions<MessageBusOptions>, T> builder) where T : MessageBusStreamClient
         {
             services.AddConfigurationBinder(configuration);
-            services.AddSingleton<IMessageBusStreamClient, T>(provider => 
+            services.AddSingleton<IMessageBusStreamClient, T>(provider =>
             {
                 var logger = provider.GetRequiredService<ILogger<T>>();
                 var options = provider.GetRequiredService<IOptions<MessageBusOptions>>();
@@ -59,7 +59,7 @@ namespace Up4All.Framework.MessageBus.Abstractions.Configurations
             services.AddSingleton<IMessageBusQueueClient, T>();
         }
 
-        public static void AddMessageBusStreamClientMocked<T>(this IServiceCollection services) where T : MessageBusStreamClientMock    
+        public static void AddMessageBusStreamClientMocked<T>(this IServiceCollection services) where T : MessageBusStreamClientMock
         {
             services.AddSingleton<IMessageBusStreamClient, T>();
         }
@@ -81,7 +81,7 @@ namespace Up4All.Framework.MessageBus.Abstractions.Configurations
 
         public static void AddStandaloneStreamClient(this IServiceCollection services, object offset, Func<IServiceProvider, object, MessageBusStandaloneStreamClient> instance)
         {
-            services.AddSingleton<IMessageBusStandaloneStreamClient>(provider => instance(provider,offset));
+            services.AddSingleton<IMessageBusStandaloneStreamClient>(provider => instance(provider, offset));
         }
 
         public static void AddStandaloneTopicClient(this IServiceCollection services, Func<IServiceProvider, IMessageBusStandalonePublisher> instance)

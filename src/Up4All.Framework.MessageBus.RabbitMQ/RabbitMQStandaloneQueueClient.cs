@@ -12,6 +12,7 @@ using Up4All.Framework.MessageBus.Abstractions.Interfaces;
 using Up4All.Framework.MessageBus.Abstractions.Messages;
 using Up4All.Framework.MessageBus.RabbitMQ.Consumers;
 using Up4All.Framework.MessageBus.RabbitMQ.Extensions;
+using Up4All.Framework.MessageBus.RabbitMQ.Options;
 
 namespace Up4All.Framework.MessageBus.RabbitMQ
 {
@@ -23,24 +24,25 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
 
         public IConnection Connection { get; set; }
 
-        public RabbitMQStandaloneQueueClient(string connectionString, string queuename, int connectionAttempts = 8, bool exclusive = false, bool durable = true, bool autoDelete = false, Dictionary<string,object> args = null) 
+        public RabbitMQStandaloneQueueClient(string connectionString, string queuename, int connectionAttempts = 8
+            , QueueDeclareOptions declareOpts = null)
             : base(connectionString, queuename)
         {
             _queuename = queuename;
             _connectionAttempts = connectionAttempts;
             _channel = this.CreateChannel(this.GetConnection(ConnectionString, _connectionAttempts));
-            _channel.QueueDeclare(queue: queuename, durable: durable, exclusive: exclusive, autoDelete: autoDelete, arguments: args);
+            _channel.ConfigureQueueDeclare(queuename, declareOpts);
         }
 
         public override void RegisterHandler(Func<ReceivedMessage, MessageReceivedStatusEnum> handler, Action<Exception> errorHandler, Action onIdle = null, bool autoComplete = false)
-        {            
+        {
             var receiver = new QueueMessageReceiver(_channel, handler, errorHandler, autoComplete);
             this.ConfigureHandler(_channel, _queuename, receiver, autoComplete);
         }
 
         public override Task RegisterHandlerAsync(Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatusEnum>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
         {
-         
+
             var receiver = new QueueMessageReceiver(_channel, handler, errorHandler, autoComplete);
             this.ConfigureHandler(_channel, _queuename, receiver, autoComplete);
             return Task.CompletedTask;
@@ -48,7 +50,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
 
         public override Task RegisterHandlerAsync<TModel>(Func<TModel, CancellationToken, Task<MessageReceivedStatusEnum>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
         {
-         
+
             var receiver = new QueueMessageReceiverForModel<TModel>(_channel, handler, errorHandler, autoComplete);
             this.ConfigureHandler(_channel, _queuename, receiver, autoComplete);
             return Task.CompletedTask;

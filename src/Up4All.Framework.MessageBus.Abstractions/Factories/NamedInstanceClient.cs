@@ -1,8 +1,4 @@
-﻿using System;
-
-using Up4All.Framework.MessageBus.Abstractions.Options;
-
-namespace Up4All.Framework.MessageBus.Abstractions.Factories
+﻿namespace Up4All.Framework.MessageBus.Abstractions.Factories
 {
     internal class NamedInstanceClient<TClient> where TClient : class
     {

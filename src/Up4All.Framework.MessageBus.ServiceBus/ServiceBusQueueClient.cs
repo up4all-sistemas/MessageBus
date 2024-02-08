@@ -62,7 +62,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus
             return _client.CreateProcessor(_opts.QueueName, new ServiceBusProcessorOptions
             {
                 AutoCompleteMessages = autoComplete,
-                MaxAutoLockRenewalDuration = TimeSpan.FromMinutes(6)                
+                MaxAutoLockRenewalDuration = TimeSpan.FromMinutes(6)
             });
         }
 

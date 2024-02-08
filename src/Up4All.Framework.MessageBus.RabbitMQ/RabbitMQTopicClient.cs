@@ -13,6 +13,7 @@ using Up4All.Framework.MessageBus.Abstractions.Interfaces;
 using Up4All.Framework.MessageBus.Abstractions.Messages;
 using Up4All.Framework.MessageBus.Abstractions.Options;
 using Up4All.Framework.MessageBus.RabbitMQ.Extensions;
+using Up4All.Framework.MessageBus.RabbitMQ.Options;
 
 namespace Up4All.Framework.MessageBus.RabbitMQ
 {
@@ -20,17 +21,14 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
     {
         private readonly ILogger<RabbitMQTopicClient> _logger;
         private readonly string _type;
-        private readonly bool _durable;
-        private readonly bool _autoDelete;
-        private readonly Dictionary<string, object> _args;
+        private readonly ExchangeDeclareOptions _declareOpts;
 
-        public RabbitMQTopicClient(ILogger<RabbitMQTopicClient> logger, IOptions<MessageBusOptions> messageOptions, string type = "topic", bool durable = true, bool autoDelete = false, Dictionary<string, object> args = null) : base(messageOptions)
+        public RabbitMQTopicClient(ILogger<RabbitMQTopicClient> logger, IOptions<MessageBusOptions> messageOptions, string type = "topic"
+            , ExchangeDeclareOptions declareOpts = null) : base(messageOptions)
         {
             _logger = logger;
             _type = type;
-            _durable = durable;
-            _autoDelete = autoDelete;
-            _args = args;
+            _declareOpts = declareOpts;
         }
 
         public IConnection Connection { get; set; }
@@ -68,7 +66,9 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
         public IModel ConfigureChannel(IConnection connection)
         {
             var model = this.CreateChannel(connection);
-            model.ExchangeDeclare(MessageBusOptions.TopicName, _type, _durable, _autoDelete, _args);
+            if (_declareOpts == null) return model;
+
+            model.ExchangeDeclare(MessageBusOptions.TopicName, _type, _declareOpts.Durable, _declareOpts.AutoComplete, _declareOpts.Args);
             return model;
         }
     }

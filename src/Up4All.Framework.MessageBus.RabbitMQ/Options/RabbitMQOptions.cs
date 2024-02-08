@@ -3,6 +3,6 @@
 namespace Up4All.Framework.MessageBus.RabbitMQ.Options
 {
     public class RabbitMQOptions : MessageBusOptions
-    {        
+    {
     }
 }
