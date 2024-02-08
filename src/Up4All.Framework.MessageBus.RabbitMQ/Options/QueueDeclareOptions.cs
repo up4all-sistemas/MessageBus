@@ -15,16 +15,20 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Options
 
         public ICollection<QueueBindOptions> Bindings { get; set; } = new List<QueueBindOptions>();
 
+        public string Type { get; set; }
+
         public QueueDeclareOptions()
         {
+            Args = new Dictionary<string, object>();            
         }
 
-        public QueueDeclareOptions(Action<QueueBindOptions> createBinding) : this()
+        public void AddBinding(Action<QueueBindOptions> createBinding)
         {
             var binding = new QueueBindOptions();
             createBinding(binding);
             Bindings.Add(binding);
         }
+
     }
 
     public class QueueBindOptions

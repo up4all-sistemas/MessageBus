@@ -121,6 +121,9 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
         {
             if (declareOpts == null) return;
 
+            if (!declareOpts.Args.ContainsKey("x-queue-type"))
+                declareOpts.Args.Add("x-queue-type", declareOpts.Type);
+
             channel.QueueDeclare(queue: queueName, durable: declareOpts.Durable, exclusive: declareOpts.Exclusive, autoDelete: declareOpts.AutoComplete, arguments: declareOpts.Args);
 
             if (declareOpts.Bindings.Any())
