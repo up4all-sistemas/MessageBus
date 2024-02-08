@@ -7,12 +7,14 @@ using RabbitMQ.Client.Exceptions;
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using System.Threading;
 
 using Up4All.Framework.MessageBus.Abstractions.Messages;
 using Up4All.Framework.MessageBus.Abstractions.Options;
 using Up4All.Framework.MessageBus.RabbitMQ.Consumers;
+using Up4All.Framework.MessageBus.RabbitMQ.Options;
 
 namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
 {
@@ -111,7 +113,20 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
         }
         public static IModel CreateChannel(this IRabbitMQClient client, IConnection conn)
         {
-            return conn.CreateModel();
+            var channel = conn.CreateModel();
+            return channel;
+        }
+
+        public static void ConfigureQueueDeclare(this IModel channel, string queueName, QueueDeclareOptions declareOpts)
+        {
+            if (declareOpts == null) return;
+
+            channel.QueueDeclare(queue: queueName, durable: declareOpts.Durable, exclusive: declareOpts.Exclusive, autoDelete: declareOpts.AutoComplete, arguments: declareOpts.Args);
+
+            if (declareOpts.Bindings.Any())
+                foreach (var bind in declareOpts.Bindings)
+                    channel.QueueBind(queueName, bind.ExchangeName, bind.RoutingKey ?? "", bind.Args);
+
         }
     }
 }

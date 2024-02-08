@@ -59,7 +59,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus
             {
                 AutoCompleteMessages = autoComplete,
                 MaxConcurrentCalls = 1,
-                MaxAutoLockRenewalDuration= TimeSpan.FromSeconds(1),
+                MaxAutoLockRenewalDuration = TimeSpan.FromSeconds(1),
                 PrefetchCount = 0,
             });
         }

@@ -165,7 +165,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Tests
 
         public TestModel()
         {
-            Prop1= 1;
+            Prop1 = 1;
             Prop2 = Guid.NewGuid().ToString();
         }
     }
