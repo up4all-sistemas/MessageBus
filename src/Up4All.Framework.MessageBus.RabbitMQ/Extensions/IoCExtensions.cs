@@ -24,7 +24,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
                 var options = provider.GetRequiredService<IOptions<MessageBusOptions>>();
                 var logger = provider.GetRequiredService<ILogger<RabbitMQQueueClient>>();
 
-                var declareOpts = new QueueDeclareOptions();
+                var declareOpts = RabbitMQConsts.DefaultQueueDeclareOptions;
                 configureDeclareOpts?.Invoke(declareOpts);
 
                 return new RabbitMQQueueClient(options, logger, null, declareOpts);
@@ -43,7 +43,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
                 var options = provider.GetRequiredService<IOptions<MessageBusOptions>>();
                 var logger = provider.GetRequiredService<ILogger<RabbitMQStreamClient>>();
 
-                var declareOpts = new StreamDeclareOptions();
+                var declareOpts = RabbitMQConsts.DefaultStreamDeclareOptions;
                 configureDeclareOpts?.Invoke(declareOpts);
 
                 return new RabbitMQStreamClient(options, logger, offset, declareOpts);
@@ -62,7 +62,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
                 var options = provider.GetRequiredService<IOptions<MessageBusOptions>>();
                 var logger = provider.GetRequiredService<ILogger<RabbitMQTopicClient>>();
 
-                var declareOpts = new ExchangeDeclareOptions();
+                var declareOpts = RabbitMQConsts.DefaultExchangeDeclareOptions;
                 configureDeclareOpts?.Invoke(declareOpts);
                 return new RabbitMQTopicClient(logger, options, type, declareOpts);
             });
@@ -75,7 +75,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
         {
             services.AddMessageBusNamedStreamClient(configuration, key, (provider, opts) =>
             {
-                var declareOpts = new StreamDeclareOptions();
+                var declareOpts = RabbitMQConsts.DefaultStreamDeclareOptions;
                 configureDeclareOpts?.Invoke(declareOpts);
 
                 return new RabbitMQStandaloneStreamClient(opts.ConnectionString, key, offset, declareOpts: declareOpts);
@@ -88,7 +88,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
         {
             services.AddMessageBusNamedQueueClient(configuration, key, (provider, opts) =>
             {
-                var declareOpts = new QueueDeclareOptions();
+                var declareOpts = RabbitMQConsts.DefaultQueueDeclareOptions;
                 configureDeclareOpts?.Invoke(declareOpts);
 
                 return new RabbitMQStandaloneQueueClient(opts.ConnectionString, key, declareOpts: declareOpts);
@@ -101,7 +101,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
         {
             services.AddMessageBusNamedTopicClient(configuration, key, (provider, opts) =>
             {
-                var declareOpts = new ExchangeDeclareOptions();
+                var declareOpts = RabbitMQConsts.DefaultExchangeDeclareOptions;
                 configureDeclareOpts?.Invoke(declareOpts);
 
                 return new RabbitMQStandaloneTopicClient(opts.ConnectionString, key, 8, type, declareOpts);
@@ -114,7 +114,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
         {
             services.AddStandaloneQueueClient((provider) =>
             {
-                var declareOpts = new QueueDeclareOptions();
+                var declareOpts = RabbitMQConsts.DefaultQueueDeclareOptions;
                 configureDeclareOpts?.Invoke(declareOpts);
 
                 var opts = provider.GetRequiredService<IOptions<MessageBusOptions>>().Value;
@@ -128,7 +128,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
         {
             services.AddStandaloneTopicClient((provider) =>
             {
-                var declareOpts = new ExchangeDeclareOptions();
+                var declareOpts = RabbitMQConsts.DefaultExchangeDeclareOptions;
                 configureDeclareOpts?.Invoke(declareOpts);
 
                 var opts = provider.GetRequiredService<IOptions<MessageBusOptions>>().Value;
@@ -142,7 +142,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
         {
             services.AddStandaloneStreamClient(offset, (provider, x) =>
             {
-                var declareOpts = new StreamDeclareOptions();
+                var declareOpts = RabbitMQConsts.DefaultStreamDeclareOptions;
                 configureDeclareOpts?.Invoke(declareOpts);
 
                 var opts = provider.GetRequiredService<IOptions<MessageBusOptions>>().Value;

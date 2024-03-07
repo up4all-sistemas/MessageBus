@@ -4,10 +4,15 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Options
 {
     public class ExchangeDeclareOptions
     {
-        public bool Durable { get; set; } = true;
+        public bool Durable { get; set; }
 
-        public bool AutoComplete { get; set; } = false;
+        public bool AutoComplete { get; set; }
 
-        public Dictionary<string, object> Args { get; set; } = null;
+        public Dictionary<string, object> Args { get; set; }
+
+        internal ExchangeDeclareOptions()
+        {
+            Durable = true;            
+        }
     }
 }

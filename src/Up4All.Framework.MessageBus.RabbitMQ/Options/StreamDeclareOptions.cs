@@ -4,7 +4,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Options
 {
     public class StreamDeclareOptions : QueueDeclareOptions
     {
-        public StreamDeclareOptions() : base()
+        internal StreamDeclareOptions() : base()
         {
             if (Args == null)
                 Args = new Dictionary<string, object>();

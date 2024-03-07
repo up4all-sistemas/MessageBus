@@ -5,23 +5,26 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Options
 {
     public class QueueDeclareOptions
     {
-        public bool Exclusive { get; set; } = false;
+        public bool Exclusive { get; set; }
 
-        public bool Durable { get; set; } = true;
+        public bool Durable { get; set; }
 
-        public bool AutoComplete { get; set; } = false;
+        public bool AutoComplete { get; set; }
 
-        public Dictionary<string, object> Args { get; set; } = null;
+        public Dictionary<string, object> Args { get; set; }
 
-        public ICollection<QueueBindOptions> Bindings { get; set; } = new List<QueueBindOptions>();
+        public ICollection<QueueBindOptions> Bindings { get; set; }
 
         public string Type { get; set; }
 
-        public QueueDeclareOptions()
+        internal QueueDeclareOptions()
         {
-            Args = new Dictionary<string, object>();            
+            Bindings = new List<QueueBindOptions>();
+            Args = new Dictionary<string, object>();       
+            Type = "classic";
+            Durable = true;
         }
-
+                
         public void AddBinding(Action<QueueBindOptions> createBinding)
         {
             var binding = new QueueBindOptions();
