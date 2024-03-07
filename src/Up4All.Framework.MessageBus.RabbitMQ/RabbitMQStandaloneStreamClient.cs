@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 using Up4All.Framework.MessageBus.Abstractions;
@@ -88,27 +89,15 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
 
         public override Task SendAsync(MessageBusMessage message, CancellationToken cancellation = default)
         {
-            using (var conn = this.GetConnection(ConnectionString, _connectionAttempts))
-            {
-                using (var channel = this.CreateChannel(conn))
-                {
-                    channel.SendMessage("", _streamname, message, cancellation);
-                }
-            }
-
+            _channel.SendMessage("", _streamname, message, cancellation);
+            
             return Task.CompletedTask;
         }
 
         public override Task SendAsync(IEnumerable<MessageBusMessage> messages, CancellationToken cancellation = default)
         {
-            using (var conn = this.GetConnection(ConnectionString, _connectionAttempts))
-            {
-                using (var channel = this.CreateChannel(conn))
-                {
-                    foreach (var message in messages)
-                        channel.SendMessage("", _streamname, message, cancellation);
-                }
-            }
+            foreach (var message in messages)
+                _channel.SendMessage("", _streamname, message, cancellation);
 
             return Task.CompletedTask;
         }
