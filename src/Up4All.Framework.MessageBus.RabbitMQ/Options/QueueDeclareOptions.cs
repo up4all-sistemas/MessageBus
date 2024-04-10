@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
+using Up4All.Framework.MessageBus.RabbitMQ.Enums;
+
 namespace Up4All.Framework.MessageBus.RabbitMQ.Options
 {
     public class QueueDeclareOptions
@@ -21,7 +23,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Options
         {
             Bindings = new List<QueueBindOptions>();
             Args = new Dictionary<string, object>();       
-            Type = "classic";
+            Type = QueueType.Default;
             Durable = true;
         }
                 
