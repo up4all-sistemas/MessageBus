@@ -12,7 +12,7 @@ namespace Up4All.Framework.MessageBus.Abstractions.Messages
 
         public T GetBody<T>(JsonSerializerOptions opts = null)
         {
-            opts = opts ?? new JsonSerializerOptions(JsonSerializerDefaults.Web) { DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault | System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull };
+            opts = opts ?? new JsonSerializerOptions(JsonSerializerDefaults.Web) { IncludeFields = true, DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault | System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull };
 
             return JsonSerializer.Deserialize<T>(GetBody(), opts);
         }
