@@ -8,6 +8,7 @@ using System;
 using Up4All.Framework.MessageBus.Abstractions.Configurations;
 using Up4All.Framework.MessageBus.Abstractions.Interfaces;
 using Up4All.Framework.MessageBus.Abstractions.Options;
+using Up4All.Framework.MessageBus.RabbitMQ.Enums;
 using Up4All.Framework.MessageBus.RabbitMQ.Options;
 
 namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
@@ -52,7 +53,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             return services;
         }
 
-        public static IServiceCollection AddRabbitMQTopicClient(this IServiceCollection services, IConfiguration configuration, string type = "classic"
+        public static IServiceCollection AddRabbitMQTopicClient(this IServiceCollection services, IConfiguration configuration, string type = ExchangeType.Direct
             , Action<ExchangeDeclareOptions> configureDeclareOpts = null)
         {
             services.AddConfigurationBinder(configuration);
@@ -83,6 +84,19 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             return services;
         }
 
+        public static IServiceCollection AddRabbitMQNamedStreamClient(this IServiceCollection services, string key, IConfiguration configuration, object offset
+            , Action<IServiceProvider, StreamDeclareOptions> configureDeclareOpts = null)
+        {
+            services.AddMessageBusNamedStreamClient(configuration, key, (provider, opts) =>
+            {
+                var declareOpts = RabbitMQConsts.DefaultStreamDeclareOptions;
+                configureDeclareOpts?.Invoke(provider, declareOpts);
+
+                return new RabbitMQStandaloneStreamClient(opts.ConnectionString, key, offset, declareOpts: declareOpts);
+            });
+            return services;
+        }
+
         public static IServiceCollection AddRabbitMQNamedQueueClient(this IServiceCollection services, string key, IConfiguration configuration
             , Action<QueueDeclareOptions> configureDeclareOpts = null)
         {
@@ -96,7 +110,20 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             return services;
         }
 
-        public static IServiceCollection AddRabbitMQNamedTopicClient(this IServiceCollection services, string key, IConfiguration configuration, string type = "classic"
+        public static IServiceCollection AddRabbitMQNamedQueueClient(this IServiceCollection services, string key, IConfiguration configuration
+            , Action<IServiceProvider, QueueDeclareOptions> configureDeclareOpts = null)
+        {
+            services.AddMessageBusNamedQueueClient(configuration, key, (provider, opts) =>
+            {
+                var declareOpts = RabbitMQConsts.DefaultQueueDeclareOptions;
+                configureDeclareOpts?.Invoke(provider, declareOpts);
+
+                return new RabbitMQStandaloneQueueClient(opts.ConnectionString, key, declareOpts: declareOpts);
+            });
+            return services;
+        }
+
+        public static IServiceCollection AddRabbitMQNamedTopicClient(this IServiceCollection services, string key, IConfiguration configuration, string type = ExchangeType.Direct
             , Action<ExchangeDeclareOptions> configureDeclareOpts = null)
         {
             services.AddMessageBusNamedTopicClient(configuration, key, (provider, opts) =>
@@ -109,8 +136,20 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             return services;
         }
 
-        public static IServiceCollection AddRabbitMQStandaloneQueueClient(this IServiceCollection services, IConfiguration configuration
-            , Action<QueueDeclareOptions> configureDeclareOpts = null)
+        public static IServiceCollection AddRabbitMQNamedTopicClient(this IServiceCollection services, string key, IConfiguration configuration, string type = ExchangeType.Direct
+            , Action<IServiceProvider, ExchangeDeclareOptions> configureDeclareOpts = null)
+        {
+            services.AddMessageBusNamedTopicClient(configuration, key, (provider, opts) =>
+            {
+                var declareOpts = RabbitMQConsts.DefaultExchangeDeclareOptions;
+                configureDeclareOpts?.Invoke(provider, declareOpts);
+
+                return new RabbitMQStandaloneTopicClient(opts.ConnectionString, key, 8, type, declareOpts);
+            });
+            return services;
+        }
+
+        public static IServiceCollection AddRabbitMQStandaloneQueueClient(this IServiceCollection services, Action<QueueDeclareOptions> configureDeclareOpts = null)
         {
             services.AddStandaloneQueueClient((provider) =>
             {
@@ -123,7 +162,20 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             return services;
         }
 
-        public static IServiceCollection AddRabbitMQStandaloneTopicClient(this IServiceCollection services, IConfiguration configuration, string type
+        public static IServiceCollection AddRabbitMQStandaloneQueueClient(this IServiceCollection services, Action<IServiceProvider, QueueDeclareOptions> configureDeclareOpts = null)
+        {
+            services.AddStandaloneQueueClient((provider) =>
+            {
+                var declareOpts = RabbitMQConsts.DefaultQueueDeclareOptions;
+                configureDeclareOpts?.Invoke(provider, declareOpts);
+
+                var opts = provider.GetRequiredService<IOptions<MessageBusOptions>>().Value;
+                return new RabbitMQStandaloneQueueClient(opts.ConnectionString, opts.QueueName, declareOpts: declareOpts);
+            });
+            return services;
+        }
+
+        public static IServiceCollection AddRabbitMQStandaloneTopicClient(this IServiceCollection services, string type = ExchangeType.Direct
             , Action<ExchangeDeclareOptions> configureDeclareOpts = null)
         {
             services.AddStandaloneTopicClient((provider) =>
@@ -137,13 +189,39 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             return services;
         }
 
-        public static IServiceCollection AddRabbitMQStandaloneStreamClient(this IServiceCollection services, IConfiguration configuration, object offset
-            , Action<StreamDeclareOptions> configureDeclareOpts = null)
+        public static IServiceCollection AddRabbitMQStandaloneTopicClient(this IServiceCollection services, string type = ExchangeType.Direct
+            , Action<IServiceProvider, ExchangeDeclareOptions> configureDeclareOpts = null)
+        {
+            services.AddStandaloneTopicClient((provider) =>
+            {
+                var declareOpts = RabbitMQConsts.DefaultExchangeDeclareOptions;
+                configureDeclareOpts?.Invoke(provider, declareOpts);
+
+                var opts = provider.GetRequiredService<IOptions<MessageBusOptions>>().Value;
+                return new RabbitMQStandaloneTopicClient(opts.ConnectionString, opts.TopicName, type: type, declareOpts: declareOpts);
+            });
+            return services;
+        }
+
+        public static IServiceCollection AddRabbitMQStandaloneStreamClient(this IServiceCollection services, object offset, Action<StreamDeclareOptions> configureDeclareOpts = null)
         {
             services.AddStandaloneStreamClient(offset, (provider, x) =>
             {
                 var declareOpts = RabbitMQConsts.DefaultStreamDeclareOptions;
                 configureDeclareOpts?.Invoke(declareOpts);
+
+                var opts = provider.GetRequiredService<IOptions<MessageBusOptions>>().Value;
+                return new RabbitMQStandaloneStreamClient(opts.ConnectionString, opts.StreamName, x, declareOpts: declareOpts);
+            });
+            return services;
+        }
+
+        public static IServiceCollection AddRabbitMQStandaloneStreamClient(this IServiceCollection services, object offset, Action<IServiceProvider, StreamDeclareOptions> configureDeclareOpts = null)
+        {
+            services.AddStandaloneStreamClient(offset, (provider, x) =>
+            {
+                var declareOpts = RabbitMQConsts.DefaultStreamDeclareOptions;
+                configureDeclareOpts?.Invoke(provider, declareOpts);
 
                 var opts = provider.GetRequiredService<IOptions<MessageBusOptions>>().Value;
                 return new RabbitMQStandaloneStreamClient(opts.ConnectionString, opts.StreamName, x, declareOpts: declareOpts);
