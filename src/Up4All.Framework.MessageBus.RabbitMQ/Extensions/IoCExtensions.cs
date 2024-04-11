@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using System;
+using System.Runtime.CompilerServices;
 
 using Up4All.Framework.MessageBus.Abstractions.Configurations;
 using Up4All.Framework.MessageBus.Abstractions.Interfaces;
@@ -28,7 +29,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
                 var declareOpts = RabbitMQConsts.DefaultQueueDeclareOptions;
                 configureDeclareOpts?.Invoke(declareOpts);
 
-                return new RabbitMQQueueClient(options, logger, null, configureDeclareOpts == null ? null : declareOpts);
+                return new RabbitMQQueueClient(options, logger, null, ConfigureDeclareOpts(configureDeclareOpts));
             });
 
             return services;
@@ -47,7 +48,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
                 var declareOpts = RabbitMQConsts.DefaultStreamDeclareOptions;
                 configureDeclareOpts?.Invoke(declareOpts);
 
-                return new RabbitMQStreamClient(options, logger, offset, configureDeclareOpts == null ? null : declareOpts);
+                return new RabbitMQStreamClient(options, logger, offset, ConfigureDeclareOpts(configureDeclareOpts));
             });
 
             return services;
@@ -65,7 +66,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
 
                 var declareOpts = RabbitMQConsts.DefaultExchangeDeclareOptions;
                 configureDeclareOpts?.Invoke(declareOpts);
-                return new RabbitMQTopicClient(logger, options, type, configureDeclareOpts == null ? null : declareOpts);
+                return new RabbitMQTopicClient(logger, options, type, ConfigureDeclareOpts(configureDeclareOpts));
             });
 
             return services;
@@ -79,7 +80,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
                 var declareOpts = RabbitMQConsts.DefaultStreamDeclareOptions;
                 configureDeclareOpts?.Invoke(declareOpts);
 
-                return new RabbitMQStandaloneStreamClient(opts.ConnectionString, key, offset, declareOpts: configureDeclareOpts == null ? null : declareOpts);
+                return new RabbitMQStandaloneStreamClient(opts.ConnectionString, key, offset, declareOpts: ConfigureDeclareOpts(configureDeclareOpts));
             });
             return services;
         }
@@ -92,7 +93,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
                 var declareOpts = RabbitMQConsts.DefaultStreamDeclareOptions;
                 configureDeclareOpts.Invoke(provider, declareOpts);
 
-                return new RabbitMQStandaloneStreamClient(opts.ConnectionString, key, offset, declareOpts: configureDeclareOpts == null ? null : declareOpts);
+                return new RabbitMQStandaloneStreamClient(opts.ConnectionString, key, offset, declareOpts: ConfigureDeclareOpts(provider, configureDeclareOpts));
             });
             return services;
         }
@@ -102,10 +103,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
         {
             services.AddMessageBusNamedQueueClient(configuration, key, (provider, opts) =>
             {
-                var declareOpts = RabbitMQConsts.DefaultQueueDeclareOptions;
-                configureDeclareOpts?.Invoke(declareOpts);
-
-                return new RabbitMQStandaloneQueueClient(opts.ConnectionString, key, declareOpts: configureDeclareOpts == null ? null : declareOpts);
+                return new RabbitMQStandaloneQueueClient(opts.ConnectionString, key, declareOpts: ConfigureDeclareOpts(configureDeclareOpts));
             });
             return services;
         }
@@ -115,10 +113,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
         {
             services.AddMessageBusNamedQueueClient(configuration, key, (provider, opts) =>
             {
-                var declareOpts = RabbitMQConsts.DefaultQueueDeclareOptions;
-                configureDeclareOpts.Invoke(provider, declareOpts);
-
-                return new RabbitMQStandaloneQueueClient(opts.ConnectionString, key, declareOpts: configureDeclareOpts == null ? null : declareOpts);
+                return new RabbitMQStandaloneQueueClient(opts.ConnectionString, key, declareOpts: ConfigureDeclareOpts(provider, configureDeclareOpts));
             });
             return services;
         }
@@ -131,7 +126,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
                 var declareOpts = RabbitMQConsts.DefaultExchangeDeclareOptions;
                 configureDeclareOpts?.Invoke(declareOpts);
 
-                return new RabbitMQStandaloneTopicClient(opts.ConnectionString, key, 8, type, configureDeclareOpts == null ? null : declareOpts);
+                return new RabbitMQStandaloneTopicClient(opts.ConnectionString, key, 8, type, ConfigureDeclareOpts(configureDeclareOpts));
             });
             return services;
         }
@@ -144,7 +139,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
                 var declareOpts = RabbitMQConsts.DefaultExchangeDeclareOptions;
                 configureDeclareOpts.Invoke(provider, declareOpts);
 
-                return new RabbitMQStandaloneTopicClient(opts.ConnectionString, key, 8, type, configureDeclareOpts == null ? null : declareOpts);
+                return new RabbitMQStandaloneTopicClient(opts.ConnectionString, key, 8, type, ConfigureDeclareOpts(provider, configureDeclareOpts));
             });
             return services;
         }
@@ -159,7 +154,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
                 configureDeclareOpts?.Invoke(declareOpts);
 
                 var opts = provider.GetRequiredService<IOptions<MessageBusOptions>>().Value;
-                return new RabbitMQStandaloneQueueClient(opts.ConnectionString, opts.QueueName, declareOpts: configureDeclareOpts == null ? null : declareOpts);
+                return new RabbitMQStandaloneQueueClient(opts.ConnectionString, opts.QueueName, declareOpts: ConfigureDeclareOpts(configureDeclareOpts));
             });
             return services;
         }
@@ -174,7 +169,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
                 configureDeclareOpts.Invoke(provider, declareOpts);
 
                 var opts = provider.GetRequiredService<IOptions<MessageBusOptions>>().Value;
-                return new RabbitMQStandaloneQueueClient(opts.ConnectionString, opts.QueueName, declareOpts: configureDeclareOpts == null ? null : declareOpts);
+                return new RabbitMQStandaloneQueueClient(opts.ConnectionString, opts.QueueName, declareOpts: ConfigureDeclareOpts(provider, configureDeclareOpts));
             });
             return services;
         }
@@ -189,7 +184,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
                 configureDeclareOpts?.Invoke(declareOpts);
 
                 var opts = provider.GetRequiredService<IOptions<MessageBusOptions>>().Value;
-                return new RabbitMQStandaloneTopicClient(opts.ConnectionString, opts.TopicName, type: type, declareOpts: configureDeclareOpts == null ? null : declareOpts);
+                return new RabbitMQStandaloneTopicClient(opts.ConnectionString, opts.TopicName, type: type, declareOpts: ConfigureDeclareOpts(configureDeclareOpts));
             });
             return services;
         }
@@ -204,7 +199,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
                 configureDeclareOpts.Invoke(provider, declareOpts);
 
                 var opts = provider.GetRequiredService<IOptions<MessageBusOptions>>().Value;
-                return new RabbitMQStandaloneTopicClient(opts.ConnectionString, opts.TopicName, type: type, declareOpts: configureDeclareOpts == null ? null : declareOpts);
+                return new RabbitMQStandaloneTopicClient(opts.ConnectionString, opts.TopicName, type: type, declareOpts: ConfigureDeclareOpts(provider, configureDeclareOpts));
             });
             return services;
         }
@@ -219,7 +214,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
                 configureDeclareOpts?.Invoke(declareOpts);
 
                 var opts = provider.GetRequiredService<IOptions<MessageBusOptions>>().Value;
-                return new RabbitMQStandaloneStreamClient(opts.ConnectionString, opts.StreamName, x, declareOpts: configureDeclareOpts == null ? null : declareOpts);
+                return new RabbitMQStandaloneStreamClient(opts.ConnectionString, opts.StreamName, x, declareOpts: ConfigureDeclareOpts(configureDeclareOpts));
             });
             return services;
         }
@@ -234,9 +229,69 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
                 configureDeclareOpts.Invoke(provider, declareOpts);
 
                 var opts = provider.GetRequiredService<IOptions<MessageBusOptions>>().Value;
-                return new RabbitMQStandaloneStreamClient(opts.ConnectionString, opts.StreamName, x, declareOpts: configureDeclareOpts == null ? null : declareOpts);
+                return new RabbitMQStandaloneStreamClient(opts.ConnectionString, opts.StreamName, x, declareOpts: ConfigureDeclareOpts(provider, configureDeclareOpts));
             });
             return services;
+        }
+
+        private static ExchangeDeclareOptions ConfigureDeclareOpts(IServiceProvider provider, Action<IServiceProvider, ExchangeDeclareOptions> configureDeclareOpts)
+        {
+            if (configureDeclareOpts == null)
+                return null;
+
+            var declareOpts = RabbitMQConsts.DefaultExchangeDeclareOptions;
+            configureDeclareOpts(provider, declareOpts);
+            return declareOpts;
+        }
+
+        private static ExchangeDeclareOptions ConfigureDeclareOpts(Action<ExchangeDeclareOptions> configureDeclareOpts)
+        {
+            if (configureDeclareOpts == null)
+                return null;
+
+            var declareOpts = RabbitMQConsts.DefaultExchangeDeclareOptions;
+            configureDeclareOpts(declareOpts);
+            return declareOpts;
+        }
+
+        private static StreamDeclareOptions ConfigureDeclareOpts(IServiceProvider provider, Action<IServiceProvider, StreamDeclareOptions> configureDeclareOpts)
+        {
+            if (configureDeclareOpts == null)
+                return null;
+
+            var declareOpts = RabbitMQConsts.DefaultStreamDeclareOptions;
+            configureDeclareOpts(provider, declareOpts);
+            return declareOpts;
+        }
+
+        private static StreamDeclareOptions ConfigureDeclareOpts(Action<StreamDeclareOptions> configureDeclareOpts)
+        {
+            if (configureDeclareOpts == null)
+                return null;
+
+            var declareOpts = RabbitMQConsts.DefaultStreamDeclareOptions;
+            configureDeclareOpts(declareOpts);
+            return declareOpts;
+        }
+
+        private static QueueDeclareOptions ConfigureDeclareOpts(IServiceProvider provider, Action<IServiceProvider, QueueDeclareOptions> configureDeclareOpts)
+        {
+            if (configureDeclareOpts == null)
+                return null;
+
+            var declareOpts = RabbitMQConsts.DefaultQueueDeclareOptions;
+            configureDeclareOpts(provider, declareOpts);
+            return declareOpts;
+        }
+
+        private static QueueDeclareOptions ConfigureDeclareOpts(Action<QueueDeclareOptions> configureDeclareOpts)
+        {
+            if (configureDeclareOpts == null)
+                return null;
+
+            var declareOpts = RabbitMQConsts.DefaultQueueDeclareOptions;
+            configureDeclareOpts(declareOpts);
+            return declareOpts;
         }
     }
 
