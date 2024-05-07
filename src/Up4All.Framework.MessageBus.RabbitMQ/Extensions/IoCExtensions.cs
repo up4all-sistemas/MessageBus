@@ -239,7 +239,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             if (configureDeclareOpts == null)
                 return null;
 
-            var declareOpts = RabbitMQConsts.DefaultExchangeDeclareOptions;
+            var declareOpts = new ExchangeDeclareOptions();
             configureDeclareOpts(provider, declareOpts);
             return declareOpts;
         }
@@ -249,7 +249,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             if (configureDeclareOpts == null)
                 return null;
 
-            var declareOpts = RabbitMQConsts.DefaultExchangeDeclareOptions;
+            var declareOpts = new ExchangeDeclareOptions();
             configureDeclareOpts(declareOpts);
             return declareOpts;
         }
@@ -259,7 +259,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             if (configureDeclareOpts == null)
                 return null;
 
-            var declareOpts = RabbitMQConsts.DefaultStreamDeclareOptions;
+            var declareOpts = new StreamDeclareOptions();
             configureDeclareOpts(provider, declareOpts);
             return declareOpts;
         }
@@ -269,7 +269,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             if (configureDeclareOpts == null)
                 return null;
 
-            var declareOpts = RabbitMQConsts.DefaultStreamDeclareOptions;
+            var declareOpts = new StreamDeclareOptions();
             configureDeclareOpts(declareOpts);
             return declareOpts;
         }
@@ -279,7 +279,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             if (configureDeclareOpts == null)
                 return null;
 
-            var declareOpts = RabbitMQConsts.DefaultQueueDeclareOptions;
+            var declareOpts = new QueueDeclareOptions();
             configureDeclareOpts(provider, declareOpts);
             return declareOpts;
         }
@@ -288,8 +288,8 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
         {
             if (configureDeclareOpts == null)
                 return null;
-
-            var declareOpts = RabbitMQConsts.DefaultQueueDeclareOptions;
+         
+            var declareOpts = new QueueDeclareOptions();
             configureDeclareOpts(declareOpts);
             return declareOpts;
         }
