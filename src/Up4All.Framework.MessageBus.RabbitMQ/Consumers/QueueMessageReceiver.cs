@@ -162,5 +162,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Consumers
                 _errorHandler(ex, CancellationToken.None).Wait();
             }
         }
+
+
     }
 }
