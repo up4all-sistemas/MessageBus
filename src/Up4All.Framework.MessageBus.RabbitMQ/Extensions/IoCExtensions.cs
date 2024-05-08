@@ -60,7 +60,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
 
             services.AddSingleton<IMessageBusPublisher, RabbitMQTopicClient>(provider =>
             {
-                var options = provider.GetRequiredService<IOptions<MessageBusOptions>>();                
+                var options = provider.GetRequiredService<IOptions<MessageBusOptions>>();
 
                 var declareOpts = RabbitMQConsts.DefaultExchangeDeclareOptions;
                 configureDeclareOpts?.Invoke(declareOpts);

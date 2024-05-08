@@ -17,7 +17,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Mocks
     {
         public IConnection Connection { get; set; }
 
-        public IModel Channel {get; private set;}
+        public IModel Channel { get; private set; }
 
         public RabbitMQQueueClientMocked() : base()
         {

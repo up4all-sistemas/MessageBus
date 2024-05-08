@@ -66,7 +66,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Consumers
 
                 if (!_autoComplete && response == MessageReceivedStatus.Deadletter)
                 {
-                    _channel.BasicNack(deliveryTag, false, false);                    
+                    _channel.BasicNack(deliveryTag, false, false);
                     return;
                 }
 
@@ -82,7 +82,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Consumers
             catch (Exception ex)
             {
                 if (!_autoComplete)
-                    _channel.BasicNack(deliveryTag, false, false);                
+                    _channel.BasicNack(deliveryTag, false, false);
                 _errorHandler(ex, CancellationToken.None).Wait();
             }
         }
@@ -138,7 +138,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Consumers
 
                 if (!_autoComplete && response == MessageReceivedStatus.Deadletter)
                 {
-                    _channel.BasicNack(deliveryTag, false, false);                    
+                    _channel.BasicNack(deliveryTag, false, false);
                     return;
                 }
 

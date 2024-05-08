@@ -13,7 +13,7 @@ namespace Up4All.Framework.MessageBus.Abstractions
         protected string ConnectionString { get; private set; }
         protected string TopicName { get; private set; }
 
-        public MessageBusStandaloneTopicClient(string connectionString, string topicName)
+        protected MessageBusStandaloneTopicClient(string connectionString, string topicName)
         {
             ConnectionString = connectionString;
             TopicName = topicName;

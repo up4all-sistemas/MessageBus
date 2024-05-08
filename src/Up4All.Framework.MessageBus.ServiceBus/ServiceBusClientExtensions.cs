@@ -46,7 +46,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus
                 {
                     logger.LogDebug("Creating connection to ServiceBus server");
                     var client = new ServiceBusClient(connectionString);
-                    var queueClient = client.CreateSender(entityName);                    
+                    var queueClient = client.CreateSender(entityName);
                     return (client, queueClient);
                 });
 
@@ -101,103 +101,18 @@ namespace Up4All.Framework.MessageBus.ServiceBus
 
         public static Task RegisterHandleMessageAsync(this ServiceBusProcessor client, Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
         {
-            client.ProcessMessageAsync += async (arg) =>
-            {
-                if (cancellationToken.IsCancellationRequested)
-                    await arg.AbandonMessageAsync(arg.Message, cancellationToken: cancellationToken);
-
-                var received = new ReceivedMessage();
-
-                if (arg.Message.ContentType == "application/json")
-                    received.AddBody(arg.Message.Body, true);
-                else
-                    received.AddBody(arg.Message.Body.ToArray());
-
-                if (arg.Message.ApplicationProperties.Any())
-                    received.AddUserProperties(arg.Message.ApplicationProperties.ToDictionary(x => x.Key, x => x.Value));
-
-                try
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    var result = await handler(received, cancellationToken);
-
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    if (result == MessageReceivedStatus.Deadletter)
-                        await arg.DeadLetterMessageAsync(arg.Message);
-                    else if (result == MessageReceivedStatus.Abandoned)
-                        await arg.AbandonMessageAsync(arg.Message);
-
-                    if (!autoComplete) await arg.CompleteMessageAsync(arg.Message, cancellationToken);
-
-                    cancellationToken.ThrowIfCancellationRequested();
-                }
-                catch (Exception)
-                {
-                    await arg.AbandonMessageAsync(arg.Message, cancellationToken: cancellationToken);
-                    throw;
-                }
-
-                if (onIdle != null) await onIdle.Invoke(cancellationToken);
-            };
-
-            client.ProcessErrorAsync += async (ex) =>
-            {
-                await errorHandler(ex.Exception, cancellationToken);
-            };
+            client.ProcessMessageAsync += async (arg) => await ProcessMessageAsync(arg, handler, DefineIdleHandler(onIdle), autoComplete, cancellationToken);
+            client.ProcessErrorAsync += async (ex) => await ProcessOnError(ex.Exception, errorHandler, cancellationToken);
 
             return Task.CompletedTask;
         }
 
         public static Task RegisterHandleMessageAsync<TModel>(this ServiceBusProcessor client, Func<TModel, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
         {
-            client.ProcessMessageAsync += async (arg) =>
-            {
-                if (cancellationToken.IsCancellationRequested)
-                    await arg.AbandonMessageAsync(arg.Message, cancellationToken: cancellationToken);
 
-                var received = new ReceivedMessage();
 
-                if (arg.Message.ContentType == "application/json")
-                    received.AddBody(arg.Message.Body, true);
-                else
-                    received.AddBody(arg.Message.Body.ToArray());
-
-                if (arg.Message.ApplicationProperties.Any())
-                    received.AddUserProperties(arg.Message.ApplicationProperties.ToDictionary(x => x.Key, x => x.Value));
-
-                try
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    var model = received.GetBody<TModel>();
-                    var result = await handler(model, cancellationToken);
-
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    if (result == MessageReceivedStatus.Deadletter)
-                        await arg.DeadLetterMessageAsync(arg.Message);
-                    else if (result == MessageReceivedStatus.Abandoned)
-                        await arg.AbandonMessageAsync(arg.Message);
-
-                    if (!autoComplete) await arg.CompleteMessageAsync(arg.Message, cancellationToken);
-
-                    cancellationToken.ThrowIfCancellationRequested();
-                }
-                catch (Exception)
-                {
-                    await arg.AbandonMessageAsync(arg.Message, cancellationToken: cancellationToken);
-                    throw;
-                }
-
-                if(onIdle != null) await onIdle.Invoke(cancellationToken);
-            };
-
-            client.ProcessErrorAsync += async (ex) =>
-            {
-                await errorHandler(ex.Exception, cancellationToken);
-            };
+            client.ProcessMessageAsync += async (arg) => await ProcessMessageAsync(arg, handler, DefineIdleHandler(onIdle), autoComplete, cancellationToken);
+            client.ProcessErrorAsync += async (ex) => await ProcessOnError(ex.Exception, errorHandler, cancellationToken);
 
             return Task.CompletedTask;
         }
@@ -240,6 +155,98 @@ namespace Up4All.Framework.MessageBus.ServiceBus
             return LoggerFactory
                     .Create(cfg => { })
                     .CreateLogger<T>();
+        }
+
+        private static async Task ProcessMessageAsync<TModel>(ProcessMessageEventArgs arg
+            , Func<TModel, CancellationToken, Task<MessageReceivedStatus>> handler
+            , Func<CancellationToken, Task> onIdle
+            , bool autoComplete
+            , CancellationToken cancellationToken)
+        {
+            if (cancellationToken.IsCancellationRequested)
+                await arg.AbandonMessageAsync(arg.Message, cancellationToken: cancellationToken);
+
+            var received = CreateMessage(arg);
+
+            try
+            {
+                var model = received.GetBody<TModel>();
+                await ProcessHandleResult(arg, await handler(model, cancellationToken), autoComplete, cancellationToken);
+            }
+            catch (Exception)
+            {
+                await arg.AbandonMessageAsync(arg.Message, cancellationToken: cancellationToken);
+                throw;
+            }
+
+            await onIdle.Invoke(cancellationToken);
+        }
+
+        private static async Task ProcessMessageAsync(ProcessMessageEventArgs arg
+            , Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatus>> handler
+            , Func<CancellationToken, Task> onIdle
+            , bool autoComplete
+            , CancellationToken cancellationToken)
+        {
+            if (cancellationToken.IsCancellationRequested)
+                await arg.AbandonMessageAsync(arg.Message, cancellationToken: cancellationToken);
+
+            var received = CreateMessage(arg);
+
+            try
+            {
+                await ProcessHandleResult(arg, await handler(received, cancellationToken), autoComplete, cancellationToken);
+            }
+            catch (Exception)
+            {
+                await arg.AbandonMessageAsync(arg.Message, cancellationToken: cancellationToken);
+                throw;
+            }
+
+            await onIdle.Invoke(cancellationToken);
+        }
+
+        private static Func<CancellationToken, Task> DefineIdleHandler(Func<CancellationToken, Task> onIdle = null)
+        {
+            return onIdle ?? ProcessOnIdle;
+        }
+
+        private static async Task ProcessHandleResult(ProcessMessageEventArgs arg, MessageReceivedStatus result, bool autoComplete, CancellationToken cancellationToken)
+        {
+            if (result == MessageReceivedStatus.Deadletter)
+                await arg.DeadLetterMessageAsync(arg.Message);
+
+            if (result == MessageReceivedStatus.Abandoned)
+                await arg.AbandonMessageAsync(arg.Message);
+
+            if (!autoComplete)
+                await arg.CompleteMessageAsync(arg.Message, cancellationToken);
+        }
+
+        private static Task ProcessOnIdle(CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.CompletedTask;
+        }
+
+        private static async Task ProcessOnError(Exception ex, Func<Exception, CancellationToken, Task> onError, CancellationToken cancellationToken)
+        {
+            await onError(ex, cancellationToken);
+        }
+
+        private static ReceivedMessage CreateMessage(ProcessMessageEventArgs arg)
+        {
+            var received = new ReceivedMessage();
+
+            if (arg.Message.ContentType == "application/json")
+                received.AddBody(arg.Message.Body, true);
+            else
+                received.AddBody(arg.Message.Body.ToArray());
+
+            if (arg.Message.ApplicationProperties.Any())
+                received.AddUserProperties(arg.Message.ApplicationProperties.ToDictionary(x => x.Key, x => x.Value));
+
+            return received;
         }
     }
 

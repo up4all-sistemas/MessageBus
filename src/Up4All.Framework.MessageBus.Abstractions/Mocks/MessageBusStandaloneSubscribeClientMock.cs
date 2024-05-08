@@ -10,7 +10,7 @@ namespace Up4All.Framework.MessageBus.Abstractions.Mocks
 {
     public abstract class MessageBusStandaloneSubscribeClientMock : MessageBusClientBaseMock, IMessageBusStandaloneConsumer
     {
-        public MessageBusStandaloneSubscribeClientMock() : base()
+        protected MessageBusStandaloneSubscribeClientMock() : base()
         {
         }
 
@@ -19,6 +19,6 @@ namespace Up4All.Framework.MessageBus.Abstractions.Mocks
         public abstract void RegisterHandler<TModel>(Func<TModel, MessageReceivedStatus> handler, Action<Exception> errorHandler, Action onIdle = null, bool autoComplete = false);
         public abstract void RegisterHandler(Func<ReceivedMessage, MessageReceivedStatus> handler, Action<Exception> errorHandler, Action onIdle = null, bool autoComplete = false);
         public abstract Task Close();
-        
+
     }
 }
