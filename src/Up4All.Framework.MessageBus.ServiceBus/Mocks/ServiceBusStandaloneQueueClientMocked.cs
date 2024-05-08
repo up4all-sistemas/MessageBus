@@ -11,56 +11,43 @@ using Up4All.Framework.MessageBus.Abstractions.Mocks;
 
 namespace Up4All.Framework.MessageBus.ServiceBus
 {
-    public class ServiceBusStandaloneQueueClientMocked : MessageBusStandaloneQueueClientMock, IMessageBusStandaloneQueueClient, IServiceBusClient, IDisposable
+    public class ServiceBusStandaloneQueueClientMocked : MessageBusStandaloneQueueClientMock, IMessageBusStandaloneQueueClient, IServiceBusClient
     {
         public ServiceBusStandaloneQueueClientMocked() : base()
         {
         }
 
-        public override Task RegisterHandlerAsync(Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatusEnum>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
+        public override Task RegisterHandlerAsync(Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
         {
             return Task.CompletedTask;
         }
-
-        public override void RegisterHandler(Func<ReceivedMessage, MessageReceivedStatusEnum> handler, Action<Exception> errorHandler, Action onIdle = null, bool autoComplete = false)
-        {
-
-        }
-
-        public override Task RegisterHandlerAsync<TModel>(Func<TModel, CancellationToken, Task<MessageReceivedStatusEnum>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
+        public override Task RegisterHandlerAsync<TModel>(Func<TModel, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
         {
             return Task.CompletedTask;
         }
+        public override void RegisterHandler(Func<ReceivedMessage, MessageReceivedStatus> handler, Action<Exception> errorHandler, Action onIdle = null, bool autoComplete = false)
+        {
 
-        public override void RegisterHandler<TModel>(Func<TModel, MessageReceivedStatusEnum> handler, Action<Exception> errorHandler, Action onIdle = null, bool autoComplete = false)
+        }
+        public override void RegisterHandler<TModel>(Func<TModel, MessageReceivedStatus> handler, Action<Exception> errorHandler, Action onIdle = null, bool autoComplete = false)
         {
         }
-
         public override Task SendAsync(MessageBusMessage message, CancellationToken cancellationToken = default)
         {
             return Task.CompletedTask;
         }
-
         public override Task SendAsync(IEnumerable<MessageBusMessage> messages, CancellationToken cancellationToken = default)
         {
             return Task.CompletedTask;
         }
-
-        public override Task SendAsync<TModel>(TModel message, CancellationToken cancellationToken = default)
+        public override Task SendAsync<TModel>(TModel model, CancellationToken cancellationToken = default)
         {
             return Task.CompletedTask;
         }
-
-        public override Task SendManyAsync<TModel>(IEnumerable<TModel> message, CancellationToken cancellationToken = default)
+        public override Task SendManyAsync<TModel>(IEnumerable<TModel> models, CancellationToken cancellationToken = default)
         {
             return Task.CompletedTask;
         }
-
-        public void Dispose()
-        {
-
-        }
-
         public override Task Close()
         {
             return Task.CompletedTask;

@@ -22,11 +22,11 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Options
         internal QueueDeclareOptions()
         {
             Bindings = new List<QueueBindOptions>();
-            Args = new Dictionary<string, object>();       
+            Args = new Dictionary<string, object>();
             Type = QueueType.Classic;
             Durable = true;
         }
-                
+
         public void AddBinding(Action<QueueBindOptions> createBinding)
         {
             var binding = new QueueBindOptions();

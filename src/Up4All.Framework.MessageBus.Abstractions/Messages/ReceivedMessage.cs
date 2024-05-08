@@ -12,7 +12,7 @@ namespace Up4All.Framework.MessageBus.Abstractions.Messages
 
         public T GetBody<T>(JsonSerializerOptions opts = null)
         {
-            opts = opts ?? new JsonSerializerOptions(JsonSerializerDefaults.Web) { IncludeFields = true, DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault | System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull };
+            opts = opts ?? new JsonSerializerOptions(JsonSerializerDefaults.Web) { IncludeFields = true, DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault };
 
             return JsonSerializer.Deserialize<T>(GetBody(), opts);
         }
@@ -21,6 +21,12 @@ namespace Up4All.Framework.MessageBus.Abstractions.Messages
         {
             if (!UserProperties.TryGetValue(key, out var val)) return null;
             return val;
+        }
+
+        public string GetUserPropertyValueAsString(string key)
+        {
+            if (!UserProperties.TryGetValue(key, out var val)) return null;
+            return val.ToString();
         }
     }
 }

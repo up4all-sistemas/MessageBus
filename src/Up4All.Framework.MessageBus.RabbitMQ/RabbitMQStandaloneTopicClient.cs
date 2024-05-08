@@ -16,59 +16,47 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
     public class RabbitMQStandaloneTopicClient : MessageBusStandaloneTopicClient, IRabbitMQClient, IMessageBusStandalonePublisher
     {
         private readonly string _topicName;
-        private readonly int _connectionAttempts;
-        private readonly ExchangeDeclareOptions _declareOpts;
-        private readonly string _type;
+
+        public IConnection Connection { get; set; }
+
+        public IModel Channel { get; private set; }
 
         public RabbitMQStandaloneTopicClient(string connectionString, string topicName, int connectionAttemps = 8, string type = "topic"
             , ExchangeDeclareOptions declareOpts = null) : base(connectionString, topicName)
         {
             _topicName = topicName;
-            _connectionAttempts = connectionAttemps;
-            _declareOpts = declareOpts;
-            _type = type;
+            this.GetConnection(connectionString, connectionAttemps);
+            Channel = this.CreateChannel();
+
+            if (declareOpts != null) Channel.ExchangeDeclare(topicName, type, declareOpts.Durable, declareOpts.AutoDelete, declareOpts.Args);
         }
 
-        public IConnection Connection { get; set; }
-
-        public override async Task SendAsync<TModel>(TModel model, CancellationToken cancellation = default)
+        public override async Task SendAsync<TModel>(TModel model, CancellationToken cancellationToken = default)
         {
             var message = model.CreateMessagebusMessage();
-            await SendAsync(message, cancellation);
+            await SendAsync(message, cancellationToken);
         }
-
-        public override Task SendAsync(MessageBusMessage message, CancellationToken cancellation = default)
+        public override Task SendAsync(MessageBusMessage message, CancellationToken cancellationToken = default)
         {
-            using (var channel = ConfigureChannel(this.GetConnection(ConnectionString, _connectionAttempts)))
-                channel.SendMessage(_topicName, string.Empty, message, cancellation);
+            Channel.SendMessage(_topicName, string.Empty, message, cancellationToken);
+            return Task.CompletedTask;
+        }
+        public override Task SendAsync(IEnumerable<MessageBusMessage> messages, CancellationToken cancellationToken = default)
+        {
+
+            foreach (var message in messages)
+                Channel.SendMessage(_topicName, string.Empty, message, cancellationToken);
 
             return Task.CompletedTask;
         }
-
-        public override Task SendAsync(IEnumerable<MessageBusMessage> messages, CancellationToken cancellation = default)
+        public override async Task SendManyAsync<TModel>(IEnumerable<TModel> models, CancellationToken cancellationToken = default)
         {
-            using (var channel = ConfigureChannel(this.GetConnection(ConnectionString, _connectionAttempts)))
-            {
-                foreach (var message in messages)
-                    channel.SendMessage(_topicName, string.Empty, message, cancellation);
-            }
-
-            return Task.CompletedTask;
+            await SendAsync(models.Select(x => x.CreateMessagebusMessage()), cancellationToken);
         }
-
-        public override async Task SendManyAsync<TModel>(IEnumerable<TModel> list, CancellationToken cancellation = default)
+        protected override void Dispose(bool disposing)
         {
-            await SendAsync(list.Select(x => x.CreateMessagebusMessage()), cancellation);
-        }
-
-        private IModel ConfigureChannel(IConnection connection)
-        {
-            var channel = this.CreateChannel(connection);
-
-            if (_declareOpts == null) return channel;
-
-            channel.ExchangeDeclare(exchange: _topicName, type: _type, durable: _declareOpts.Durable, _declareOpts.AutoComplete, _declareOpts.Args);
-            return channel;
+            Channel.Close();
+            Connection.Close();
         }
     }
 }

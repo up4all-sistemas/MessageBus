@@ -8,7 +8,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Options
     {
         internal StreamDeclareOptions() : base()
         {
-            Type= QueueType.Stream;
+            Type = QueueType.Stream;
 
             if (Args == null)
                 Args = new Dictionary<string, object>();

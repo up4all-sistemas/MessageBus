@@ -4,7 +4,6 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Threading;
 using System.Threading.Tasks;
 
 using Up4All.Framework.MessageBus.Abstractions.Configurations;
@@ -33,7 +32,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Tests
             services.AddLogging();
 
             services.AddMessageBusQueueClient(_configuration);
-            services.AddMessageBusTopicClient(_configuration);            
+            services.AddMessageBusTopicClient(_configuration);
             services.AddMessageBusStreamClient(_configuration, "next");
 
             _provider = services.BuildServiceProvider();
@@ -78,11 +77,9 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Tests
             {
                 passed = msg != null
                 && msg.UserProperties.ContainsKey("proptst")
-                && msg.UserProperties["proptst"] == "tst";
-                return Abstractions.Enums.MessageReceivedStatusEnum.Completed;
+                && msg.GetUserPropertyValueAsString("proptst") == "tst";
+                return Abstractions.Enums.MessageReceivedStatus.Completed;
             }, (ex) => Debug.Print(ex.Message));
-
-            Thread.Sleep(3000);
 
             Assert.True(passed);
         }
@@ -109,15 +106,11 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Tests
 
             MessageBusMessage result = null;
 
-            await client.RegisterHandlerAsync(async (msg, c) =>
+            await client.RegisterHandlerAsync((msg, c) =>
             {
                 result = msg;
-                return Abstractions.Enums.MessageReceivedStatusEnum.Completed;
+                return Task.FromResult(Abstractions.Enums.MessageReceivedStatus.Completed);
             }, (ex, c) => { Debug.Print(ex.Message); return Task.CompletedTask; });
-
-            //await StreamSendMessage();
-
-            while (result == null) continue;
 
             Assert.NotNull(result);
         }

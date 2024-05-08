@@ -6,13 +6,13 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Options
     {
         public bool Durable { get; set; }
 
-        public bool AutoComplete { get; set; }
+        public bool AutoDelete { get; set; }
 
         public Dictionary<string, object> Args { get; set; }
 
         internal ExchangeDeclareOptions()
         {
-            Durable = true;            
+            Durable = true;
         }
     }
 }

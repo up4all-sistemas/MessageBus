@@ -8,12 +8,12 @@ namespace Up4All.Framework.MessageBus.Abstractions.Interfaces
 {
     public interface IMessageBusPublisher
     {
-        Task SendAsync<TModel>(TModel model, CancellationToken cancellation = default);
+        Task SendAsync<TModel>(TModel model, CancellationToken cancellationToken = default);
 
-        Task SendManyAsync<TModel>(IEnumerable<TModel> list, CancellationToken cancellation = default);
+        Task SendAsync(MessageBusMessage message, CancellationToken cancellationToken = default);
 
-        Task SendAsync(MessageBusMessage message, CancellationToken cancellation = default);
+        Task SendAsync(IEnumerable<MessageBusMessage> messages, CancellationToken cancellationToken = default);
 
-        Task SendAsync(IEnumerable<MessageBusMessage> messages, CancellationToken cancellation = default);
+        Task SendManyAsync<TModel>(IEnumerable<TModel> models, CancellationToken cancellationToken = default);
     }
 }

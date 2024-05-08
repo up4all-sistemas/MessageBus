@@ -17,8 +17,8 @@ namespace Up4All.Framework.MessageBus.Abstractions.Interfaces
 
         void AddUserProperty(KeyValuePair<string, object> prop);
 
-        void AddUserProperties(IDictionary<string, object> props);
-
         void AddUserProperty(string key, object value);
+
+        void AddUserProperties(IDictionary<string, object> props);
     }
 }
