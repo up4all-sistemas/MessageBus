@@ -16,7 +16,7 @@ namespace Up4All.Framework.MessageBus.Abstractions
 
         protected object Offset;
 
-        public MessageBusStandaloneStreamClient(string connectionString, string queueName, object offset)
+        protected MessageBusStandaloneStreamClient(string connectionString, string queueName, object offset)
         {
             ConnectionString = connectionString;
             QueueName = queueName;
@@ -28,7 +28,7 @@ namespace Up4All.Framework.MessageBus.Abstractions
         public abstract Task RegisterHandlerAsync(Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default);
         public abstract Task RegisterHandlerAsync<TModel>(Func<TModel, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default);
         public abstract Task SendAsync(MessageBusMessage message, CancellationToken cancellationToken = default);
-        public abstract Task SendAsync(IEnumerable<MessageBusMessage> messages, CancellationToken cancellationToken = default);        
+        public abstract Task SendAsync(IEnumerable<MessageBusMessage> messages, CancellationToken cancellationToken = default);
         public abstract Task SendAsync<TModel>(TModel model, CancellationToken cancellationToken = default);
         public abstract Task SendManyAsync<TModel>(IEnumerable<TModel> models, CancellationToken cancellationToken = default);
         public abstract Task Close();

@@ -28,7 +28,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
             : base(connectionString, streamname, offset)
         {
             _streamname = streamname;
-            this.GetConnection(connectionString,connectionAttempts);
+            this.GetConnection(connectionString, connectionAttempts);
             Channel = this.CreateChannel();
             Channel.ConfigureQueueDeclare(streamname, declareOpts);
         }
@@ -62,7 +62,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
         {
             var message = model.CreateMessagebusMessage();
             await SendAsync(message, cancellationToken);
-        }        
+        }
         public override Task SendAsync(MessageBusMessage message, CancellationToken cancellationToken = default)
         {
             Channel.SendMessage("", _streamname, message, cancellationToken);

@@ -61,7 +61,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
         {
             var message = model.CreateMessagebusMessage();
             await SendAsync(message, cancellationToken);
-        }        
+        }
         public override Task SendAsync(MessageBusMessage message, CancellationToken cancellationToken = default)
         {
             Channel.SendMessage("", _queuename, message, cancellationToken);

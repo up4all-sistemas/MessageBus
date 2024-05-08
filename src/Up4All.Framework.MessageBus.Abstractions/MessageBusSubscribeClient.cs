@@ -13,7 +13,7 @@ namespace Up4All.Framework.MessageBus.Abstractions
 {
     public abstract class MessageBusSubscribeClient : MessageBusClientBase, IMessageBusConsumer
     {
-        public MessageBusSubscribeClient(IOptions<MessageBusOptions> messageBusOptions) : base(messageBusOptions)
+        protected MessageBusSubscribeClient(IOptions<MessageBusOptions> messageBusOptions) : base(messageBusOptions)
         {
         }
 

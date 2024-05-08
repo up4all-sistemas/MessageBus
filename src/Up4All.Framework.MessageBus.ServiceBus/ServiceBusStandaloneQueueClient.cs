@@ -14,7 +14,7 @@ using Up4All.Framework.MessageBus.Abstractions.Messages;
 namespace Up4All.Framework.MessageBus.ServiceBus
 {
     public class ServiceBusStandaloneQueueClient : MessageBusStandaloneQueueClient, IServiceBusClient
-    {   
+    {
         private readonly ServiceBusSender _queueClient;
         private readonly string _queueName;
         private readonly ServiceBusClient _client;

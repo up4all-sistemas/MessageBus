@@ -2,7 +2,7 @@
 {
     public abstract class MessageBusClientBaseMock
     {
-        public MessageBusClientBaseMock()
+        protected MessageBusClientBaseMock()
         {
 
         }

@@ -42,6 +42,6 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Mocks
             return Task.CompletedTask;
         }
 
-        
+
     }
 }

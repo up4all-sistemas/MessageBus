@@ -11,7 +11,7 @@ namespace Up4All.Framework.MessageBus.Abstractions.Mocks
 {
     public abstract class MessageBusStandaloneStreamClientMock : MessageBusClientBaseMock, IMessageBusStandaloneStreamClient
     {
-        public MessageBusStandaloneStreamClientMock() : base()
+        protected MessageBusStandaloneStreamClientMock() : base()
         {
         }
 
@@ -20,7 +20,7 @@ namespace Up4All.Framework.MessageBus.Abstractions.Mocks
         public abstract void RegisterHandler<TModel>(Func<TModel, MessageReceivedStatus> handler, Action<Exception> errorHandler, Action onIdle = null, bool autoComplete = false);
         public abstract void RegisterHandler(Func<ReceivedMessage, MessageReceivedStatus> handler, Action<Exception> errorHandler, Action onIdle = null, bool autoComplete = false);
         public abstract Task SendAsync(MessageBusMessage message, CancellationToken cancellationToken = default);
-        public abstract Task SendAsync(IEnumerable<MessageBusMessage> messages, CancellationToken cancellationToken = default);        
+        public abstract Task SendAsync(IEnumerable<MessageBusMessage> messages, CancellationToken cancellationToken = default);
         public abstract Task SendAsync<TModel>(TModel model, CancellationToken cancellationToken = default);
         public abstract Task SendManyAsync<TModel>(IEnumerable<TModel> models, CancellationToken cancellationToken = default);
         public abstract Task Close();
