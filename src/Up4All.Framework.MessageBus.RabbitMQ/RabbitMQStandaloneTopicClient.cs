@@ -31,17 +31,17 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
             if (declareOpts != null) Channel.ExchangeDeclare(topicName, type, declareOpts.Durable, declareOpts.AutoDelete, declareOpts.Args);
         }
 
-        public override async Task SendAsync<TModel>(TModel model, CancellationToken cancellationToken = default)
+        public async Task SendAsync<TModel>(TModel model, CancellationToken cancellationToken = default)
         {
             var message = model.CreateMessagebusMessage();
             await SendAsync(message, cancellationToken);
         }
-        public override Task SendAsync(MessageBusMessage message, CancellationToken cancellationToken = default)
+        public Task SendAsync(MessageBusMessage message, CancellationToken cancellationToken = default)
         {
             Channel.SendMessage(_topicName, string.Empty, message, cancellationToken);
             return Task.CompletedTask;
         }
-        public override Task SendAsync(IEnumerable<MessageBusMessage> messages, CancellationToken cancellationToken = default)
+        public Task SendAsync(IEnumerable<MessageBusMessage> messages, CancellationToken cancellationToken = default)
         {
 
             foreach (var message in messages)
@@ -49,7 +49,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
 
             return Task.CompletedTask;
         }
-        public override async Task SendManyAsync<TModel>(IEnumerable<TModel> models, CancellationToken cancellationToken = default)
+        public async Task SendManyAsync<TModel>(IEnumerable<TModel> models, CancellationToken cancellationToken = default)
         {
             await SendAsync(models.Select(x => x.CreateMessagebusMessage()), cancellationToken);
         }
