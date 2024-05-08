@@ -8,7 +8,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus
     public class ServiceBusQueueClient : ServiceBusStandaloneQueueClient, IMessageBusQueueClient, IServiceBusClient
     {
         public ServiceBusQueueClient(IOptions<MessageBusOptions> messageOptions) : base(messageOptions.Value.ConnectionString, messageOptions.Value.QueueName)
-        {            
+        {
         }
     }
 }

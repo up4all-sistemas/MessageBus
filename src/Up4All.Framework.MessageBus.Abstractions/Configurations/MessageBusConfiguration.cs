@@ -7,7 +7,6 @@ using System;
 
 using Up4All.Framework.MessageBus.Abstractions.Factories;
 using Up4All.Framework.MessageBus.Abstractions.Interfaces;
-using Up4All.Framework.MessageBus.Abstractions.Mocks;
 using Up4All.Framework.MessageBus.Abstractions.Options;
 
 namespace Up4All.Framework.MessageBus.Abstractions.Configurations
@@ -54,26 +53,6 @@ namespace Up4All.Framework.MessageBus.Abstractions.Configurations
             services.AddSingleton<IMessageBusConsumer, T>();
         }
 
-        public static void AddMessageBusQueueClientMocked<T>(this IServiceCollection services) where T : MessageBusQueueClientMock
-        {
-            services.AddSingleton<IMessageBusQueueClient, T>();
-        }
-
-        public static void AddMessageBusStreamClientMocked<T>(this IServiceCollection services) where T : MessageBusStreamClientMock
-        {
-            services.AddSingleton<IMessageBusStreamClient, T>();
-        }
-
-        public static void AddMessageBusTopicClientMocked<T>(this IServiceCollection services) where T : MessageBusTopicClientMock
-        {
-            services.AddSingleton<IMessageBusPublisher, T>();
-        }
-
-        public static void AddMessageBusSubscribeClientMocked<T>(this IServiceCollection services) where T : MessageBusSubscribeClientMock
-        {
-            services.AddSingleton<IMessageBusConsumer, T>();
-        }
-
         public static void AddStandaloneQueueClient(this IServiceCollection services, Func<IServiceProvider, IMessageBusStandaloneQueueClient> instance)
         {
             services.AddSingleton<IMessageBusStandaloneQueueClient>(instance);
@@ -92,26 +71,6 @@ namespace Up4All.Framework.MessageBus.Abstractions.Configurations
         public static void AddStandaloneTopicClient(this IServiceCollection services, Func<IServiceProvider, IMessageBusStandaloneConsumer> instance)
         {
             services.AddSingleton<IMessageBusStandaloneConsumer>(instance);
-        }
-
-        public static void AddStandaloneQueueClientMocked<T>(this IServiceCollection services) where T : MessageBusStandaloneQueueClientMock
-        {
-            services.AddSingleton<IMessageBusStandaloneQueueClient, T>();
-        }
-
-        public static void AddStandaloneStreamClientMocked<T>(this IServiceCollection services) where T : MessageBusStandaloneStreamClientMock
-        {
-            services.AddSingleton<IMessageBusStandaloneStreamClient, T>();
-        }
-
-        public static void AddStandaloneTopicClientMocked<T>(this IServiceCollection services) where T : MessageBusStandaloneTopicClientMock
-        {
-            services.AddSingleton<IMessageBusStandalonePublisher, T>();
-        }
-
-        public static void AddStandaloneMessageBusSubscribeClientMocked<T>(this IServiceCollection services) where T : MessageBusStandaloneSubscribeClientMock
-        {
-            services.AddSingleton<IMessageBusStandaloneConsumer, T>();
         }
 
         public static void AddMessageBusNamedQueueClient(this IServiceCollection services, IConfiguration configuration, string key, Func<IServiceProvider, MessageBusOptions, IMessageBusStandaloneQueueClient> createInstance)
