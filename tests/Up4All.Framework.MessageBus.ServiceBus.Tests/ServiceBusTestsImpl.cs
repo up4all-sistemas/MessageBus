@@ -44,7 +44,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Tests
         }
 
         [Fact]
-        public async void QueueSendMessage()
+        public async Task QueueSendMessage()
         {
             var client = _provider.GetRequiredService<IMessageBusQueueClient>();
 
@@ -60,7 +60,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Tests
         }
 
         [Fact]
-        public async void QueueSendMessageTyped()
+        public async Task QueueSendMessageTyped()
         {
             var client = _provider.GetRequiredService<IMessageBusQueueClient>();
 
@@ -71,7 +71,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Tests
         }
 
         [Fact]
-        public async void QueueSendMessageList()
+        public async Task QueueSendMessageList()
         {
             var client = _provider.GetRequiredService<IMessageBusQueueClient>();
 
@@ -90,12 +90,9 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Tests
 
             client.RegisterHandler((msg) =>
             {
-                Assert.True(msg != null);
-                return Abstractions.Enums.MessageReceivedStatusEnum.Completed;
+                Assert.NotNull(msg);
+                return Abstractions.Enums.MessageReceivedStatus.Completed;
             }, (ex) => Debug.Print(ex.Message));
-
-
-            Thread.Sleep(5000);
         }
 
         [Fact]
@@ -105,15 +102,13 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Tests
 
             client.RegisterHandler<TestModel>((msg) =>
             {
-                Assert.True(msg is TestModel);
-                return Abstractions.Enums.MessageReceivedStatusEnum.Completed;
+                Assert.True(msg is not null);
+                return Abstractions.Enums.MessageReceivedStatus.Completed;
             }, (ex) => Debug.Print(ex.Message));
-
-            Thread.Sleep(5000);
         }
 
         [Fact]
-        public async void TopicSendMessage()
+        public async Task TopicSendMessage()
         {
             var client = _provider.GetRequiredService<IMessageBusPublisher>();
 
@@ -133,11 +128,9 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Tests
 
             client.RegisterHandler((msg) =>
             {
-                Assert.True(msg != null);
-                return Abstractions.Enums.MessageReceivedStatusEnum.Completed;
+                Assert.NotNull(msg);
+                return Abstractions.Enums.MessageReceivedStatus.Completed;
             }, (ex) => Debug.Print(ex.Message));
-
-            Thread.Sleep(5000);
         }
 
         [Fact]

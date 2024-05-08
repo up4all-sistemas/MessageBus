@@ -21,108 +21,103 @@ using Up4All.Framework.MessageBus.RabbitMQ.Options;
 
 namespace Up4All.Framework.MessageBus.RabbitMQ
 {
-    public class RabbitMQQueueClient : MessageBusQueueClient, IRabbitMQClient, IMessageBusQueueClient, IDisposable
+    public class RabbitMQQueueClient : MessageBusQueueClient, IRabbitMQClient, IMessageBusQueueClient
     {
         private readonly object _offset;
-        private readonly ILogger<RabbitMQQueueClient> _logger;
-        private IModel _channel;
 
         public IConnection Connection { get; set; }
+
+        public IModel Channel { get; private set; }
 
         public RabbitMQQueueClient(IOptions<MessageBusOptions> messageOptions, ILogger<RabbitMQQueueClient> logger, object offset = null
             , QueueDeclareOptions declareOpts = null) : base(messageOptions)
         {
             _offset = offset;
-            _logger = logger;
-            _channel = this.CreateChannel(this.GetConnection(MessageBusOptions, logger));
-            _channel.ConfigureQueueDeclare(MessageBusOptions.QueueName, declareOpts);
+            this.GetConnection(MessageBusOptions, logger);
+            Channel = this.CreateChannel();
+            Channel.ConfigureQueueDeclare(MessageBusOptions.QueueName, declareOpts);
         }
 
-        public override void RegisterHandler(Func<ReceivedMessage, MessageReceivedStatusEnum> handler, Action<Exception> errorHandler, Action onIdle = null, bool autoComplete = false)
+        public override void RegisterHandler(Func<ReceivedMessage, MessageReceivedStatus> handler, Action<Exception> errorHandler, Action onIdle = null, bool autoComplete = false)
         {
-            _channel = this.CreateChannel(this.GetConnection(MessageBusOptions, _logger));
-            var receiver = new QueueMessageReceiver(_channel, handler, errorHandler, autoComplete);
-            this.ConfigureHandler(_channel, MessageBusOptions.QueueName, receiver, autoComplete, _offset);
+            var receiver = new QueueMessageReceiver(Channel, handler, errorHandler, autoComplete);
+            this.ConfigureHandler(MessageBusOptions.QueueName, receiver, autoComplete, _offset);
         }
 
-        public override Task RegisterHandlerAsync(Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatusEnum>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
+        public override void RegisterHandler<TModel>(Func<TModel, MessageReceivedStatus> handler, Action<Exception> errorHandler, Action onIdle = null, bool autoComplete = false)
         {
-            _channel = this.CreateChannel(this.GetConnection(MessageBusOptions, _logger));
-            var receiver = new QueueMessageReceiver(_channel, handler, errorHandler, autoComplete);
-            this.ConfigureHandler(_channel, MessageBusOptions.QueueName, receiver, autoComplete, _offset);
+            var receiver = new QueueMessageReceiverForModel<TModel>(Channel, handler, errorHandler, autoComplete);
+            this.ConfigureHandler(MessageBusOptions.QueueName, receiver, autoComplete, _offset);
+        }
+
+        public override Task RegisterHandlerAsync(Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
+        {
+            var receiver = new QueueMessageReceiver(Channel, handler, errorHandler, autoComplete);
+            this.ConfigureHandler(MessageBusOptions.QueueName, receiver, autoComplete, _offset);
             return Task.CompletedTask;
         }
 
-        public override Task RegisterHandlerAsync<TModel>(Func<TModel, CancellationToken, Task<MessageReceivedStatusEnum>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
+        public override Task RegisterHandlerAsync<TModel>(Func<TModel, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
         {
-            _channel = this.CreateChannel(this.GetConnection(MessageBusOptions, _logger));
-            var receiver = new QueueMessageReceiverForModel<TModel>(_channel, handler, errorHandler, autoComplete);
-            this.ConfigureHandler(_channel, MessageBusOptions.QueueName, receiver, autoComplete, _offset);
+            var receiver = new QueueMessageReceiverForModel<TModel>(Channel, handler, errorHandler, autoComplete);
+            this.ConfigureHandler(MessageBusOptions.QueueName, receiver, autoComplete, _offset);
             return Task.CompletedTask;
-        }
-
-        public override void RegisterHandler<TModel>(Func<TModel, MessageReceivedStatusEnum> handler, Action<Exception> errorHandler, Action onIdle = null, bool autoComplete = false)
-        {
-            _channel = this.CreateChannel(this.GetConnection(MessageBusOptions, _logger));
-            var receiver = new QueueMessageReceiverForModel<TModel>(_channel, handler, errorHandler, autoComplete);
-            this.ConfigureHandler(_channel, MessageBusOptions.QueueName, receiver, autoComplete, _offset);
         }
 
         private void CreateAndSend(MessageBusMessage msg)
         {
-            IBasicProperties basicProps = _channel.CreateBasicProperties();
+            IBasicProperties basicProps = Channel.CreateBasicProperties();
             basicProps.PopulateHeaders(msg);
-            _channel.BasicPublish(exchange: "", routingKey: MessageBusOptions.QueueName, basicProperties: basicProps, body: msg.Body);
+            Channel.BasicPublish(exchange: "", routingKey: MessageBusOptions.QueueName, basicProperties: basicProps, body: msg.Body);
         }
 
         private void CreateAndSend<TModel>(TModel model)
         {
-            IBasicProperties basicProps = _channel.CreateBasicProperties();
+            IBasicProperties basicProps = Channel.CreateBasicProperties();
 
             var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(model, new JsonSerializerOptions(JsonSerializerDefaults.Web)));
 
-            _channel.BasicPublish(exchange: "", routingKey: MessageBusOptions.QueueName, basicProperties: basicProps, body: body);
-        }
-
-        public void Dispose()
-        {
-            Close();
+            Channel.BasicPublish(exchange: "", routingKey: MessageBusOptions.QueueName, basicProperties: basicProps, body: body);
         }
 
         public override Task Close()
         {
-            _channel?.Close();
-            //base.Close();
-
+            Channel?.Close();
             return Task.CompletedTask;
         }
 
-        public override Task SendAsync<TModel>(TModel model, CancellationToken cancellation = default)
+        public override Task SendAsync<TModel>(TModel model, CancellationToken cancellationToken = default)
         {
             CreateAndSend(model);
             return Task.CompletedTask;
         }
 
-        public override Task SendManyAsync<TModel>(IEnumerable<TModel> list, CancellationToken cancellation = default)
-        {
-            foreach (var model in list)
-                CreateAndSend(model);
-
-            return Task.CompletedTask;
-        }
-
-        public override Task SendAsync(MessageBusMessage message, CancellationToken cancellation = default)
+        public override Task SendAsync(MessageBusMessage message, CancellationToken cancellationToken = default)
         {
             CreateAndSend(message);
             return Task.CompletedTask;
         }
 
-        public override Task SendAsync(IEnumerable<MessageBusMessage> messages, CancellationToken cancellation = default)
+        public override Task SendAsync(IEnumerable<MessageBusMessage> messages, CancellationToken cancellationToken = default)
         {
             foreach (var message in messages)
                 CreateAndSend(message);
 
             return Task.CompletedTask;
+        }
+
+        public override Task SendManyAsync<TModel>(IEnumerable<TModel> models, CancellationToken cancellationToken = default)
+        {
+            foreach (var model in models)
+                CreateAndSend(model);
+
+            return Task.CompletedTask;
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            Close();
+            Channel?.Dispose();
         }
 
     }

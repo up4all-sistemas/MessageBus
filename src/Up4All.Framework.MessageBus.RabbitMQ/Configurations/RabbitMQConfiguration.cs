@@ -18,7 +18,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Configurations
 
         public static IServiceCollection AddMessageBusStreamClient(this IServiceCollection services, IConfiguration configuration, object offset)
         {
-            services.AddMessageBusStreamClient<RabbitMQStreamClient>(configuration, offset, (logger, opts) => new RabbitMQStreamClient(opts, logger, offset));
+            services.AddMessageBusStreamClient<RabbitMQStreamClient>(configuration, (logger, opts) => new RabbitMQStreamClient(opts, logger, offset));
             return services;
         }
 

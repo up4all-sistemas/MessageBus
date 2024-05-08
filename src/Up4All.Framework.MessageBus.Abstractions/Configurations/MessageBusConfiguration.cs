@@ -31,7 +31,7 @@ namespace Up4All.Framework.MessageBus.Abstractions.Configurations
             services.AddSingleton<IMessageBusQueueClient, T>();
         }
 
-        public static void AddMessageBusStreamClient<T>(this IServiceCollection services, IConfiguration configuration, object offset, Func<ILogger<T>, IOptions<MessageBusOptions>, T> builder) where T : MessageBusStreamClient
+        public static void AddMessageBusStreamClient<T>(this IServiceCollection services, IConfiguration configuration, Func<ILogger<T>, IOptions<MessageBusOptions>, T> builder) where T : MessageBusStreamClient
         {
             services.AddConfigurationBinder(configuration);
             services.AddSingleton<IMessageBusStreamClient, T>(provider =>
@@ -143,9 +143,11 @@ namespace Up4All.Framework.MessageBus.Abstractions.Configurations
             {
                 var opts = p.GetRequiredService<IOptions<MessageBusOptions>>();
 
-                var namedInstance = new NamedInstanceClient<TClient>();
-                namedInstance.Key = key;
-                namedInstance.Instance = createInstance(p, opts.Value);
+                var namedInstance = new NamedInstanceClient<TClient>
+                {
+                    Key = key,
+                    Instance = createInstance(p, opts.Value)
+                };
                 return namedInstance;
             });
         }

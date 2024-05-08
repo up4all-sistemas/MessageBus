@@ -4,7 +4,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using System;
-using System.Runtime.CompilerServices;
 
 using Up4All.Framework.MessageBus.Abstractions.Configurations;
 using Up4All.Framework.MessageBus.Abstractions.Interfaces;
@@ -61,12 +60,11 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
 
             services.AddSingleton<IMessageBusPublisher, RabbitMQTopicClient>(provider =>
             {
-                var options = provider.GetRequiredService<IOptions<MessageBusOptions>>();
-                var logger = provider.GetRequiredService<ILogger<RabbitMQTopicClient>>();
+                var options = provider.GetRequiredService<IOptions<MessageBusOptions>>();                
 
                 var declareOpts = RabbitMQConsts.DefaultExchangeDeclareOptions;
                 configureDeclareOpts?.Invoke(declareOpts);
-                return new RabbitMQTopicClient(logger, options, type, ConfigureDeclareOpts(configureDeclareOpts));
+                return new RabbitMQTopicClient(options, type, ConfigureDeclareOpts(configureDeclareOpts));
             });
 
             return services;
@@ -288,17 +286,17 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
         {
             if (configureDeclareOpts == null)
                 return null;
-         
+
             var declareOpts = new QueueDeclareOptions();
             configureDeclareOpts(declareOpts);
             return declareOpts;
         }
     }
 
-    public class RabbitMQConsts
+    public static class RabbitMQConsts
     {
-        public static QueueDeclareOptions DefaultQueueDeclareOptions = new QueueDeclareOptions();
-        public static StreamDeclareOptions DefaultStreamDeclareOptions = new StreamDeclareOptions();
-        public static ExchangeDeclareOptions DefaultExchangeDeclareOptions = new ExchangeDeclareOptions();
+        public static QueueDeclareOptions DefaultQueueDeclareOptions => new QueueDeclareOptions();
+        public static StreamDeclareOptions DefaultStreamDeclareOptions => new StreamDeclareOptions();
+        public static ExchangeDeclareOptions DefaultExchangeDeclareOptions => new ExchangeDeclareOptions();
     }
 }

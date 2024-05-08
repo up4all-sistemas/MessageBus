@@ -28,12 +28,12 @@ namespace Up4All.Framework.MessageBus.ServiceBus
             return Task.CompletedTask;
         }
 
-        public override Task SendAsync<TModel>(TModel message, CancellationToken cancellationToken = default)
+        public override Task SendAsync<TModel>(TModel model, CancellationToken cancellationToken = default)
         {
             return Task.CompletedTask;
         }
 
-        public override Task SendManyAsync<TModel>(IEnumerable<TModel> message, CancellationToken cancellationToken = default)
+        public override Task SendManyAsync<TModel>(IEnumerable<TModel> models, CancellationToken cancellationToken = default)
         {
             return Task.CompletedTask;
         }

@@ -15,11 +15,11 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Consumers
     public class QueueMessageReceiver : EventingBasicConsumer
     {
         private readonly IModel _channel;
-        private readonly Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatusEnum>> _handler;
+        private readonly Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatus>> _handler;
         private readonly Func<Exception, CancellationToken, Task> _errorHandler;
         private readonly bool _autoComplete;
 
-        public QueueMessageReceiver(IModel channel, Func<ReceivedMessage, MessageReceivedStatusEnum> handler, Action<Exception> errorHandler, bool autocomplete) : base(channel)
+        public QueueMessageReceiver(IModel channel, Func<ReceivedMessage, MessageReceivedStatus> handler, Action<Exception> errorHandler, bool autocomplete) : base(channel)
         {
             _autoComplete = autocomplete;
             _channel = channel;
@@ -36,7 +36,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Consumers
             };
         }
 
-        public QueueMessageReceiver(IModel channel, Func<ReceivedMessage, Task<MessageReceivedStatusEnum>> handler, Func<Exception, Task> errorHandler, bool autocomplete) : base(channel)
+        public QueueMessageReceiver(IModel channel, Func<ReceivedMessage, Task<MessageReceivedStatus>> handler, Func<Exception, Task> errorHandler, bool autocomplete) : base(channel)
         {
             _autoComplete = autocomplete;
             _channel = channel;
@@ -44,7 +44,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Consumers
             _errorHandler = (ex, c) => { c.ThrowIfCancellationRequested(); return errorHandler(ex); };
         }
 
-        public QueueMessageReceiver(IModel channel, Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatusEnum>> handler, Func<Exception, CancellationToken, Task> errorHandler, bool autocomplete) : base(channel)
+        public QueueMessageReceiver(IModel channel, Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, bool autocomplete) : base(channel)
         {
             _autoComplete = autocomplete;
             _channel = channel;
@@ -64,14 +64,13 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Consumers
 
                 var response = _handler(message, CancellationToken.None).GetAwaiter().GetResult();
 
-                if (!_autoComplete && response == MessageReceivedStatusEnum.Deadletter)
+                if (!_autoComplete && response == MessageReceivedStatus.Deadletter)
                 {
-                    _channel.BasicNack(deliveryTag, false, false);
-                    //_channel.BasicReject(deliveryTag, false);
+                    _channel.BasicNack(deliveryTag, false, false);                    
                     return;
                 }
 
-                if (!_autoComplete && response == MessageReceivedStatusEnum.Abandoned)
+                if (!_autoComplete && response == MessageReceivedStatus.Abandoned)
                 {
                     _channel.BasicReject(deliveryTag, true);
                     return;
@@ -83,8 +82,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Consumers
             catch (Exception ex)
             {
                 if (!_autoComplete)
-                    _channel.BasicNack(deliveryTag, false, false);
-                //_channel.BasicReject(deliveryTag, true);
+                    _channel.BasicNack(deliveryTag, false, false);                
                 _errorHandler(ex, CancellationToken.None).Wait();
             }
         }
@@ -93,11 +91,11 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Consumers
     public class QueueMessageReceiverForModel<TModel> : DefaultBasicConsumer
     {
         private readonly IModel _channel;
-        private readonly Func<TModel, CancellationToken, Task<MessageReceivedStatusEnum>> _handler;
+        private readonly Func<TModel, CancellationToken, Task<MessageReceivedStatus>> _handler;
         private readonly Func<Exception, CancellationToken, Task> _errorHandler;
         private readonly bool _autoComplete;
 
-        public QueueMessageReceiverForModel(IModel channel, Func<TModel, MessageReceivedStatusEnum> handler, Action<Exception> errorHandler, bool autocomplete)
+        public QueueMessageReceiverForModel(IModel channel, Func<TModel, MessageReceivedStatus> handler, Action<Exception> errorHandler, bool autocomplete)
         {
             _autoComplete = autocomplete;
             _channel = channel;
@@ -114,7 +112,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Consumers
             };
         }
 
-        public QueueMessageReceiverForModel(IModel channel, Func<TModel, Task<MessageReceivedStatusEnum>> handler, Func<Exception, Task> errorHandler, bool autocomplete)
+        public QueueMessageReceiverForModel(IModel channel, Func<TModel, Task<MessageReceivedStatus>> handler, Func<Exception, Task> errorHandler, bool autocomplete)
         {
             _autoComplete = autocomplete;
             _channel = channel;
@@ -122,7 +120,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Consumers
             _errorHandler = (ex, c) => { c.ThrowIfCancellationRequested(); return errorHandler(ex); };
         }
 
-        public QueueMessageReceiverForModel(IModel channel, Func<TModel, CancellationToken, Task<MessageReceivedStatusEnum>> handler, Func<Exception, CancellationToken, Task> errorHandler, bool autocomplete)
+        public QueueMessageReceiverForModel(IModel channel, Func<TModel, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, bool autocomplete)
         {
             _autoComplete = autocomplete;
             _channel = channel;
@@ -138,14 +136,13 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Consumers
 
                 var response = _handler(model, CancellationToken.None).GetAwaiter().GetResult();
 
-                if (!_autoComplete && response == MessageReceivedStatusEnum.Deadletter)
+                if (!_autoComplete && response == MessageReceivedStatus.Deadletter)
                 {
-                    _channel.BasicNack(deliveryTag, false, false);
-                    //_channel.BasicReject(deliveryTag, false);
+                    _channel.BasicNack(deliveryTag, false, false);                    
                     return;
                 }
 
-                if (!_autoComplete && response == MessageReceivedStatusEnum.Abandoned)
+                if (!_autoComplete && response == MessageReceivedStatus.Abandoned)
                 {
                     _channel.BasicReject(deliveryTag, true);
                     return;
@@ -158,7 +155,6 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Consumers
             {
                 if (!_autoComplete)
                     _channel.BasicNack(deliveryTag, false, false);
-                //_channel.BasicReject(deliveryTag, true);
                 _errorHandler(ex, CancellationToken.None).Wait();
             }
         }

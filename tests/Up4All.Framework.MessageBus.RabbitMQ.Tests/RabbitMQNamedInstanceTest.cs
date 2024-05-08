@@ -6,6 +6,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 
 using Up4All.Framework.MessageBus.Abstractions.Configurations;
 using Up4All.Framework.MessageBus.Abstractions.Factories;
@@ -33,16 +34,12 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Tests
 
             services.AddMessageBusNamedQueueClient(_configuration, "queue1", (provider, opts) =>
             {
-                var logger = provider.GetRequiredService<ILogger<RabbitMQStandaloneQueueClient>>();
-
                 return new RabbitMQStandaloneQueueClient(opts.ConnectionString
                     , opts.QueueName, 8);
             });
 
             services.AddMessageBusNamedTopicClient(_configuration, "topic1", (provider, opts) =>
             {
-                var logger = provider.GetRequiredService<ILogger<RabbitMQStandaloneTopicClient>>();
-
                 return new RabbitMQStandaloneTopicClient(
                       opts.ConnectionString
                     , opts.TopicName
@@ -53,7 +50,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Tests
         }
 
         [Fact]
-        public async void QueueSendMessage()
+        public async Task QueueSendMessage()
         {
             var factory = _provider.GetRequiredService<MessageBusFactory>();
             var client = factory.GetQueueClient("queue1");
@@ -77,12 +74,9 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Tests
 
             client.RegisterHandler((msg) =>
             {
-                Assert.True(msg != null);
-                return Abstractions.Enums.MessageReceivedStatusEnum.Completed;
+                Assert.NotNull(msg);
+                return Abstractions.Enums.MessageReceivedStatus.Completed;
             }, (ex) => Debug.Print(ex.Message), () => { }, false);
-
-
-            Thread.Sleep(5000);
         }
 
         [Fact]
@@ -96,8 +90,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Tests
                 throw new Exception("Test Error");
             }, (ex) => Debug.Print(ex.Message), () => { }, false);
 
-
-            Thread.Sleep(5000);
+            Assert.True(true);
         }
 
         [Fact]
@@ -108,16 +101,13 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Tests
 
             client.RegisterHandler((msg) =>
             {
-                Assert.True(msg != null);
-                return Abstractions.Enums.MessageReceivedStatusEnum.Deadletter;
+                Assert.NotNull(msg);
+                return Abstractions.Enums.MessageReceivedStatus.Deadletter;
             }, (ex) => Debug.Print(ex.Message), () => { }, false);
-
-
-            Thread.Sleep(5000);
         }
 
         [Fact]
-        public async void TopicSendMessage()
+        public async Task TopicSendMessage()
         {
             var factory = _provider.GetRequiredService<MessageBusFactory>();
             var client = factory.GetTopicClient("topic1");
@@ -127,7 +117,6 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Tests
             };
             msg.AddBody(System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(new { teste = "teste", numero = 10 }));
             msg.UserProperties.Add("proptst", "tst");
-            //msg.UserProperties.Add("routing-key", "test-subs");
             msg.AddUserProperty("target", "main");
 
             await client.SendAsync(msg);

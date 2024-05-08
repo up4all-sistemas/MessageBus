@@ -12,42 +12,40 @@ using Up4All.Framework.MessageBus.Abstractions.Messages;
 
 namespace Up4All.Framework.MessageBus.ServiceBus
 {
-    public class ServiceBusStandaloneTopicClient : MessageBusStandaloneTopicClient, IServiceBusClient, IDisposable
+    public class ServiceBusStandaloneTopicClient : MessageBusStandaloneTopicClient, IServiceBusClient
     {
-        private readonly ServiceBusClient _client;
         private readonly ServiceBusSender _topicClient;
 
         public ServiceBusStandaloneTopicClient(string connectionString, string topicName, int connectionAttempts = 8) : base(connectionString, topicName)
         {
-            (_client, _topicClient) = this.CreateClient(connectionString, topicName, connectionAttempts);
-        }
-
-        public void Dispose()
-        {
-            _topicClient.CloseAsync().Wait();
+            var (_, topicClient) = ServiceBusClientExtensions.CreateClient(connectionString, topicName, connectionAttempts);
+            _topicClient = topicClient;
         }
 
         public override async Task SendAsync(MessageBusMessage message, CancellationToken cancellationToken = default)
         {
-            await _topicClient.SendMessageAsync(this.PrepareMesssage(message), cancellationToken);
+            await _topicClient.SendMessageAsync(ServiceBusClientExtensions.PrepareMesssage(message), cancellationToken);
         }
 
         public override async Task SendAsync(IEnumerable<MessageBusMessage> messages, CancellationToken cancellationToken = default)
         {
-            var sbMessages = messages.Select(x => this.PrepareMesssage(x));
+            var sbMessages = messages.Select(x => ServiceBusClientExtensions.PrepareMesssage(x));
             await _topicClient.SendMessagesAsync(sbMessages, cancellationToken);
         }
 
-        public override async Task SendAsync<TModel>(TModel message, CancellationToken cancellationToken = default)
+        public override async Task SendAsync<TModel>(TModel model, CancellationToken cancellationToken = default)
         {
-            await _topicClient.SendMessageAsync(this.PrepareMesssage(message), cancellationToken);
+            await _topicClient.SendMessageAsync(ServiceBusClientExtensions.PrepareMesssage(model), cancellationToken);
         }
 
-        public override async Task SendManyAsync<TModel>(IEnumerable<TModel> messages, CancellationToken cancellationToken = default)
+        public override async Task SendManyAsync<TModel>(IEnumerable<TModel> models, CancellationToken cancellationToken = default)
         {
-            var sbMessages = messages.Select(x => this.PrepareMesssage(x));
+            var sbMessages = models.Select(x => ServiceBusClientExtensions.PrepareMesssage(x));
             await _topicClient.SendMessagesAsync(sbMessages, cancellationToken);
         }
 
+        protected override void Dispose(bool disposing)
+        {            
+        }
     }
 }

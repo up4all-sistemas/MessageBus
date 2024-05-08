@@ -11,7 +11,7 @@ using Up4All.Framework.MessageBus.Abstractions.Messages;
 
 namespace Up4All.Framework.MessageBus.ServiceBus
 {
-    public class ServiceBusStandaloneSubscribeClient : MessageBusStandaloneSubscribeClient, IServiceBusClient, IDisposable
+    public class ServiceBusStandaloneSubscribeClient : MessageBusStandaloneSubscribeClient, IServiceBusClient
     {
         private readonly ServiceBusClient _client;
         private readonly string _topicName;
@@ -22,31 +22,31 @@ namespace Up4All.Framework.MessageBus.ServiceBus
         {
             _topicName = topicName;
             _subscriptionName = subscriptionName;
-            _client = this.CreateClient(connectionString, connectionAttempts);
+            _client = ServiceBusClientExtensions.CreateClient(connectionString, connectionAttempts);
         }
 
-        public override async Task RegisterHandlerAsync(Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatusEnum>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
+        public override async Task RegisterHandlerAsync(Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
         {
             _processor = CreateProcessor(autoComplete);
             await _processor.RegisterHandleMessageAsync(handler, errorHandler, onIdle, autoComplete);
             await _processor.StartProcessingAsync();
         }
 
-        public override async Task RegisterHandlerAsync<TModel>(Func<TModel, CancellationToken, Task<MessageReceivedStatusEnum>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
+        public override async Task RegisterHandlerAsync<TModel>(Func<TModel, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
         {
             _processor = CreateProcessor(autoComplete);
             await _processor.RegisterHandleMessageAsync(handler, errorHandler, onIdle, autoComplete);
             await _processor.StartProcessingAsync();
         }
 
-        public override void RegisterHandler(Func<ReceivedMessage, MessageReceivedStatusEnum> handler, Action<Exception> errorHandler, Action onIdle = null, bool autoComplete = false)
+        public override void RegisterHandler(Func<ReceivedMessage, MessageReceivedStatus> handler, Action<Exception> errorHandler, Action onIdle = null, bool autoComplete = false)
         {
             _processor = CreateProcessor(autoComplete);
             _processor.RegisterHandleMessage(handler, errorHandler, onIdle, autoComplete);
             _processor.StartProcessingAsync().Wait();
         }
 
-        public override void RegisterHandler<TModel>(Func<TModel, MessageReceivedStatusEnum> handler, Action<Exception> errorHandler, Action onIdle = null, bool autoComplete = false)
+        public override void RegisterHandler<TModel>(Func<TModel, MessageReceivedStatus> handler, Action<Exception> errorHandler, Action onIdle = null, bool autoComplete = false)
         {
             _processor = CreateProcessor(autoComplete);
             _processor.RegisterHandleMessage(handler, errorHandler, onIdle, autoComplete);
@@ -66,17 +66,13 @@ namespace Up4All.Framework.MessageBus.ServiceBus
 
         public override async Task Close()
         {
-            await _processor?.CloseAsync();
-            await _client?.DisposeAsync().AsTask();
+            if (_processor != null) await _processor.CloseAsync();
+            if (_client != null) await _client.DisposeAsync().AsTask();
         }
 
-        public void Dispose()
+        protected override void Dispose(bool disposing)
         {
             Close().Wait();
         }
-
-
-
-
     }
 }

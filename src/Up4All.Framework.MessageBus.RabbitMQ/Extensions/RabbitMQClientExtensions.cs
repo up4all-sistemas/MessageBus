@@ -20,24 +20,24 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
 {
     public static class RabbitMQClientExtensions
     {
-        public static void ConfigureHandler(this IRabbitMQClient client, IModel channel, string queueName, QueueMessageReceiver receiver, bool autoComplete, object offset = null)
+        public static void ConfigureHandler(this IRabbitMQClient client, string queueName, QueueMessageReceiver receiver, bool autoComplete, object offset = null)
         {
-            channel.BasicQos(0, 1, false);
+            client.Channel.BasicQos(0, 1, false);
 
             var args = new Dictionary<string, object> { };
             if (offset != null) args.Add("x-stream-offset", offset);
 
-            channel.BasicConsume(queue: queueName, autoAck: autoComplete, consumer: receiver, arguments: args);
+            client.Channel.BasicConsume(queue: queueName, autoAck: autoComplete, consumer: receiver, arguments: args);
         }
 
-        public static void ConfigureHandler<TModel>(this IRabbitMQClient client, IModel channel, string queueName, QueueMessageReceiverForModel<TModel> receiver, bool autoComplete, object offset = null)
+        public static void ConfigureHandler<TModel>(this IRabbitMQClient client, string queueName, QueueMessageReceiverForModel<TModel> receiver, bool autoComplete, object offset = null)
         {
-            channel.BasicQos(0, 1, false);
+            client.Channel.BasicQos(0, 1, false);
 
             var args = new Dictionary<string, object> { };
             if (offset != null) args.Add("x-stream-offset", offset);
 
-            channel.BasicConsume(queue: queueName, autoAck: autoComplete, consumer: receiver, arguments: args);
+            client.Channel.BasicConsume(queue: queueName, autoAck: autoComplete, consumer: receiver, arguments: args);
         }
 
         public static MessageBusMessage CreateMessagebusMessage<TModel>(this TModel model)
@@ -71,12 +71,12 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
                 .WaitAndRetry(opts.ConnectionAttempts, retryAttempt =>
                 {
                     TimeSpan wait = TimeSpan.FromSeconds(Math.Pow(2, retryAttempt));
-                    logger.LogInformation($"Failed to connect in RabbitMQ server, retrying in {wait}");
+                    logger.LogInformation("Failed to connect in RabbitMQ server, retrying in {Wait}", wait);
                     return wait;
                 })
                 .ExecuteAndCapture(() =>
                 {
-                    logger.LogDebug($"Trying to connect in RabbitMQ server");
+                    logger.LogDebug("Trying to connect in RabbitMQ server");
                     conn = new ConnectionFactory() { Uri = new Uri(opts.ConnectionString) }.CreateConnection();
                 });
 
@@ -111,9 +111,9 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             client.Connection = conn;
             return conn;
         }
-        public static IModel CreateChannel(this IRabbitMQClient client, IConnection conn)
+        public static IModel CreateChannel(this IRabbitMQClient client)
         {
-            var channel = conn.CreateModel();
+            var channel = client.Connection.CreateModel();
             return channel;
         }
 
