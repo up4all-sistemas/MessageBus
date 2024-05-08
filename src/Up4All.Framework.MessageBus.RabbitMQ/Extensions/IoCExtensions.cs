@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using System;
@@ -22,7 +21,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
 
             services.AddSingleton<IMessageBusQueueClient, RabbitMQQueueClient>(provider =>
             {
-                var options = provider.GetRequiredService<IOptions<MessageBusOptions>>();                
+                var options = provider.GetRequiredService<IOptions<MessageBusOptions>>();
 
                 var declareOpts = RabbitMQConsts.DefaultQueueDeclareOptions;
                 configureDeclareOpts?.Invoke(declareOpts);
@@ -40,7 +39,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
 
             services.AddSingleton<IMessageBusStreamClient, RabbitMQStreamClient>(provider =>
             {
-                var options = provider.GetRequiredService<IOptions<MessageBusOptions>>();                
+                var options = provider.GetRequiredService<IOptions<MessageBusOptions>>();
 
                 var declareOpts = RabbitMQConsts.DefaultStreamDeclareOptions;
                 configureDeclareOpts?.Invoke(declareOpts);

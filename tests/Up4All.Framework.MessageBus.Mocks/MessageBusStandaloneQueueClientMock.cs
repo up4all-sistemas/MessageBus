@@ -7,11 +7,11 @@ using Up4All.Framework.MessageBus.Abstractions.Enums;
 using Up4All.Framework.MessageBus.Abstractions.Interfaces;
 using Up4All.Framework.MessageBus.Abstractions.Messages;
 
-namespace Up4All.Framework.MessageBus.Abstractions.Mocks
+namespace Up4All.Framework.MessageBus.Mocks
 {
-    public abstract class MessageBusStandaloneStreamClientMock : MessageBusClientBaseMock, IMessageBusStandaloneStreamClient
+    public abstract class MessageBusStandaloneQueueClientMock : MessageBusClientBaseMock, IMessageBusStandaloneQueueClient
     {
-        protected MessageBusStandaloneStreamClientMock() : base()
+        protected MessageBusStandaloneQueueClientMock() : base()
         {
         }
 
