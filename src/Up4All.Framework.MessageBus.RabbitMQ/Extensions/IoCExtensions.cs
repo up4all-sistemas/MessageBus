@@ -22,13 +22,12 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
 
             services.AddSingleton<IMessageBusQueueClient, RabbitMQQueueClient>(provider =>
             {
-                var options = provider.GetRequiredService<IOptions<MessageBusOptions>>();
-                var logger = provider.GetRequiredService<ILogger<RabbitMQQueueClient>>();
+                var options = provider.GetRequiredService<IOptions<MessageBusOptions>>();                
 
                 var declareOpts = RabbitMQConsts.DefaultQueueDeclareOptions;
                 configureDeclareOpts?.Invoke(declareOpts);
 
-                return new RabbitMQQueueClient(options, logger, null, ConfigureDeclareOpts(configureDeclareOpts));
+                return new RabbitMQQueueClient(options, ConfigureDeclareOpts(configureDeclareOpts));
             });
 
             return services;
@@ -41,13 +40,12 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
 
             services.AddSingleton<IMessageBusStreamClient, RabbitMQStreamClient>(provider =>
             {
-                var options = provider.GetRequiredService<IOptions<MessageBusOptions>>();
-                var logger = provider.GetRequiredService<ILogger<RabbitMQStreamClient>>();
+                var options = provider.GetRequiredService<IOptions<MessageBusOptions>>();                
 
                 var declareOpts = RabbitMQConsts.DefaultStreamDeclareOptions;
                 configureDeclareOpts?.Invoke(declareOpts);
 
-                return new RabbitMQStreamClient(options, logger, offset, ConfigureDeclareOpts(configureDeclareOpts));
+                return new RabbitMQStreamClient(options, offset, ConfigureDeclareOpts(configureDeclareOpts));
             });
 
             return services;

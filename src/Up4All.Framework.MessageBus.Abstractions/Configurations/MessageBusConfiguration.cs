@@ -25,13 +25,13 @@ namespace Up4All.Framework.MessageBus.Abstractions.Configurations
             services.AddSingleton<MessageBusFactory>();
         }
 
-        public static void AddMessageBusQueueClient<T>(this IServiceCollection services, IConfiguration configuration) where T : MessageBusQueueClient
+        public static void AddMessageBusQueueClient<T>(this IServiceCollection services, IConfiguration configuration) where T : class, IMessageBusQueueClient
         {
             services.AddConfigurationBinder(configuration);
             services.AddSingleton<IMessageBusQueueClient, T>();
         }
 
-        public static void AddMessageBusStreamClient<T>(this IServiceCollection services, IConfiguration configuration, Func<ILogger<T>, IOptions<MessageBusOptions>, T> builder) where T : MessageBusStreamClient
+        public static void AddMessageBusStreamClient<T>(this IServiceCollection services, IConfiguration configuration, Func<ILogger<T>, IOptions<MessageBusOptions>, T> builder) where T : class, IMessageBusStreamClient
         {
             services.AddConfigurationBinder(configuration);
             services.AddSingleton<IMessageBusStreamClient, T>(provider =>
@@ -42,13 +42,13 @@ namespace Up4All.Framework.MessageBus.Abstractions.Configurations
             });
         }
 
-        public static void AddMessageBusTopicClient<T>(this IServiceCollection services, IConfiguration configuration) where T : MessageBusTopicClient
+        public static void AddMessageBusTopicClient<T>(this IServiceCollection services, IConfiguration configuration) where T : class, IMessageBusPublisher
         {
             services.AddConfigurationBinder(configuration);
             services.AddSingleton<IMessageBusPublisher, T>();
         }
 
-        public static void AddMessageBusSubscribeClient<T>(this IServiceCollection services, IConfiguration configuration) where T : MessageBusSubscribeClient
+        public static void AddMessageBusSubscribeClient<T>(this IServiceCollection services, IConfiguration configuration) where T : class, IMessageBusConsumer
         {
             services.AddConfigurationBinder(configuration);
             services.AddSingleton<IMessageBusConsumer, T>();
@@ -79,7 +79,7 @@ namespace Up4All.Framework.MessageBus.Abstractions.Configurations
             services.AddSingleton<IMessageBusStandaloneQueueClient>(instance);
         }
 
-        public static void AddStandaloneStreamClient(this IServiceCollection services, object offset, Func<IServiceProvider, object, MessageBusStandaloneStreamClient> instance)
+        public static void AddStandaloneStreamClient(this IServiceCollection services, object offset, Func<IServiceProvider, object, IMessageBusStandaloneStreamClient> instance)
         {
             services.AddSingleton<IMessageBusStandaloneStreamClient>(provider => instance(provider, offset));
         }
