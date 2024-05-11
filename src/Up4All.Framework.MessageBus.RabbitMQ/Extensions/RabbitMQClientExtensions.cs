@@ -1,5 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
 
+using OpenTelemetry;
+using OpenTelemetry.Context.Propagation;
+
 using Polly;
 
 using RabbitMQ.Client;
@@ -7,19 +10,26 @@ using RabbitMQ.Client.Exceptions;
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Text;
 using System.Text.Json;
 using System.Threading;
 
+using Up4All.Framework.MessageBus.Abstractions.Extensions;
 using Up4All.Framework.MessageBus.Abstractions.Messages;
 using Up4All.Framework.MessageBus.Abstractions.Options;
 using Up4All.Framework.MessageBus.RabbitMQ.Consumers;
+using Up4All.Framework.MessageBus.RabbitMQ.Enums;
 using Up4All.Framework.MessageBus.RabbitMQ.Options;
 
 namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
 {
     public static class RabbitMQClientExtensions
     {
+        private static readonly ActivitySource activitySource = new ActivitySource(Consts.OpenTelemetrySourceName);
+        private static readonly TextMapPropagator Propagator = Propagators.DefaultTextMapPropagator;
+
         public static void ConfigureHandler(this IRabbitMQClient client, string queueName, QueueMessageReceiver receiver, bool autoComplete, object offset = null)
         {
             client.Channel.BasicQos(0, 1, false);
@@ -49,16 +59,23 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
 
         public static void SendMessage(this IModel channel, string topicName, string queueName, MessageBusMessage msg, CancellationToken cancellationToken)
         {
+            var activityName = $"message-send {topicName} {queueName}";
             var basicProps = channel.CreateBasicProperties();
             basicProps.PopulateHeaders(msg);
 
-            var routingKey = queueName;
+            using (var activity = ProcessOpenTelemetryActivity(activityName, ActivityKind.Producer))
+            {
+                var routingKey = queueName;
 
-            if (msg.UserProperties.ContainsKey("routing-key"))
-                routingKey = msg.UserProperties["routing-key"].ToString();
+                if (msg.UserProperties.ContainsKey("routing-key"))                
+                    routingKey = msg.UserProperties["routing-key"].ToString();
 
-            cancellationToken.ThrowIfCancellationRequested();
-            channel.BasicPublish(topicName, routingKey, basicProps, msg.Body);
+                InjectPropagationContext(activity, basicProps);
+                AddTagsToActivity(activity, topicName, routingKey, msg.Body);
+
+                cancellationToken.ThrowIfCancellationRequested();                
+                channel.BasicPublish(topicName, routingKey, basicProps, msg.Body);
+            }
         }
 
         public static IConnection GetConnection(this IRabbitMQClient client, MessageBusOptions opts, ILogger<IRabbitMQClient> logger)
@@ -111,6 +128,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             client.Connection = conn;
             return conn;
         }
+
         public static IModel CreateChannel(this IRabbitMQClient client)
         {
             var channel = client.Connection.CreateModel();
@@ -130,6 +148,46 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
                 foreach (var bind in declareOpts.Bindings)
                     channel.QueueBind(queueName, bind.ExchangeName, bind.RoutingKey ?? "", bind.Args);
 
+        }
+
+        public static Activity ProcessOpenTelemetryActivity(string activityName, ActivityKind kind, ActivityContext parent = default)
+        {   
+            var activity = activitySource.StartActivity(activityName, kind, parent);
+            return activity;
+        }
+
+        public static void InjectPropagationContext(Activity activity, IBasicProperties props)
+        {
+            if (activity == null) return;
+
+            Propagator.Inject(new PropagationContext(activity.Context, Baggage.Current), props, (x, key, value) =>
+            {
+                props.Headers = props.Headers ?? new Dictionary<string, object>();
+                props.Headers[key] = value;
+            });
+        }
+
+        public static PropagationContext GetParentPropagationContext(IBasicProperties props)
+        {
+            var parent = Propagator.Extract(default, props, (x, key) =>
+            {
+                if (x.Headers.TryGetValue(key, out var value))
+                    return new[] { Encoding.UTF8.GetString((byte[])value) };
+                return Enumerable.Empty<string>();
+            });
+            Baggage.Current = parent.Baggage;
+
+            return parent;
+        }
+
+        public static void AddTagsToActivity(Activity activity, string exchangeName, string routingKey, byte[] body)
+        {
+            if (activity == null) return;            
+
+            activity.SetTag("message", Encoding.UTF8.GetString(body));
+            activity.SetTag("messaging.system", "rabbitmq");
+            activity.SetTag("messaging.destination", exchangeName);
+            activity.SetTag("messaging.rabbitmq.routing_key", routingKey);
         }
     }
 }
