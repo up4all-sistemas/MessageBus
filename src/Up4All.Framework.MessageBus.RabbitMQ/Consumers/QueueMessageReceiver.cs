@@ -1,12 +1,19 @@
-﻿using RabbitMQ.Client;
+﻿using OpenTelemetry;
+using OpenTelemetry.Context.Propagation;
+
+using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
 using System;
+using System.Diagnostics;
+using System.Linq;
+using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Up4All.Framework.MessageBus.Abstractions.Enums;
+using Up4All.Framework.MessageBus.Abstractions.Extensions;
 using Up4All.Framework.MessageBus.Abstractions.Messages;
 using Up4All.Framework.MessageBus.RabbitMQ.Extensions;
 
@@ -56,34 +63,42 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Consumers
         {
             base.HandleBasicDeliver(consumerTag, deliveryTag, redelivered, exchange, routingKey, properties, body);
 
-            try
+            var activiyName = $"message-received {exchange} {routingKey}";
+            var parentContext = RabbitMQClientExtensions.GetParentPropagationContext(properties);            
+            using (var activivy = RabbitMQClientExtensions.ProcessOpenTelemetryActivity(activiyName, ActivityKind.Consumer, parentContext.ActivityContext))
             {
-                var message = new ReceivedMessage();
-                message.AddBody(BinaryData.FromBytes(body), true);
-                message.PopulateUserProperties(properties.Headers);
-
-                var response = _handler(message, CancellationToken.None).GetAwaiter().GetResult();
-
-                if (!_autoComplete && response == MessageReceivedStatus.Deadletter)
+                try
                 {
-                    _channel.BasicNack(deliveryTag, false, false);
-                    return;
-                }
+                    var message = new ReceivedMessage();
+                    message.AddBody(BinaryData.FromBytes(body), true);
+                    message.PopulateUserProperties(properties.Headers);
 
-                if (!_autoComplete && response == MessageReceivedStatus.Abandoned)
+                    RabbitMQClientExtensions.AddTagsToActivity(activivy, exchange, routingKey, body.ToArray());
+
+                    var response = _handler(message, CancellationToken.None).GetAwaiter().GetResult();
+
+                    if (!_autoComplete && response == MessageReceivedStatus.Deadletter)
+                    {
+                        _channel.BasicNack(deliveryTag, false, false);
+                        return;
+                    }
+
+                    if (!_autoComplete && response == MessageReceivedStatus.Abandoned)
+                    {
+                        _channel.BasicReject(deliveryTag, true);
+                        return;
+                    }
+
+                    if (!_autoComplete)
+                        _channel.BasicAck(deliveryTag, false);
+
+                }
+                catch (Exception ex)
                 {
-                    _channel.BasicReject(deliveryTag, true);
-                    return;
+                    if (!_autoComplete)
+                        _channel.BasicNack(deliveryTag, false, false);
+                    _errorHandler(ex, CancellationToken.None).Wait();
                 }
-
-                if (!_autoComplete)
-                    _channel.BasicAck(deliveryTag, false);
-            }
-            catch (Exception ex)
-            {
-                if (!_autoComplete)
-                    _channel.BasicNack(deliveryTag, false, false);
-                _errorHandler(ex, CancellationToken.None).Wait();
             }
         }
     }
@@ -130,35 +145,42 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Consumers
 
         public override void HandleBasicDeliver(string consumerTag, ulong deliveryTag, bool redelivered, string exchange, string routingKey, IBasicProperties properties, ReadOnlyMemory<byte> body)
         {
-            try
+            var activiyName = $"message-received {exchange} {routingKey}";
+            var parentContext = RabbitMQClientExtensions.GetParentPropagationContext(properties);
+            using (var activivy = RabbitMQClientExtensions.ProcessOpenTelemetryActivity(activiyName, ActivityKind.Consumer, parentContext.ActivityContext))
             {
-                var model = JsonSerializer.Deserialize<TModel>(body.ToArray(), new JsonSerializerOptions(JsonSerializerDefaults.Web));
-
-                var response = _handler(model, CancellationToken.None).GetAwaiter().GetResult();
-
-                if (!_autoComplete && response == MessageReceivedStatus.Deadletter)
+                try
                 {
-                    _channel.BasicNack(deliveryTag, false, false);
-                    return;
-                }
+                    var model = JsonSerializer.Deserialize<TModel>(body.ToArray(), new JsonSerializerOptions(JsonSerializerDefaults.Web));
 
-                if (!_autoComplete && response == MessageReceivedStatus.Abandoned)
+                    RabbitMQClientExtensions.AddTagsToActivity(activivy, exchange, routingKey, body.ToArray());
+
+                    var response = _handler(model, CancellationToken.None).GetAwaiter().GetResult();
+
+                    if (!_autoComplete && response == MessageReceivedStatus.Deadletter)
+                    {
+                        _channel.BasicNack(deliveryTag, false, false);
+                        return;
+                    }
+
+                    if (!_autoComplete && response == MessageReceivedStatus.Abandoned)
+                    {
+                        _channel.BasicReject(deliveryTag, true);
+                        return;
+                    }
+
+                    if (!_autoComplete)
+                        _channel.BasicAck(deliveryTag, false);
+
+                }
+                catch (Exception ex)
                 {
-                    _channel.BasicReject(deliveryTag, true);
-                    return;
+                    if (!_autoComplete)
+                        _channel.BasicNack(deliveryTag, false, false);
+                    _errorHandler(ex, CancellationToken.None).Wait();
                 }
-
-                if (!_autoComplete)
-                    _channel.BasicAck(deliveryTag, false);
-            }
-            catch (Exception ex)
-            {
-                if (!_autoComplete)
-                    _channel.BasicNack(deliveryTag, false, false);
-                _errorHandler(ex, CancellationToken.None).Wait();
             }
         }
-
 
     }
 }

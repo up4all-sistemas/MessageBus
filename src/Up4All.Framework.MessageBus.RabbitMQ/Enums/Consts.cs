@@ -1,5 +1,10 @@
 ﻿namespace Up4All.Framework.MessageBus.RabbitMQ.Enums
 {
+    public struct Consts
+    {
+        public const string OpenTelemetrySourceName = "RabbitMQ Up4All MessageBus";
+    }
+
     public struct ExchangeType
     {
         public const string Direct = "direct";
