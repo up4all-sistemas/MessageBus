@@ -12,6 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Up4All.Framework.MessageBus.Abstractions.Enums;
+using Up4All.Framework.MessageBus.Abstractions.Extensions;
 using Up4All.Framework.MessageBus.Abstractions.Messages;
 using Up4All.Framework.MessageBus.Abstractions.Options;
 
@@ -93,7 +94,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus
         {
             var sbMessage = new ServiceBusMessage
             {
-                Body = BinaryData.FromString(JsonSerializer.Serialize(message, new JsonSerializerOptions(JsonSerializerDefaults.Web))),
+                Body = BinaryData.FromString(JsonSerializer.Serialize(message.CreateMessagebusMessage(), new JsonSerializerOptions(JsonSerializerDefaults.Web))),
                 ContentType = "application/json"
             };
             return sbMessage;
