@@ -17,6 +17,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "6-Tests", "6-Tests", "{7CB8
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Up4All.Framework.MessageBus.Mocks", "tests\Up4All.Framework.MessageBus.Mocks\Up4All.Framework.MessageBus.Mocks.csproj", "{7403825B-9CA1-4F1B-8A79-0BE91049E014}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Up4All.Framework.MessageBus.Tests", "Up4All.Framework.MessageBus.Tests\Up4All.Framework.MessageBus.Tests.csproj", "{A4D9F311-81B2-4EEB-B3B4-37F03BF18D27}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,10 @@ Global
 		{7403825B-9CA1-4F1B-8A79-0BE91049E014}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7403825B-9CA1-4F1B-8A79-0BE91049E014}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7403825B-9CA1-4F1B-8A79-0BE91049E014}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A4D9F311-81B2-4EEB-B3B4-37F03BF18D27}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A4D9F311-81B2-4EEB-B3B4-37F03BF18D27}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A4D9F311-81B2-4EEB-B3B4-37F03BF18D27}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A4D9F311-81B2-4EEB-B3B4-37F03BF18D27}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -48,6 +54,7 @@ Global
 		{D7FB7803-393E-4E9E-8563-35FF9B016334} = {75FCCFDF-512C-4AFD-8F2B-38B07E65D9E8}
 		{A14A6A71-FCBE-43C0-9BAA-DF9AAC9E5D36} = {75FCCFDF-512C-4AFD-8F2B-38B07E65D9E8}
 		{7403825B-9CA1-4F1B-8A79-0BE91049E014} = {7CB8F5AA-ADF1-403F-BF48-B2F048159676}
+		{A4D9F311-81B2-4EEB-B3B4-37F03BF18D27} = {7CB8F5AA-ADF1-403F-BF48-B2F048159676}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {C1A6D398-42DF-4648-92E9-537113A8B3CF}

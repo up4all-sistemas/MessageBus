@@ -51,20 +51,29 @@ namespace Up4All.Framework.MessageBus.Abstractions.Messages
             AddBody(JsonSerializer.Serialize(obj, opts));
         }
 
-        public void AddUserProperty(KeyValuePair<string, object> prop)
+        public void AddUserProperty(KeyValuePair<string, object> prop, bool replace = false)
         {
+            if (UserProperties.ContainsKey(prop.Key) && !replace) return;
+
+            UserProperties.Remove(prop.Key);
             UserProperties.Add(prop);
         }
 
-        public void AddUserProperty(string key, object value)
+        public void AddUserProperty(string key, object value, bool replace = false)
         {
-            UserProperties.Add(new KeyValuePair<string, object>(key, value));
+            AddUserProperty(new KeyValuePair<string, object>(key, value), replace);
         }
 
-        public void AddUserProperties(IDictionary<string, object> props)
+        public void AddUserProperties(IDictionary<string, object> props, bool replace = false)
         {
             foreach (var prop in props)
-                AddUserProperty(prop);
+                AddUserProperty(prop, replace);
+        }
+
+        public void RemoveUserProperty(string key)
+        {
+            if (UserProperties.ContainsKey(key))
+                UserProperties.Remove(key);
         }
     }
 }

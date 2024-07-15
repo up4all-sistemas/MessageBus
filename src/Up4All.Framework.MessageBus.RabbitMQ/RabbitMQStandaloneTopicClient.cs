@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Up4All.Framework.MessageBus.Abstractions;
+using Up4All.Framework.MessageBus.Abstractions.Extensions;
 using Up4All.Framework.MessageBus.Abstractions.Interfaces;
 using Up4All.Framework.MessageBus.Abstractions.Messages;
 using Up4All.Framework.MessageBus.RabbitMQ.Extensions;

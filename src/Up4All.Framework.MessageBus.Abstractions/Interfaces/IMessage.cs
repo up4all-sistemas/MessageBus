@@ -15,10 +15,10 @@ namespace Up4All.Framework.MessageBus.Abstractions.Interfaces
 
         void AddBody<T>(T obj, JsonSerializerOptions opts = null) where T : class;
 
-        void AddUserProperty(KeyValuePair<string, object> prop);
+        void AddUserProperty(KeyValuePair<string, object> prop, bool repalce = false);
 
-        void AddUserProperty(string key, object value);
+        void AddUserProperty(string key, object value, bool repalce = false);
 
-        void AddUserProperties(IDictionary<string, object> props);
+        void AddUserProperties(IDictionary<string, object> props, bool repalce = false);
     }
 }

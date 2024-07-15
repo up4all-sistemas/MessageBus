@@ -27,9 +27,9 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Options
             Durable = true;
         }
 
-        public void AddBinding(Action<QueueBindOptions> createBinding)
+        public void AddBinding(string exchangeName, Action<QueueBindOptions> createBinding)
         {
-            var binding = new QueueBindOptions();
+            var binding = new QueueBindOptions(exchangeName);
             createBinding(binding);
             Bindings.Add(binding);
         }
@@ -44,14 +44,14 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Options
 
         public Dictionary<string, object> Args { get; set; }
 
-        internal QueueBindOptions()
+        internal QueueBindOptions(string exchangeName)
         {
+            ExchangeName = exchangeName;
             Args = new Dictionary<string, object>();
         }
 
-        public QueueBindOptions(string exchangeName, string defaultArgKey, object defaultArgValue, string routingkey = null) : this()
-        {
-            ExchangeName = exchangeName;
+        public QueueBindOptions(string exchangeName, string defaultArgKey, object defaultArgValue, string routingkey = null) : this(exchangeName)
+        {            
             RoutingKey = routingkey;
             Args.Add(defaultArgKey, defaultArgValue);
         }

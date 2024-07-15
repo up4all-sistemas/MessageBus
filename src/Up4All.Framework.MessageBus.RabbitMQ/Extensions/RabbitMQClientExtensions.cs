@@ -12,10 +12,12 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
 
+using Up4All.Framework.MessageBus.Abstractions.Attributes;
 using Up4All.Framework.MessageBus.Abstractions.Extensions;
 using Up4All.Framework.MessageBus.Abstractions.Messages;
 using Up4All.Framework.MessageBus.Abstractions.Options;
@@ -50,13 +52,6 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             client.Channel.BasicConsume(queue: queueName, autoAck: autoComplete, consumer: receiver, arguments: args);
         }
 
-        public static MessageBusMessage CreateMessagebusMessage<TModel>(this TModel model)
-        {
-            var message = new MessageBusMessage();
-            message.AddBody(BinaryData.FromString(JsonSerializer.Serialize(model, new JsonSerializerOptions(JsonSerializerDefaults.Web))));
-            return message;
-        }
-
         public static void SendMessage(this IModel channel, string topicName, string queueName, MessageBusMessage msg, CancellationToken cancellationToken)
         {
             var activityName = $"message-send {topicName} {queueName}";
@@ -67,8 +62,8 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             {
                 var routingKey = queueName;
 
-                if (msg.UserProperties.ContainsKey("routing-key"))                
-                    routingKey = msg.UserProperties["routing-key"].ToString();
+                if (msg.ContainsRoutingKey())
+                    routingKey = msg.GetRoutingKey();
 
                 InjectPropagationContext(activity, basicProps);
                 AddTagsToActivity(activity, topicName, routingKey, msg.Body);
