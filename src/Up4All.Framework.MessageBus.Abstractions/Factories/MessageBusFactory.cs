@@ -36,5 +36,12 @@ namespace Up4All.Framework.MessageBus.Abstractions.Factories
             return namedInstances.FirstOrDefault(x => x.Key == key)?.Instance;
 
         }
+
+        public IMessageBusStandaloneStreamClient GetStreamClient(string key)
+        {
+            var namedInstances = _provider.GetServices<NamedInstanceClient<IMessageBusStandaloneStreamClient>>();
+            return namedInstances.FirstOrDefault(x => x.Key == key)?.Instance;
+
+        }
     }
 }

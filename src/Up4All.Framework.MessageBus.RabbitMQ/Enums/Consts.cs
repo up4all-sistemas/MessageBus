@@ -19,4 +19,11 @@
         public const string Quorum = "quorum";
         public const string Stream = "stream";
     }
+
+    public struct OffsetType
+    {
+        public const string First = "first";
+        public const string Last = "last";
+        public const string Next = "next";
+    }
 }
