@@ -43,19 +43,65 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
         {
             var receiver = new QueueMessageReceiverForModel<TModel>(Channel, handler, errorHandler, autoComplete);
             this.ConfigureHandler(_queuename, receiver, autoComplete);
+        }        
+        public void Send<TModel>(TModel model)
+        {
+            var message = model.CreateMessagebusMessage();
+            Send(message);
         }
+        public void Send(MessageBusMessage message)
+        {
+            Channel.SendMessage("", _queuename, message);            
+        }
+        public void Send(IEnumerable<MessageBusMessage> messages)
+        {
+            foreach (var message in messages)
+                Channel.SendMessage("", _queuename, message);
+
+        }
+        public void SendMany<TModel>(IEnumerable<TModel> models)
+        {
+            Send(models.Select(x => x.CreateMessagebusMessage()));
+        }
+        public void Close()
+        {
+            Channel?.Close();
+            Connection.Close();
+        }
+        protected override void Dispose(bool disposing)
+        {
+            Close();
+        }
+    }
+
+    public class RabbitMQStandaloneQueueAsyncClient : MessageBusStandaloneQueueClient, IRabbitMQClient, IMessageBusStandaloneQueueAsyncClient
+    {
+        private readonly string _queuename;
+
+        public IConnection Connection { get; set; }
+        public IModel Channel { get; private set; }
+
+        public RabbitMQStandaloneQueueAsyncClient(string connectionString, string queuename, int connectionAttempts = 8
+            , QueueDeclareOptions declareOpts = null)
+            : base(connectionString, queuename)
+        {
+            _queuename = queuename;
+            this.GetConnection(ConnectionString, connectionAttempts, true);
+            Channel = this.CreateChannel();
+            Channel.ConfigureQueueDeclare(queuename, declareOpts);
+        }
+
         public Task RegisterHandlerAsync(Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
         {
-
-            var receiver = new QueueMessageReceiver(Channel, handler, errorHandler, autoComplete);
-            this.ConfigureHandler(_queuename, receiver, autoComplete);
+            var receiver = new AsyncQueueMessageReceiver(Channel, handler, errorHandler, autoComplete);
+            this.ConfigureAsyncHandler(_queuename, receiver, autoComplete);
             return Task.CompletedTask;
         }
         public Task RegisterHandlerAsync<TModel>(Func<TModel, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
         {
 
-            var receiver = new QueueMessageReceiverForModel<TModel>(Channel, handler, errorHandler, autoComplete);
-            this.ConfigureHandler(_queuename, receiver, autoComplete);
+            var receiver = new AsyncQueueMessageReceiverForModel<TModel>(Channel, handler, errorHandler, autoComplete);
+            this.ConfigureAsyncHandler(_queuename, receiver, autoComplete);
             return Task.CompletedTask;
         }
         public async Task SendAsync<TModel>(TModel model, CancellationToken cancellationToken = default)
@@ -65,13 +111,16 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
         }
         public Task SendAsync(MessageBusMessage message, CancellationToken cancellationToken = default)
         {
-            Channel.SendMessage("", _queuename, message, cancellationToken);
+            Channel.SendMessage("", _queuename, message);
             return Task.CompletedTask;
         }
         public Task SendAsync(IEnumerable<MessageBusMessage> messages, CancellationToken cancellationToken = default)
         {
             foreach (var message in messages)
-                Channel.SendMessage("", _queuename, message, cancellationToken);
+            {
+                Channel.SendMessage("", _queuename, message);
+                cancellationToken.ThrowIfCancellationRequested();
+            }                
 
             return Task.CompletedTask;
         }

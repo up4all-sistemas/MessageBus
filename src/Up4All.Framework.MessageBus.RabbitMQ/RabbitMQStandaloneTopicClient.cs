@@ -32,27 +32,23 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
             if (declareOpts != null) Channel.ExchangeDeclare(topicName, type, declareOpts.Durable, declareOpts.AutoDelete, declareOpts.Args);
         }
 
-        public async Task SendAsync<TModel>(TModel model, CancellationToken cancellationToken = default)
+        public void Send<TModel>(TModel model)
         {
             var message = model.CreateMessagebusMessage();
-            await SendAsync(message, cancellationToken);
+            Send(message);
         }
-        public Task SendAsync(MessageBusMessage message, CancellationToken cancellationToken = default)
+        public void Send(MessageBusMessage message)
         {
-            Channel.SendMessage(_topicName, string.Empty, message, cancellationToken);
-            return Task.CompletedTask;
+            Channel.SendMessage(_topicName, string.Empty, message);
         }
-        public Task SendAsync(IEnumerable<MessageBusMessage> messages, CancellationToken cancellationToken = default)
+        public void Send(IEnumerable<MessageBusMessage> messages)
         {
-
             foreach (var message in messages)
-                Channel.SendMessage(_topicName, string.Empty, message, cancellationToken);
-
-            return Task.CompletedTask;
+                Channel.SendMessage(_topicName, string.Empty, message);
         }
-        public async Task SendManyAsync<TModel>(IEnumerable<TModel> models, CancellationToken cancellationToken = default)
+        public void SendMany<TModel>(IEnumerable<TModel> models)
         {
-            await SendAsync(models.Select(x => x.CreateMessagebusMessage()), cancellationToken);
+            Send(models.Select(x => x.CreateMessagebusMessage()));
         }
         protected override void Dispose(bool disposing)
         {

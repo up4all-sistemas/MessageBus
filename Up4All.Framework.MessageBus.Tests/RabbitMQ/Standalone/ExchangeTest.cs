@@ -19,7 +19,7 @@ namespace Up4All.Framework.MessageBus.Tests.RabbitMQ.Standalone
         }
 
         [Test]
-        public async Task TestSendToExchange()
+        public void TestSendToExchange()
         {
             var service = Provider.GetRequiredService<IMessageBusStandalonePublisher>();
 
@@ -29,7 +29,7 @@ namespace Up4All.Framework.MessageBus.Tests.RabbitMQ.Standalone
                 MyProperty1 = "Teste1"
             };
 
-            await service.SendAsync(payload, CancellationToken.None);
+            service.Send(payload);
             Assert.Pass();
         }
     }

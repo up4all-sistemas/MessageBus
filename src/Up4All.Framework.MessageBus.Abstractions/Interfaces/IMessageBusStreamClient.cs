@@ -3,4 +3,8 @@
     public interface IMessageBusStreamClient : IMessageBusPublisher, IMessageBusConsumer
     {
     }
+
+    public interface IMessageBusStreamAsyncClient : IMessageBusPublisherAsync, IMessageBusAsyncConsumer
+    {
+    }
 }

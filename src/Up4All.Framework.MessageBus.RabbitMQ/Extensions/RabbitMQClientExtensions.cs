@@ -12,12 +12,10 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Reflection;
 using System.Text;
-using System.Text.Json;
 using System.Threading;
+using System.Threading.Tasks;
 
-using Up4All.Framework.MessageBus.Abstractions.Attributes;
 using Up4All.Framework.MessageBus.Abstractions.Extensions;
 using Up4All.Framework.MessageBus.Abstractions.Messages;
 using Up4All.Framework.MessageBus.Abstractions.Options;
@@ -31,6 +29,26 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
     {
         private static readonly ActivitySource activitySource = new ActivitySource(Consts.OpenTelemetrySourceName);
         private static readonly TextMapPropagator Propagator = Propagators.DefaultTextMapPropagator;
+
+        public static void ConfigureAsyncHandler(this IRabbitMQClient client, string queueName, AsyncQueueMessageReceiver receiver, bool autoComplete, object offset = null)
+        {
+            client.Channel.BasicQos(0, 1, false);
+
+            var args = new Dictionary<string, object> { };
+            if (offset != null) args.Add("x-stream-offset", offset);
+
+            client.Channel.BasicConsume(queue: queueName, autoAck: autoComplete, consumer: receiver, arguments: args);
+        }
+
+        public static void ConfigureAsyncHandler<TModel>(this IRabbitMQClient client, string queueName, AsyncQueueMessageReceiverForModel<TModel> receiver, bool autoComplete, object offset = null)
+        {
+            client.Channel.BasicQos(0, 1, false);
+
+            var args = new Dictionary<string, object> { };
+            if (offset != null) args.Add("x-stream-offset", offset);
+
+            client.Channel.BasicConsume(queue: queueName, autoAck: autoComplete, consumer: receiver, arguments: args);
+        }
 
         public static void ConfigureHandler(this IRabbitMQClient client, string queueName, QueueMessageReceiver receiver, bool autoComplete, object offset = null)
         {
@@ -52,7 +70,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             client.Channel.BasicConsume(queue: queueName, autoAck: autoComplete, consumer: receiver, arguments: args);
         }
 
-        public static void SendMessage(this IModel channel, string topicName, string queueName, MessageBusMessage msg, CancellationToken cancellationToken)
+        public static void SendMessage(this IModel channel, string topicName, string queueName, MessageBusMessage msg)
         {
             var activityName = $"message-send {topicName} {queueName}";
             var basicProps = channel.CreateBasicProperties();
@@ -68,7 +86,6 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
                 InjectPropagationContext(activity, basicProps);
                 AddTagsToActivity(activity, topicName, routingKey, msg.Body);
 
-                cancellationToken.ThrowIfCancellationRequested();                
                 channel.BasicPublish(topicName, routingKey, basicProps, msg.Body);
             }
         }
@@ -99,7 +116,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             return conn;
         }
 
-        public static IConnection GetConnection(this IRabbitMQClient client, string connectionString, int connectionAttempts)
+        public static IConnection GetConnection(this IRabbitMQClient client, string connectionString, int connectionAttempts, bool isAsyncConsumer = false)
         {
             if (client.Connection != null) return client.Connection;
 
@@ -114,7 +131,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
                 .ExecuteAndCapture(() =>
                 {
                     if (conn != null && conn.IsOpen) return;
-                    conn = new ConnectionFactory() { Uri = new Uri(connectionString) }.CreateConnection();
+                    conn = new ConnectionFactory() { Uri = new Uri(connectionString), DispatchConsumersAsync = isAsyncConsumer }.CreateConnection();
                 });
 
             if (result.Outcome != OutcomeType.Successful)
@@ -146,7 +163,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
         }
 
         public static Activity ProcessOpenTelemetryActivity(string activityName, ActivityKind kind, ActivityContext parent = default)
-        {   
+        {
             var activity = activitySource.StartActivity(activityName, kind, parent);
             return activity;
         }
@@ -177,7 +194,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
 
         public static void AddTagsToActivity(Activity activity, string exchangeName, string routingKey, byte[] body)
         {
-            if (activity == null) return;            
+            if (activity == null) return;
 
             activity.SetTag("message", Encoding.UTF8.GetString(body));
             activity.SetTag("messaging.system", "rabbitmq");
