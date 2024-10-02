@@ -16,6 +16,15 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Extensions
             return services;
         }
 
+        public static IServiceCollection AddMessageBusNamedQueueAsyncClient(this IServiceCollection services, string key, IConfiguration configuration)
+        {
+            services.AddMessageBusNamedQueueAsyncClient(configuration, key, (provider, opts) =>
+            {
+                return new ServiceBusStandaloneQueueAsyncClient(opts.ConnectionString, key);
+            });
+            return services;
+        }
+
         public static IServiceCollection AddMessageBusNamedTopicClient(this IServiceCollection services, string key, IConfiguration configuration)
         {
             services.AddMessageBusNamedTopicClient(configuration, key, (provider, opts) =>
@@ -30,6 +39,15 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Extensions
             services.AddMessageBusNamedSubscriptionClient(configuration, key, (provider, opts) =>
             {
                 return new ServiceBusStandaloneSubscribeClient(opts.ConnectionString, opts.TopicName, key);
+            });
+            return services;
+        }
+
+        public static IServiceCollection AddMessageBusNamedSubscriptionAsyncClient(this IServiceCollection services, string key, IConfiguration configuration)
+        {
+            services.AddMessageBusNamedSubscriptionAsyncClient(configuration, key, (provider, opts) =>
+            {
+                return new ServiceBusStandaloneSubscribeAsyncClient(opts.ConnectionString, opts.TopicName, key);
             });
             return services;
         }

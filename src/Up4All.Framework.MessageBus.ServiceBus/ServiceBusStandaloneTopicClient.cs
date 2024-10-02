@@ -3,8 +3,6 @@ using Azure.Messaging.ServiceBus;
 
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 using Up4All.Framework.MessageBus.Abstractions;
 using Up4All.Framework.MessageBus.Abstractions.Interfaces;
@@ -22,26 +20,26 @@ namespace Up4All.Framework.MessageBus.ServiceBus
             _topicClient = topicClient;
         }
 
-        public async Task SendAsync(MessageBusMessage message, CancellationToken cancellationToken = default)
+        public void Send(MessageBusMessage message)
         {
-            await _topicClient.SendMessageAsync(ServiceBusClientExtensions.PrepareMesssage(message), cancellationToken);
+            _topicClient.SendMessageAsync(ServiceBusClientExtensions.PrepareMesssage(message)).Wait();
         }
 
-        public async Task SendAsync(IEnumerable<MessageBusMessage> messages, CancellationToken cancellationToken = default)
+        public void Send(IEnumerable<MessageBusMessage> messages)
         {
             var sbMessages = messages.Select(x => ServiceBusClientExtensions.PrepareMesssage(x));
-            await _topicClient.SendMessagesAsync(sbMessages, cancellationToken);
+            _topicClient.SendMessagesAsync(sbMessages).Wait();
         }
 
-        public async Task SendAsync<TModel>(TModel model, CancellationToken cancellationToken = default)
+        public void Send<TModel>(TModel model)
         {
-            await _topicClient.SendMessageAsync(ServiceBusClientExtensions.PrepareMesssage(model), cancellationToken);
+            _topicClient.SendMessageAsync(ServiceBusClientExtensions.PrepareMesssage(model)).Wait();
         }
 
-        public async Task SendManyAsync<TModel>(IEnumerable<TModel> models, CancellationToken cancellationToken = default)
+        public void SendMany<TModel>(IEnumerable<TModel> models)
         {
             var sbMessages = models.Select(x => ServiceBusClientExtensions.PrepareMesssage(x));
-            await _topicClient.SendMessagesAsync(sbMessages, cancellationToken);
+            _topicClient.SendMessagesAsync(sbMessages).Wait();
         }
 
         protected override void Dispose(bool disposing)

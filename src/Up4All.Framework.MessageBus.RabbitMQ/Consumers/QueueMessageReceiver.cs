@@ -1,19 +1,13 @@
-﻿using OpenTelemetry;
-using OpenTelemetry.Context.Propagation;
-
-using RabbitMQ.Client;
+﻿using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
 using System;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Up4All.Framework.MessageBus.Abstractions.Enums;
-using Up4All.Framework.MessageBus.Abstractions.Extensions;
 using Up4All.Framework.MessageBus.Abstractions.Messages;
 using Up4All.Framework.MessageBus.RabbitMQ.Extensions;
 
@@ -233,7 +227,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Consumers
             base.HandleBasicDeliver(consumerTag, deliveryTag, redelivered, exchange, routingKey, properties, body);
 
             var activiyName = $"message-received {exchange} {routingKey}";
-            var parentContext = RabbitMQClientExtensions.GetParentPropagationContext(properties);            
+            var parentContext = RabbitMQClientExtensions.GetParentPropagationContext(properties);
             using (var activivy = RabbitMQClientExtensions.ProcessOpenTelemetryActivity(activiyName, ActivityKind.Consumer, parentContext.ActivityContext))
             {
                 try

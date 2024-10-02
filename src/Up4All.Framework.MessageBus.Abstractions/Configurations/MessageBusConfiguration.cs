@@ -113,6 +113,11 @@ namespace Up4All.Framework.MessageBus.Abstractions.Configurations
             services.AddMessageBusNamedClient(configuration, key, createInstance);
         }
 
+        public static void AddMessageBusNamedSubscriptionAsyncClient(this IServiceCollection services, IConfiguration configuration, string key, Func<IServiceProvider, MessageBusOptions, IMessageBusStandaloneAsyncConsumer> createInstance)
+        {
+            services.AddMessageBusNamedClient(configuration, key, createInstance);
+        }
+
         private static void AddMessageBusNamedClient<TClient>(this IServiceCollection services, IConfiguration configuration, string key, Func<IServiceProvider, MessageBusOptions, TClient> createInstance)
             where TClient : class
         {

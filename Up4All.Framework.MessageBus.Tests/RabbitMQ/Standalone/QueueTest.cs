@@ -10,7 +10,7 @@ namespace Up4All.Framework.MessageBus.Tests.RabbitMQ.Standalone
     {
         protected override void ConfigureServices(IServiceCollection services)
         {
-            services.AddRabbitMQStandaloneQueueClient(Configuration, d => 
+            services.AddRabbitMQStandaloneQueueClient(Configuration, d =>
             {
                 d.AddBinding("testtopic", b => { b.RoutingKey = "teste"; });
             });

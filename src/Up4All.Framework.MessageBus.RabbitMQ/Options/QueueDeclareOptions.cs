@@ -51,7 +51,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Options
         }
 
         public QueueBindOptions(string exchangeName, string defaultArgKey, object defaultArgValue, string routingkey = null) : this(exchangeName)
-        {            
+        {
             RoutingKey = routingkey;
             Args.Add(defaultArgKey, defaultArgValue);
         }

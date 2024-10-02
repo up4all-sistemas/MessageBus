@@ -2,6 +2,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
+using OpenTelemetry.Trace;
+
 using System;
 
 using Up4All.Framework.MessageBus.Abstractions.Configurations;
@@ -9,10 +11,6 @@ using Up4All.Framework.MessageBus.Abstractions.Interfaces;
 using Up4All.Framework.MessageBus.Abstractions.Options;
 using Up4All.Framework.MessageBus.RabbitMQ.Enums;
 using Up4All.Framework.MessageBus.RabbitMQ.Options;
-using OpenTelemetry;
-using OpenTelemetry.Resources;
-using OpenTelemetry.Trace;
-using System.Reflection;
 
 namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
 {
