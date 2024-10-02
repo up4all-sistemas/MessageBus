@@ -58,9 +58,19 @@ namespace Up4All.Framework.MessageBus.Abstractions.Configurations
             services.AddSingleton<IMessageBusStandaloneQueueClient>(instance);
         }
 
+        public static void AddStandaloneQueueAsyncClient(this IServiceCollection services, Func<IServiceProvider, IMessageBusStandaloneQueueAsyncClient> instance)
+        {
+            services.AddSingleton(instance);
+        }
+
         public static void AddStandaloneStreamClient(this IServiceCollection services, object offset, Func<IServiceProvider, object, IMessageBusStandaloneStreamClient> instance)
         {
             services.AddSingleton<IMessageBusStandaloneStreamClient>(provider => instance(provider, offset));
+        }
+
+        public static void AddStandaloneStreamAsyncClient(this IServiceCollection services, object offset, Func<IServiceProvider, object, IMessageBusStandaloneStreamAsyncClient> instance)
+        {
+            services.AddSingleton(provider => instance(provider, offset));
         }
 
         public static void AddStandaloneTopicClient(this IServiceCollection services, Func<IServiceProvider, IMessageBusStandalonePublisher> instance)
@@ -78,7 +88,17 @@ namespace Up4All.Framework.MessageBus.Abstractions.Configurations
             services.AddMessageBusNamedClient(configuration, key, createInstance);
         }
 
+        public static void AddMessageBusNamedQueueAsyncClient(this IServiceCollection services, IConfiguration configuration, string key, Func<IServiceProvider, MessageBusOptions, IMessageBusStandaloneQueueAsyncClient> createInstance)
+        {
+            services.AddMessageBusNamedClient(configuration, key, createInstance);
+        }
+
         public static void AddMessageBusNamedStreamClient(this IServiceCollection services, IConfiguration configuration, string key, Func<IServiceProvider, MessageBusOptions, IMessageBusStandaloneStreamClient> createInstance)
+        {
+            services.AddMessageBusNamedClient(configuration, key, createInstance);
+        }
+
+        public static void AddMessageBusNamedStreamAsyncClient(this IServiceCollection services, IConfiguration configuration, string key, Func<IServiceProvider, MessageBusOptions, IMessageBusStandaloneStreamAsyncClient> createInstance)
         {
             services.AddMessageBusNamedClient(configuration, key, createInstance);
         }

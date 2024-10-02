@@ -17,7 +17,7 @@ namespace Up4All.Framework.MessageBus.Tests.RabbitMQ.Standalone
         }
 
         [Test]
-        public async Task TestSendToQueue()
+        public void TestSendToQueue()
         {
             var service = Provider.GetRequiredService<IMessageBusStandaloneQueueClient>();
 
@@ -27,7 +27,7 @@ namespace Up4All.Framework.MessageBus.Tests.RabbitMQ.Standalone
                 MyProperty1 = "Teste1"
             };
 
-            await service.SendAsync(payload, CancellationToken.None);
+            service.Send(payload);
             Assert.Pass();
         }
     }

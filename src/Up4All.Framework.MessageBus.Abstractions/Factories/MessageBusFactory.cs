@@ -23,6 +23,13 @@ namespace Up4All.Framework.MessageBus.Abstractions.Factories
 
         }
 
+        public IMessageBusStandaloneQueueAsyncClient GetQueueAsyncClient(string key)
+        {
+            var namedInstances = _provider.GetServices<NamedInstanceClient<IMessageBusStandaloneQueueAsyncClient>>();
+            return namedInstances.FirstOrDefault(x => x.Key == key)?.Instance;
+
+        }
+
         public IMessageBusStandalonePublisher GetTopicClient(string key)
         {
             var namedInstances = _provider.GetServices<NamedInstanceClient<IMessageBusStandalonePublisher>>();
@@ -40,6 +47,13 @@ namespace Up4All.Framework.MessageBus.Abstractions.Factories
         public IMessageBusStandaloneStreamClient GetStreamClient(string key)
         {
             var namedInstances = _provider.GetServices<NamedInstanceClient<IMessageBusStandaloneStreamClient>>();
+            return namedInstances.FirstOrDefault(x => x.Key == key)?.Instance;
+
+        }
+
+        public IMessageBusStandaloneStreamAsyncClient GetStreamAsyncClient(string key)
+        {
+            var namedInstances = _provider.GetServices<NamedInstanceClient<IMessageBusStandaloneStreamAsyncClient>>();
             return namedInstances.FirstOrDefault(x => x.Key == key)?.Instance;
 
         }

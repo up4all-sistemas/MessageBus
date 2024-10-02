@@ -13,4 +13,12 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
         {
         }
     }
+
+    public class RabbitMQStreamAsyncClient : RabbitMQStandaloneStreamAsyncClient, IMessageBusStreamAsyncClient
+    {
+        public RabbitMQStreamAsyncClient(IOptions<MessageBusOptions> messageOptions, object offset
+            , StreamDeclareOptions declareOpts = null) : base(messageOptions.Value.ConnectionString, messageOptions.Value.StreamName, offset, messageOptions.Value.ConnectionAttempts, declareOpts)
+        {
+        }
+    }
 }
