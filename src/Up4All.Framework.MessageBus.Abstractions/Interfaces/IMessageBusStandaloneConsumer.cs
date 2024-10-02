@@ -3,4 +3,8 @@
     public interface IMessageBusStandaloneConsumer : IMessageBusConsumer
     {
     }
+
+    public interface IMessageBusStandaloneAsyncConsumer : IMessageBusAsyncConsumer
+    {
+    }
 }

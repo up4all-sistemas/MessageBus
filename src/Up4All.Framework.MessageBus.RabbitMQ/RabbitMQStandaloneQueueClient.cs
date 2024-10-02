@@ -43,7 +43,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
         {
             var receiver = new QueueMessageReceiverForModel<TModel>(Channel, handler, errorHandler, autoComplete);
             this.ConfigureHandler(_queuename, receiver, autoComplete);
-        }        
+        }
         public void Send<TModel>(TModel model)
         {
             var message = model.CreateMessagebusMessage();
@@ -51,7 +51,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
         }
         public void Send(MessageBusMessage message)
         {
-            Channel.SendMessage("", _queuename, message);            
+            Channel.SendMessage("", _queuename, message);
         }
         public void Send(IEnumerable<MessageBusMessage> messages)
         {
@@ -120,7 +120,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
             {
                 Channel.SendMessage("", _queuename, message);
                 cancellationToken.ThrowIfCancellationRequested();
-            }                
+            }
 
             return Task.CompletedTask;
         }

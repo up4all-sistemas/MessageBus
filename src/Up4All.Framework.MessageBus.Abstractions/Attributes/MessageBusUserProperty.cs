@@ -8,7 +8,7 @@ namespace Up4All.Framework.MessageBus.Abstractions.Attributes
         public string Key { get; set; }
 
         public MessageBusUserProperty(string key = null)
-        {                
+        {
             Key = key;
         }
     }

@@ -6,7 +6,7 @@ namespace Up4All.Framework.MessageBus.Tests
     public abstract class TestBase
     {
         protected readonly IServiceProvider Provider;
-        protected readonly IConfiguration Configuration;        
+        protected readonly IConfiguration Configuration;
 
         protected TestBase()
         {

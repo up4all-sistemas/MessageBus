@@ -12,7 +12,7 @@ namespace Up4All.Framework.MessageBus.Tests.RabbitMQ.Standalone
     {
         protected override void ConfigureServices(IServiceCollection services)
         {
-            services.AddRabbitMQStandaloneTopicClient(Configuration, ExchangeType.Topic, d => 
+            services.AddRabbitMQStandaloneTopicClient(Configuration, ExchangeType.Topic, d =>
             {
                 d.Durable = true;
             });
@@ -34,5 +34,5 @@ namespace Up4All.Framework.MessageBus.Tests.RabbitMQ.Standalone
         }
     }
 
-    
+
 }

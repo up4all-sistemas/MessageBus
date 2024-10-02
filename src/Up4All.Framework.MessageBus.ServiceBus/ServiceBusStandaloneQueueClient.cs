@@ -27,19 +27,6 @@ namespace Up4All.Framework.MessageBus.ServiceBus
             (_client, _queueClient) = ServiceBusClientExtensions.CreateClient(connectionString, queuename, connectionAttemps);
         }
 
-        public async Task RegisterHandlerAsync(Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
-        {
-            _processor = CreateProcessor(autoComplete);
-            await _processor.RegisterHandleMessageAsync(handler, errorHandler, onIdle, autoComplete, cancellationToken);
-            await _processor.StartProcessingAsync();
-        }
-
-        public async Task RegisterHandlerAsync<TModel>(Func<TModel, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
-        {
-            _processor = CreateProcessor(autoComplete);
-            await _processor.RegisterHandleMessageAsync(handler, errorHandler, onIdle, autoComplete, cancellationToken);
-            await _processor.StartProcessingAsync();
-        }
 
         public void RegisterHandler(Func<ReceivedMessage, MessageReceivedStatus> handler, Action<Exception> errorHandler, Action onIdle = null, bool autoComplete = false)
         {
@@ -53,6 +40,76 @@ namespace Up4All.Framework.MessageBus.ServiceBus
             _processor = CreateProcessor(autoComplete);
             _processor.RegisterHandleMessage(handler, errorHandler, onIdle, autoComplete);
             _processor.StartProcessingAsync().Wait();
+        }
+
+        private ServiceBusProcessor CreateProcessor(bool autoComplete)
+        {
+            return _client.CreateProcessor(_queueName, new ServiceBusProcessorOptions
+            {
+                AutoCompleteMessages = autoComplete
+            });
+        }
+
+        public void Send(MessageBusMessage message)
+        {
+            _queueClient.SendMessageAsync(ServiceBusClientExtensions.PrepareMesssage(message)).Wait();
+        }
+
+        public void Send(IEnumerable<MessageBusMessage> messages)
+        {
+            var sbMessages = messages.Select(x => ServiceBusClientExtensions.PrepareMesssage(x));
+            _queueClient.SendMessagesAsync(sbMessages).Wait();
+        }
+
+        public void Send<TModel>(TModel model)
+        {
+            _queueClient.SendMessageAsync(ServiceBusClientExtensions.PrepareMesssage(model)).Wait();
+        }
+
+        public void SendMany<TModel>(IEnumerable<TModel> models)
+        {
+            var sbMessages = models.Select(x => ServiceBusClientExtensions.PrepareMesssage(x));
+            _queueClient.SendMessagesAsync(sbMessages).Wait();
+        }
+
+        public void Close()
+        {
+            if (_processor != null) _processor.CloseAsync().Wait();
+            if (_queueClient != null) _queueClient.CloseAsync().Wait();
+            if (_queueClient != null) _queueClient.DisposeAsync();
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            Close();
+        }
+    }
+
+    public class ServiceBusStandaloneQueueAsyncClient : MessageBusStandaloneQueueClient, IMessageBusStandaloneQueueAsyncClient, IServiceBusClient
+    {
+        private readonly ServiceBusSender _queueClient;
+        private readonly string _queueName;
+        private readonly ServiceBusClient _client;
+        private ServiceBusProcessor _processor;
+
+        public ServiceBusStandaloneQueueAsyncClient(string connectionString, string queuename, int connectionAttemps = 8) : base(connectionString, queuename)
+        {
+            _queueName = queuename;
+            (_client, _queueClient) = ServiceBusClientExtensions.CreateClient(connectionString, queuename, connectionAttemps);
+        }
+
+        public async Task RegisterHandlerAsync(Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
+        {
+            _processor = CreateProcessor(autoComplete);
+            await _processor.RegisterHandleMessageAsync(handler, errorHandler, onIdle, autoComplete, cancellationToken);
+            await _processor.StartProcessingAsync();
+        }
+
+        public async Task RegisterHandlerAsync<TModel>(Func<TModel, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
+        {
+            _processor = CreateProcessor(autoComplete);
+            await _processor.RegisterHandleMessageAsync(handler, errorHandler, onIdle, autoComplete, cancellationToken);
+            await _processor.StartProcessingAsync();
         }
 
         private ServiceBusProcessor CreateProcessor(bool autoComplete)

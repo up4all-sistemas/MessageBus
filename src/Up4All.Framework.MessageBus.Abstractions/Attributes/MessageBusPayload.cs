@@ -8,7 +8,7 @@ namespace Up4All.Framework.MessageBus.Abstractions.Attributes
         public string Target { get; private set; }
 
         public MessageBusPayload(string target = null)
-        {            
+        {
             Target = target;
         }
     }
