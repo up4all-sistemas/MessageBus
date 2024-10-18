@@ -41,7 +41,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
         {
             services.AddConfigurationBinder(configuration);
 
-            services.AddSingleton<IMessageBusStandaloneQueueAsyncClient, RabbitMQQueueAsyncClient>(provider =>
+            services.AddSingleton<IMessageBusQueueAsyncClient, RabbitMQQueueAsyncClient>(provider =>
             {
                 var options = provider.GetRequiredService<IOptions<MessageBusOptions>>();
 
