@@ -78,6 +78,11 @@ namespace Up4All.Framework.MessageBus.Abstractions.Configurations
             services.AddSingleton<IMessageBusStandalonePublisher>(instance);
         }
 
+        public static void AddStandaloneTopicAsyncClient(this IServiceCollection services, Func<IServiceProvider, IMessageBusStandalonePublisherAsync> instance)
+        {
+            services.AddSingleton(instance);
+        }
+
         public static void AddStandaloneTopicClient(this IServiceCollection services, Func<IServiceProvider, IMessageBusStandaloneConsumer> instance)
         {
             services.AddSingleton<IMessageBusStandaloneConsumer>(instance);
@@ -104,6 +109,11 @@ namespace Up4All.Framework.MessageBus.Abstractions.Configurations
         }
 
         public static void AddMessageBusNamedTopicClient(this IServiceCollection services, IConfiguration configuration, string key, Func<IServiceProvider, MessageBusOptions, IMessageBusStandalonePublisher> createInstance)
+        {
+            services.AddMessageBusNamedClient(configuration, key, createInstance);
+        }
+
+        public static void AddMessageBusNamedTopicAsyncClient(this IServiceCollection services, IConfiguration configuration, string key, Func<IServiceProvider, MessageBusOptions, IMessageBusStandalonePublisherAsync> createInstance)
         {
             services.AddMessageBusNamedClient(configuration, key, createInstance);
         }

@@ -3,4 +3,8 @@
     public interface IMessageBusStandalonePublisher : IMessageBusPublisher
     {
     }
+
+    public interface IMessageBusStandalonePublisherAsync : IMessageBusPublisherAsync
+    {
+    }
 }
