@@ -26,4 +26,9 @@
         public const string Last = "last";
         public const string Next = "next";
     }
+
+    public struct Arguments
+    {
+        public const string StreamOffsetKey = "x-stream-offset";
+    }
 }

@@ -3,13 +3,8 @@
 namespace Up4All.Framework.MessageBus.Abstractions.Attributes
 {
     [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
-    public class MessageBusUserProperty : Attribute
+    public class MessageBusUserPropertyAttribute(string key) : Attribute
     {
-        public string Key { get; set; }
-
-        public MessageBusUserProperty(string key = null)
-        {
-            Key = key;
-        }
+        public string Key => key;
     }
 }

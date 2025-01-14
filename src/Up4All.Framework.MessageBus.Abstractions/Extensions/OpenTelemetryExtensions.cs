@@ -4,16 +4,10 @@ namespace Up4All.Framework.MessageBus.Abstractions.Extensions
 {
     public static class OpenTelemetryExtensions<TSource> where TSource : class
     {
-        public static string ServiceName { get; }
-        public static string ServiceVersion { get; }
-
-        static OpenTelemetryExtensions()
+        public static ActivitySource CreateActivitySource()
         {
-            ServiceName = typeof(TSource).Assembly.GetName().Name;
-            ServiceVersion = typeof(TSource).Assembly.GetName().Version.ToString();
+            var assemblyName = typeof(TSource).Assembly.GetName();
+            return new ActivitySource(assemblyName.Name, assemblyName.Version.ToString());
         }
-
-        public static ActivitySource CreateActivitySource() =>
-            new ActivitySource(ServiceName, ServiceVersion);
     }
 }

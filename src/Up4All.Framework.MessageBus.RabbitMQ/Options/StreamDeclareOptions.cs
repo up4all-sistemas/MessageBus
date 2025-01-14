@@ -9,9 +9,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Options
         internal StreamDeclareOptions() : base()
         {
             Type = QueueType.Stream;
-
-            if (Args == null)
-                Args = new Dictionary<string, object>();
+            Args ??= [];
 
             if (!Args.ContainsKey("x-stream-type"))
                 Args.Add("x-stream-type", "stream");

@@ -45,7 +45,7 @@ namespace Up4All.Framework.MessageBus.Abstractions.Messages
 
         public void AddBody<T>(T obj, JsonSerializerOptions opts = null) where T : class
         {
-            opts = opts ?? new JsonSerializerOptions(JsonSerializerDefaults.Web) { DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault };
+            opts ??= new JsonSerializerOptions(JsonSerializerDefaults.Web) { DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault };
 
             IsJson = true;
             AddBody(JsonSerializer.Serialize(obj, opts));

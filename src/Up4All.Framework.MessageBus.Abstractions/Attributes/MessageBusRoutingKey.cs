@@ -3,13 +3,8 @@
 namespace Up4All.Framework.MessageBus.Abstractions.Attributes
 {
     [AttributeUsage(AttributeTargets.Class)]
-    public class MessageBusRoutingKey : Attribute
+    public class MessageBusRoutingKeyAttribute(string routingKey) : Attribute
     {
-        public string RoutingKey { get; private set; }
-
-        public MessageBusRoutingKey(string routingKey)
-        {
-            RoutingKey = routingKey;
-        }
+        public string RoutingKey => routingKey;
     }
 }

@@ -59,40 +59,38 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Consumers
 
             var activiyName = $"message-received {exchange} {routingKey}";
             var parentContext = RabbitMQClientExtensions.GetParentPropagationContext(properties);
-            using (var activivy = RabbitMQClientExtensions.ProcessOpenTelemetryActivity(activiyName, ActivityKind.Consumer, parentContext.ActivityContext))
+            using var activivy = RabbitMQClientExtensions.ProcessOpenTelemetryActivity(activiyName, ActivityKind.Consumer, parentContext.ActivityContext);
+            try
             {
-                try
+                var message = new ReceivedMessage();
+                message.AddBody(BinaryData.FromBytes(body), true);
+                message.PopulateUserProperties(properties.Headers);
+
+                RabbitMQClientExtensions.AddTagsToActivity(activivy, exchange, routingKey, body.ToArray());
+
+                var response = await _handler(message, CancellationToken.None);
+
+                if (!_autoComplete && response == MessageReceivedStatus.Deadletter)
                 {
-                    var message = new ReceivedMessage();
-                    message.AddBody(BinaryData.FromBytes(body), true);
-                    message.PopulateUserProperties(properties.Headers);
-
-                    RabbitMQClientExtensions.AddTagsToActivity(activivy, exchange, routingKey, body.ToArray());
-
-                    var response = await _handler(message, CancellationToken.None);
-
-                    if (!_autoComplete && response == MessageReceivedStatus.Deadletter)
-                    {
-                        _channel.BasicNack(deliveryTag, false, false);
-                        return;
-                    }
-
-                    if (!_autoComplete && response == MessageReceivedStatus.Abandoned)
-                    {
-                        _channel.BasicReject(deliveryTag, true);
-                        return;
-                    }
-
-                    if (!_autoComplete)
-                        _channel.BasicAck(deliveryTag, false);
-
+                    _channel.BasicNack(deliveryTag, false, false);
+                    return;
                 }
-                catch (Exception ex)
+
+                if (!_autoComplete && response == MessageReceivedStatus.Abandoned)
                 {
-                    if (!_autoComplete)
-                        _channel.BasicNack(deliveryTag, false, false);
-                    await _errorHandler(ex, CancellationToken.None);
+                    _channel.BasicReject(deliveryTag, true);
+                    return;
                 }
+
+                if (!_autoComplete)
+                    _channel.BasicAck(deliveryTag, false);
+
+            }
+            catch (Exception ex)
+            {
+                if (!_autoComplete)
+                    _channel.BasicNack(deliveryTag, false, false);
+                await _errorHandler(ex, CancellationToken.None);
             }
         }
     }
@@ -143,40 +141,38 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Consumers
 
             var activiyName = $"message-received {exchange} {routingKey}";
             var parentContext = RabbitMQClientExtensions.GetParentPropagationContext(properties);
-            using (var activivy = RabbitMQClientExtensions.ProcessOpenTelemetryActivity(activiyName, ActivityKind.Consumer, parentContext.ActivityContext))
+            using var activivy = RabbitMQClientExtensions.ProcessOpenTelemetryActivity(activiyName, ActivityKind.Consumer, parentContext.ActivityContext);
+            try
             {
-                try
+                var message = new ReceivedMessage();
+                message.AddBody(BinaryData.FromBytes(body), true);
+                message.PopulateUserProperties(properties.Headers);
+
+                RabbitMQClientExtensions.AddTagsToActivity(activivy, exchange, routingKey, body.ToArray());
+
+                var response = await _handler(model, CancellationToken.None);
+
+                if (!_autoComplete && response == MessageReceivedStatus.Deadletter)
                 {
-                    var message = new ReceivedMessage();
-                    message.AddBody(BinaryData.FromBytes(body), true);
-                    message.PopulateUserProperties(properties.Headers);
-
-                    RabbitMQClientExtensions.AddTagsToActivity(activivy, exchange, routingKey, body.ToArray());
-
-                    var response = await _handler(model, CancellationToken.None);
-
-                    if (!_autoComplete && response == MessageReceivedStatus.Deadletter)
-                    {
-                        _channel.BasicNack(deliveryTag, false, false);
-                        return;
-                    }
-
-                    if (!_autoComplete && response == MessageReceivedStatus.Abandoned)
-                    {
-                        _channel.BasicReject(deliveryTag, true);
-                        return;
-                    }
-
-                    if (!_autoComplete)
-                        _channel.BasicAck(deliveryTag, false);
-
+                    _channel.BasicNack(deliveryTag, false, false);
+                    return;
                 }
-                catch (Exception ex)
+
+                if (!_autoComplete && response == MessageReceivedStatus.Abandoned)
                 {
-                    if (!_autoComplete)
-                        _channel.BasicNack(deliveryTag, false, false);
-                    await _errorHandler(ex, CancellationToken.None);
+                    _channel.BasicReject(deliveryTag, true);
+                    return;
                 }
+
+                if (!_autoComplete)
+                    _channel.BasicAck(deliveryTag, false);
+
+            }
+            catch (Exception ex)
+            {
+                if (!_autoComplete)
+                    _channel.BasicNack(deliveryTag, false, false);
+                await _errorHandler(ex, CancellationToken.None);
             }
         }
     }
@@ -228,42 +224,41 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Consumers
 
             var activiyName = $"message-received {exchange} {routingKey}";
             var parentContext = RabbitMQClientExtensions.GetParentPropagationContext(properties);
-            using (var activivy = RabbitMQClientExtensions.ProcessOpenTelemetryActivity(activiyName, ActivityKind.Consumer, parentContext.ActivityContext))
+            using var activivy = RabbitMQClientExtensions.ProcessOpenTelemetryActivity(activiyName, ActivityKind.Consumer, parentContext.ActivityContext);
+            try
             {
-                try
+                var message = new ReceivedMessage();
+                message.AddBody(BinaryData.FromBytes(body), true);
+                message.PopulateUserProperties(properties.Headers);
+
+                RabbitMQClientExtensions.AddTagsToActivity(activivy, exchange, routingKey, body.ToArray());
+
+                var response = _handler(message, CancellationToken.None).GetAwaiter().GetResult();
+
+                if (!_autoComplete && response == MessageReceivedStatus.Deadletter)
                 {
-                    var message = new ReceivedMessage();
-                    message.AddBody(BinaryData.FromBytes(body), true);
-                    message.PopulateUserProperties(properties.Headers);
-
-                    RabbitMQClientExtensions.AddTagsToActivity(activivy, exchange, routingKey, body.ToArray());
-
-                    var response = _handler(message, CancellationToken.None).GetAwaiter().GetResult();
-
-                    if (!_autoComplete && response == MessageReceivedStatus.Deadletter)
-                    {
-                        _channel.BasicNack(deliveryTag, false, false);
-                        return;
-                    }
-
-                    if (!_autoComplete && response == MessageReceivedStatus.Abandoned)
-                    {
-                        _channel.BasicReject(deliveryTag, true);
-                        return;
-                    }
-
-                    if (!_autoComplete)
-                        _channel.BasicAck(deliveryTag, false);
-
+                    _channel.BasicNack(deliveryTag, false, false);
+                    return;
                 }
-                catch (Exception ex)
+
+                if (!_autoComplete && response == MessageReceivedStatus.Abandoned)
                 {
-                    if (!_autoComplete)
-                        _channel.BasicNack(deliveryTag, false, false);
-                    _errorHandler(ex, CancellationToken.None).Wait();
+                    _channel.BasicReject(deliveryTag, true);
+                    return;
                 }
+
+                if (!_autoComplete)
+                    _channel.BasicAck(deliveryTag, false);
+
+            }
+            catch (Exception ex)
+            {
+                if (!_autoComplete)
+                    _channel.BasicNack(deliveryTag, false, false);
+                _errorHandler(ex, CancellationToken.None).Wait();
             }
         }
+
     }
 
     public class QueueMessageReceiverForModel<TModel> : DefaultBasicConsumer
@@ -310,40 +305,38 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Consumers
         {
             var activiyName = $"message-received {exchange} {routingKey}";
             var parentContext = RabbitMQClientExtensions.GetParentPropagationContext(properties);
-            using (var activivy = RabbitMQClientExtensions.ProcessOpenTelemetryActivity(activiyName, ActivityKind.Consumer, parentContext.ActivityContext))
+            using var activivy = RabbitMQClientExtensions.ProcessOpenTelemetryActivity(activiyName, ActivityKind.Consumer, parentContext.ActivityContext);
+
+            try
             {
-                try
+                var model = JsonSerializer.Deserialize<TModel>(body.ToArray(), new JsonSerializerOptions(JsonSerializerDefaults.Web));
+
+                RabbitMQClientExtensions.AddTagsToActivity(activivy, exchange, routingKey, body.ToArray());
+
+                var response = _handler(model, CancellationToken.None).GetAwaiter().GetResult();
+
+                if (!_autoComplete && response == MessageReceivedStatus.Deadletter)
                 {
-                    var model = JsonSerializer.Deserialize<TModel>(body.ToArray(), new JsonSerializerOptions(JsonSerializerDefaults.Web));
-
-                    RabbitMQClientExtensions.AddTagsToActivity(activivy, exchange, routingKey, body.ToArray());
-
-                    var response = _handler(model, CancellationToken.None).GetAwaiter().GetResult();
-
-                    if (!_autoComplete && response == MessageReceivedStatus.Deadletter)
-                    {
-                        _channel.BasicNack(deliveryTag, false, false);
-                        return;
-                    }
-
-                    if (!_autoComplete && response == MessageReceivedStatus.Abandoned)
-                    {
-                        _channel.BasicReject(deliveryTag, true);
-                        return;
-                    }
-
-                    if (!_autoComplete)
-                        _channel.BasicAck(deliveryTag, false);
-
+                    _channel.BasicNack(deliveryTag, false, false);
+                    return;
                 }
-                catch (Exception ex)
+
+                if (!_autoComplete && response == MessageReceivedStatus.Abandoned)
                 {
-                    if (!_autoComplete)
-                        _channel.BasicNack(deliveryTag, false, false);
-                    _errorHandler(ex, CancellationToken.None).Wait();
+                    _channel.BasicReject(deliveryTag, true);
+                    return;
                 }
+
+                if (!_autoComplete)
+                    _channel.BasicAck(deliveryTag, false);
+
+            }
+            catch (Exception ex)
+            {
+                if (!_autoComplete)
+                    _channel.BasicNack(deliveryTag, false, false);
+                _errorHandler(ex, CancellationToken.None).Wait();
             }
         }
-
     }
 }
