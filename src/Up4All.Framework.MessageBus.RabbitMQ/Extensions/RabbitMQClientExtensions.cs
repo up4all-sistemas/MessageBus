@@ -25,7 +25,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
 {
     public static class RabbitMQClientExtensions
     {
-        private static readonly ActivitySource activitySource = new ActivitySource(Consts.OpenTelemetrySourceName);
+        private static readonly ActivitySource activitySource = new(Consts.OpenTelemetrySourceName);
         private static readonly TextMapPropagator Propagator = Propagators.DefaultTextMapPropagator;
 
         public static void ConfigureAsyncHandler(this IRabbitMQClient client, string queueName, AsyncQueueMessageReceiver receiver, bool autoComplete, object offset = null)
@@ -33,7 +33,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             client.Channel.BasicQos(0, 1, false);
 
             var args = new Dictionary<string, object> { };
-            if (offset != null) args.Add("x-stream-offset", offset);
+            if (offset != null) args.Add(Arguments.StreamOffsetKey, offset);
 
             client.Channel.BasicConsume(queue: queueName, autoAck: autoComplete, consumer: receiver, arguments: args);
         }
@@ -43,7 +43,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             client.Channel.BasicQos(0, 1, false);
 
             var args = new Dictionary<string, object> { };
-            if (offset != null) args.Add("x-stream-offset", offset);
+            if (offset != null) args.Add(Arguments.StreamOffsetKey, offset);
 
             client.Channel.BasicConsume(queue: queueName, autoAck: autoComplete, consumer: receiver, arguments: args);
         }
@@ -53,7 +53,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             client.Channel.BasicQos(0, 1, false);
 
             var args = new Dictionary<string, object> { };
-            if (offset != null) args.Add("x-stream-offset", offset);
+            if (offset != null) args.Add(Arguments.StreamOffsetKey, offset);
 
             client.Channel.BasicConsume(queue: queueName, autoAck: autoComplete, consumer: receiver, arguments: args);
         }
@@ -63,7 +63,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             client.Channel.BasicQos(0, 1, false);
 
             var args = new Dictionary<string, object> { };
-            if (offset != null) args.Add("x-stream-offset", offset);
+            if (offset != null) args.Add(Arguments.StreamOffsetKey, offset);
 
             client.Channel.BasicConsume(queue: queueName, autoAck: autoComplete, consumer: receiver, arguments: args);
         }
@@ -74,18 +74,17 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             var basicProps = channel.CreateBasicProperties();
             basicProps.PopulateHeaders(msg);
 
-            using (var activity = ProcessOpenTelemetryActivity(activityName, ActivityKind.Producer))
-            {
-                var routingKey = queueName;
+            using var activity = ProcessOpenTelemetryActivity(activityName, ActivityKind.Producer);
+            var routingKey = queueName;
 
-                if (msg.ContainsRoutingKey())
-                    routingKey = msg.GetRoutingKey();
+            if (msg.ContainsRoutingKey())
+                routingKey = msg.GetRoutingKey();
 
-                InjectPropagationContext(activity, basicProps);
-                AddTagsToActivity(activity, topicName, routingKey, msg.Body);
+            InjectPropagationContext(activity, basicProps);
+            AddTagsToActivity(activity, topicName, routingKey, msg.Body);
 
-                channel.BasicPublish(topicName, routingKey, basicProps, msg.Body);
-            }
+            channel.BasicPublish(topicName, routingKey, basicProps, msg.Body);
+
         }
 
         public static IConnection GetConnection(this IRabbitMQClient client, MessageBusOptions opts, ILogger<IRabbitMQClient> logger)
@@ -172,7 +171,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
 
             Propagator.Inject(new PropagationContext(activity.Context, Baggage.Current), props, (x, key, value) =>
             {
-                props.Headers = props.Headers ?? new Dictionary<string, object>();
+                props.Headers ??= new Dictionary<string, object>();
                 props.Headers[key] = value;
             });
         }
@@ -182,8 +181,8 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             var parent = Propagator.Extract(default, props, (x, key) =>
             {
                 if (x.Headers.TryGetValue(key, out var value))
-                    return new[] { Encoding.UTF8.GetString((byte[])value) };
-                return Enumerable.Empty<string>();
+                    return [ Encoding.UTF8.GetString((byte[])value) ];
+                return [];
             });
             Baggage.Current = parent.Baggage;
 

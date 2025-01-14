@@ -2,8 +2,8 @@
 
 namespace Up4All.Framework.MessageBus.Tests.RabbitMQ.Payloads
 {
-    [MessageBusPayload("TestPayload")]
-    [MessageBusAdditionalUserProperty("teste1", "teste23")]
+    [MessageBusPayloadAttribute("TestPayload")]
+    [MessageBusAdditionalUserPropertyAttribute("teste1", "teste23")]
     //[MessageBusRoutingKey("teste")]
     public class TestPayload
     {

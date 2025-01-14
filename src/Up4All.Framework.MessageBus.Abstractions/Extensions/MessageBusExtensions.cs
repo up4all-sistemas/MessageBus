@@ -15,9 +15,9 @@ namespace Up4All.Framework.MessageBus.Abstractions.Extensions
         {
             var message = new MessageBusMessage();
             var modelType = model.GetType();
-            var target = modelType.GetCustomAttribute<MessageBusPayload>();
-            var routingKey = modelType.GetCustomAttribute<MessageBusRoutingKey>();
-            message.AddUserProperties(modelType.GetCustomAttributes<MessageBusAdditionalUserProperty>().ToDictionary(x => x.Key, x => x.Value));
+            var target = modelType.GetCustomAttribute<MessageBusPayloadAttribute>();
+            var routingKey = modelType.GetCustomAttribute<MessageBusRoutingKeyAttribute>();
+            message.AddUserProperties(modelType.GetCustomAttributes<MessageBusAdditionalUserPropertyAttribute>().ToDictionary(x => x.Key, x => x.Value));
 
             if (!string.IsNullOrEmpty(target?.Target))
                 message.AddUserProperty("target", target.Target);
@@ -29,9 +29,9 @@ namespace Up4All.Framework.MessageBus.Abstractions.Extensions
 
             foreach (var prop in properties)
             {
-                if (!prop.CustomAttributes.Any(x => x.AttributeType == typeof(MessageBusUserProperty))) continue;
+                if (!prop.CustomAttributes.Any(x => x.AttributeType == typeof(MessageBusUserPropertyAttribute))) continue;
 
-                var attr = prop.GetCustomAttribute<MessageBusUserProperty>();
+                var attr = prop.GetCustomAttribute<MessageBusUserPropertyAttribute>();
                 if (attr is null) continue;
 
                 message.AddUserProperty(attr.Key, prop.GetValue(model, null));

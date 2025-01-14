@@ -19,9 +19,9 @@ namespace Up4All.Framework.MessageBus.Abstractions
 
         protected abstract void Dispose(bool disposing);
 
-        protected void CreateOpenTelemetryActivitySource<TSource>(string activityName, ActivityKind kind) where TSource : class
+        protected static void CreateOpenTelemetryActivitySource<TSource>(string activityName, ActivityKind kind) where TSource : class
         {
-            var activity = OpenTelemetryExtensions<TSource>.CreateActivitySource()
+            OpenTelemetryExtensions<TSource>.CreateActivitySource()
                 .StartActivity(activityName, kind);
         }
     }

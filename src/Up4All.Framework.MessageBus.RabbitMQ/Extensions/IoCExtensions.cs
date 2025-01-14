@@ -536,8 +536,8 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
 
     public static class RabbitMQConsts
     {
-        public static QueueDeclareOptions DefaultQueueDeclareOptions => new QueueDeclareOptions();
-        public static StreamDeclareOptions DefaultStreamDeclareOptions => new StreamDeclareOptions();
-        public static ExchangeDeclareOptions DefaultExchangeDeclareOptions => new ExchangeDeclareOptions();
+        public static QueueDeclareOptions DefaultQueueDeclareOptions => new ();
+        public static StreamDeclareOptions DefaultStreamDeclareOptions => new ();
+        public static ExchangeDeclareOptions DefaultExchangeDeclareOptions => new ();        
     }
 }

@@ -21,8 +21,8 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Options
 
         internal QueueDeclareOptions()
         {
-            Bindings = new List<QueueBindOptions>();
-            Args = new Dictionary<string, object>();
+            Bindings = [];
+            Args = [];
             Type = QueueType.Classic;
             Durable = true;
         }
@@ -47,7 +47,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Options
         internal QueueBindOptions(string exchangeName)
         {
             ExchangeName = exchangeName;
-            Args = new Dictionary<string, object>();
+            Args = [];
         }
 
         public QueueBindOptions(string exchangeName, string defaultArgKey, object defaultArgValue, string routingkey = null) : this(exchangeName)

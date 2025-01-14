@@ -83,8 +83,6 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
         public async Task SendAsync(MessageBusMessage message, CancellationToken cancellationToken = default)
         {
             await Task.Run(() => Channel.SendMessage(_topicName, string.Empty, message), cancellationToken);
-
-            Channel.SendMessage(_topicName, string.Empty, message);
         }
         public async Task SendAsync(IEnumerable<MessageBusMessage> messages, CancellationToken cancellationToken = default)
         {
