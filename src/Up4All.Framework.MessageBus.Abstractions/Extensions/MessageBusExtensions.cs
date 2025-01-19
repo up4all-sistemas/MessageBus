@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Text.Json;
 
 using Up4All.Framework.MessageBus.Abstractions.Attributes;
@@ -54,6 +55,13 @@ namespace Up4All.Framework.MessageBus.Abstractions.Extensions
         public static string GetRoutingKey(this MessageBusMessage message)
         {
             return message.UserProperties["routing-key"].ToString();
+        }
+
+        internal static string GetUserPropertyAsString(this MessageBusMessage message, string userPropertyKey, string defaultValue = default)
+        {
+            message.UserProperties.TryGetValue(userPropertyKey, out var rawValue);
+            if (rawValue == null) return defaultValue;
+            return Encoding.UTF8.GetString((byte[])rawValue);
         }
     }
 }
