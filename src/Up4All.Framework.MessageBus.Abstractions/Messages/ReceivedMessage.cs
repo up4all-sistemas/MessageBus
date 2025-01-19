@@ -1,6 +1,8 @@
 ﻿using System.Text;
 using System.Text.Json;
 
+using Up4All.Framework.MessageBus.Abstractions.Extensions;
+
 namespace Up4All.Framework.MessageBus.Abstractions.Messages
 {
     public class ReceivedMessage : MessageBusMessage
@@ -23,10 +25,9 @@ namespace Up4All.Framework.MessageBus.Abstractions.Messages
             return val;
         }
 
-        public string GetUserPropertyValueAsString(string key)
+        public string GetUserPropertyValueAsString(string key, string defaultValue = default)
         {
-            if (!UserProperties.TryGetValue(key, out var val)) return null;
-            return val.ToString();
+            return this.GetUserPropertyAsString(key, defaultValue);
         }
     }
 }
