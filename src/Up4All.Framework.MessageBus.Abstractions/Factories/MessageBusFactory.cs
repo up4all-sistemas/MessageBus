@@ -51,6 +51,13 @@ namespace Up4All.Framework.MessageBus.Abstractions.Factories
 
         }
 
+        public IMessageBusStandaloneAsyncConsumer GetSubscriptionAsyncClient(string key)
+        {
+            var namedInstances = _provider.GetServices<NamedInstanceClient<IMessageBusStandaloneAsyncConsumer>>();
+            return namedInstances.FirstOrDefault(x => x.Key == key)?.Instance;
+
+        }
+
         public IMessageBusStandaloneStreamClient GetStreamClient(string key)
         {
             var namedInstances = _provider.GetServices<NamedInstanceClient<IMessageBusStandaloneStreamClient>>();

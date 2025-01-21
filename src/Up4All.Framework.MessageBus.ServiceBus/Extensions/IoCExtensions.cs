@@ -47,7 +47,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Extensions
         {
             services.AddMessageBusNamedSubscriptionAsyncClient(configuration, key, (provider, opts) =>
             {
-                return new ServiceBusStandaloneSubscribeAsyncClient(opts.ConnectionString, opts.TopicName, key);
+                return new ServiceBusStandaloneSubscribeAsyncClient(opts.ConnectionString, opts.TopicName, key); 
             });
             return services;
         }
