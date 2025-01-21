@@ -7,7 +7,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Extensions
 {
     public static class IoCExtensions
     {
-        public static IServiceCollection AddMessageBusNamedQueueClient(this IServiceCollection services, string key, IConfiguration configuration)
+        public static IServiceCollection AddServiceBusNamedQueueClient(this IServiceCollection services, string key, IConfiguration configuration)
         {
             services.AddMessageBusNamedQueueClient(configuration, key, (provider, opts) =>
             {
@@ -16,7 +16,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Extensions
             return services;
         }
 
-        public static IServiceCollection AddMessageBusNamedQueueAsyncClient(this IServiceCollection services, string key, IConfiguration configuration)
+        public static IServiceCollection AddServiceBusNamedQueueAsyncClient(this IServiceCollection services, string key, IConfiguration configuration)
         {
             services.AddMessageBusNamedQueueAsyncClient(configuration, key, (provider, opts) =>
             {
@@ -25,7 +25,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Extensions
             return services;
         }
 
-        public static IServiceCollection AddMessageBusNamedTopicClient(this IServiceCollection services, string key, IConfiguration configuration)
+        public static IServiceCollection AddServiceBusNamedTopicClient(this IServiceCollection services, string key, IConfiguration configuration)
         {
             services.AddMessageBusNamedTopicClient(configuration, key, (provider, opts) =>
             {
@@ -34,7 +34,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Extensions
             return services;
         }
 
-        public static IServiceCollection AddMessageBusNamedSubscriptionClient(this IServiceCollection services, string key, IConfiguration configuration)
+        public static IServiceCollection AddServiceBusNamedSubscriptionClient(this IServiceCollection services, string key, IConfiguration configuration)
         {
             services.AddMessageBusNamedSubscriptionClient(configuration, key, (provider, opts) =>
             {
@@ -43,7 +43,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Extensions
             return services;
         }
 
-        public static IServiceCollection AddMessageBusNamedSubscriptionAsyncClient(this IServiceCollection services, string key, IConfiguration configuration)
+        public static IServiceCollection AddServiceBusNamedSubscriptionAsyncClient(this IServiceCollection services, string key, IConfiguration configuration)
         {
             services.AddMessageBusNamedSubscriptionAsyncClient(configuration, key, (provider, opts) =>
             {
