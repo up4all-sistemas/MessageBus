@@ -11,6 +11,9 @@ namespace Up4All.Framework.MessageBus.Mocks
         protected MessageBusStandaloneSubscribeClientMock() : base()
         {
         }
+        
+        public string QueueName => string.Empty;
+
         public abstract void RegisterHandler<TModel>(Func<TModel, MessageReceivedStatus> handler, Action<Exception> errorHandler, Action onIdle = null, bool autoComplete = false);
         public abstract void RegisterHandler(Func<ReceivedMessage, MessageReceivedStatus> handler, Action<Exception> errorHandler, Action onIdle = null, bool autoComplete = false);
         public abstract void Close();

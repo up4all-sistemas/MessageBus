@@ -15,6 +15,10 @@ namespace Up4All.Framework.MessageBus.Mocks
         {
         }
 
+        public string TopicName => string.Empty;
+
+        public string QueueName => string.Empty;
+
         public abstract void RegisterHandler<TModel>(Func<TModel, MessageReceivedStatus> handler, Action<Exception> errorHandler, Action onIdle = null, bool autoComplete = false);
         public abstract void RegisterHandler(Func<ReceivedMessage, MessageReceivedStatus> handler, Action<Exception> errorHandler, Action onIdle = null, bool autoComplete = false);
         public abstract void Send(MessageBusMessage message);
@@ -29,6 +33,10 @@ namespace Up4All.Framework.MessageBus.Mocks
         protected MessageBusStandaloneQueueAsyncClientMock() : base()
         {
         }
+
+        public string TopicName => string.Empty;
+
+        public string QueueName => string.Empty;
 
         public abstract Task RegisterHandlerAsync(Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default);
         public abstract Task RegisterHandlerAsync<TModel>(Func<TModel, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default);
