@@ -12,6 +12,8 @@ namespace Up4All.Framework.MessageBus.Mocks
         {
         }
 
+        public string TopicName => string.Empty;
+
         public abstract void Send(MessageBusMessage message);
         public abstract void Send(IEnumerable<MessageBusMessage> messages);
         public abstract void Send<TModel>(TModel model);

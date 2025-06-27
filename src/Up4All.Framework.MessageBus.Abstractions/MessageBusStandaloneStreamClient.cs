@@ -3,7 +3,8 @@
     public abstract class MessageBusStandaloneStreamClient : MessageBusStandaloneClientBase
     {
         protected string ConnectionString { get; private set; }
-        protected string QueueName { get; private set; }
+        public string QueueName { get; private set; }
+        public string TopicName => string.Empty;
 
         protected object Offset;
 

@@ -8,6 +8,8 @@ namespace Up4All.Framework.MessageBus.Abstractions.Interfaces
 {
     public interface IMessageBusPublisher
     {
+        public string TopicName { get; }
+
         void Send<TModel>(TModel model);
 
         void Send(MessageBusMessage message);
@@ -19,6 +21,8 @@ namespace Up4All.Framework.MessageBus.Abstractions.Interfaces
 
     public interface IMessageBusPublisherAsync
     {
+        public string TopicName { get; }
+
         Task SendAsync<TModel>(TModel model, CancellationToken cancellationToken = default);
 
         Task SendAsync(MessageBusMessage message, CancellationToken cancellationToken = default);
