@@ -63,5 +63,54 @@ namespace Up4All.Framework.MessageBus.Abstractions.Extensions
             if (rawValue == null) return defaultValue;
             return Encoding.UTF8.GetString((byte[])rawValue);
         }
+
+        internal static bool TryGetUserPropertyAsString(this MessageBusMessage message, string userPropertyKey, out string value)
+        {
+            value = default;
+            if (message.UserProperties.TryGetValue(userPropertyKey, out var rawValue))
+            {
+                value = Encoding.UTF8.GetString((byte[])rawValue);
+                return true;
+            }
+            return false;
+        }
+
+        internal static bool TryGetUserPropertyAsInt32(this MessageBusMessage message, string userPropertyKey, out int value)
+        {
+            value = default;
+            return message.TryGetUserPropertyAsString(userPropertyKey, out var valueStr) && int.TryParse(valueStr, out value);
+        }
+
+        internal static bool TryGetUserPropertyAsDecimal(this MessageBusMessage message, string userPropertyKey, out decimal value)
+        {
+            value = default;
+            return message.TryGetUserPropertyAsString(userPropertyKey, out var valueStr) && decimal.TryParse(valueStr, out value);
+        }
+
+        internal static bool TryGetUserPropertyAsDateTime(this MessageBusMessage message, string userPropertyKey, out DateTime value)
+        {
+            value = default;
+            return message.TryGetUserPropertyAsString(userPropertyKey, out var valueStr) && DateTime.TryParse(valueStr, out value);
+        }
+
+        internal static bool TryGetUserPropertyAs<T>(this MessageBusMessage message, string userPropertyKey, out T value) where T : class
+        {
+            value = default;
+            if (message.TryGetUserPropertyAsString(userPropertyKey, out var valueStr)) 
+            {
+                try
+                {
+                    value = JsonSerializer.Deserialize<T>(valueStr, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+                    return true;
+                }
+                catch (JsonException)
+                {
+                    // Handle deserialization failure
+                    return false;
+                }
+            }
+
+            return false;
+        }
     }
 }
