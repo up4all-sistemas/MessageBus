@@ -99,7 +99,6 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
         }
         public Task RegisterHandlerAsync<TModel>(Func<TModel, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
         {
-
             var receiver = new AsyncQueueMessageReceiverForModel<TModel>(Channel, handler, errorHandler, autoComplete);
             this.ConfigureAsyncHandler(_queuename, receiver, autoComplete);
             return Task.CompletedTask;

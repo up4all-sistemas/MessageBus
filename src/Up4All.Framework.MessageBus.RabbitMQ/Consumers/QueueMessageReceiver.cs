@@ -8,302 +8,84 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Up4All.Framework.MessageBus.Abstractions.Enums;
+using Up4All.Framework.MessageBus.Abstractions.Extensions;
 using Up4All.Framework.MessageBus.Abstractions.Messages;
 using Up4All.Framework.MessageBus.RabbitMQ.Extensions;
 
 namespace Up4All.Framework.MessageBus.RabbitMQ.Consumers
-{
-    public class AsyncQueueMessageReceiver(IModel channel, Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, bool autocomplete) : AsyncEventingBasicConsumer(channel)
+{   
+
+
+
+    public class AsyncQueueMessageReceiver(IModel channel, Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, bool autocomplete) 
+        : AsyncEventingBasicConsumer(channel)
     {
         private readonly IModel _channel = channel;
         private readonly Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatus>> _handler = handler;
         private readonly Func<Exception, CancellationToken, Task> _errorHandler = errorHandler;
         private readonly bool _autoComplete = autocomplete;
 
-        public AsyncQueueMessageReceiver(IModel channel, Func<ReceivedMessage, MessageReceivedStatus> handler, Action<Exception> errorHandler, bool autocomplete) 
-            : this(channel, (msg,ct) => Task.FromResult(handler(msg)), (ex,ct) => { errorHandler(ex); return Task.CompletedTask; }, autocomplete)
-        {            
-        }
-
-        public AsyncQueueMessageReceiver(IModel channel, Func<ReceivedMessage, Task<MessageReceivedStatus>> handler, Func<Exception, Task> errorHandler, bool autocomplete) 
-            : this(channel, (msg, ct) => handler(msg), (ex, ct) => errorHandler(ex), autocomplete)
-        {            
-        }
-
         public override async Task HandleBasicDeliver(string consumerTag, ulong deliveryTag, bool redelivered, string exchange, string routingKey, IBasicProperties properties, ReadOnlyMemory<byte> body)
         {
             await base.HandleBasicDeliver(consumerTag, deliveryTag, redelivered, exchange, routingKey, properties, body);
-
             using var activity = this.CreateMessageReceivedActivity(properties, exchange, routingKey);
             try
             {
-                var message = new ReceivedMessage();
-                message.AddBody(BinaryData.FromBytes(body), true);
-                message.PopulateUserProperties(properties.Headers);
-
+                var message = body.CreateReceivedMessage(properties.Headers);
                 RabbitMQClientExtensions.AddTagsToActivity(activity, exchange, routingKey, body.ToArray());
-
                 var response = await _handler(message, CancellationToken.None);
-
-                if (!_autoComplete && response == MessageReceivedStatus.Deadletter)
-                {
-                    _channel.BasicNack(deliveryTag, false, false);
-                    return;
-                }
-
-                if (!_autoComplete && response == MessageReceivedStatus.Abandoned)
-                {
-                    _channel.BasicReject(deliveryTag, true);
-                    return;
-                }
-
-                if (!_autoComplete)
-                    _channel.BasicAck(deliveryTag, false);
-
+                _channel.ProcessMessage(deliveryTag, response, _autoComplete);
             }
             catch (Exception ex)
             {
-                if (!_autoComplete)
-                    _channel.BasicNack(deliveryTag, false, false);
+                _channel.ProcessErrorMessage(deliveryTag, _autoComplete);                
                 await _errorHandler(ex, CancellationToken.None);
             }
         }
     }
 
-    public class AsyncQueueMessageReceiverForModel<TModel> : AsyncDefaultBasicConsumer
+    public class AsyncQueueMessageReceiverForModel<TModel>(IModel channel, Func<TModel, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, bool autocomplete)
+        : AsyncQueueMessageReceiver(channel, (msg, ct) => {
+                var model = msg.GetBody<TModel>();
+                return handler(model, ct);
+            }, errorHandler, autocomplete)
     {
-        private readonly IModel _channel;
-        private readonly Func<TModel, CancellationToken, Task<MessageReceivedStatus>> _handler;
-        private readonly Func<Exception, CancellationToken, Task> _errorHandler;
-        private readonly bool _autoComplete;
-
-        public AsyncQueueMessageReceiverForModel(IModel channel, Func<TModel, MessageReceivedStatus> handler, Action<Exception> errorHandler, bool autocomplete)
-        {
-            _autoComplete = autocomplete;
-            _channel = channel;
-            _handler = (msg, c) =>
-            {
-                c.ThrowIfCancellationRequested();
-                return Task.FromResult(handler(msg));
-            };
-            _errorHandler = (ex, c) =>
-            {
-                c.ThrowIfCancellationRequested();
-                errorHandler(ex);
-                return Task.CompletedTask;
-            };
-        }
-
-        public AsyncQueueMessageReceiverForModel(IModel channel, Func<TModel, Task<MessageReceivedStatus>> handler, Func<Exception, Task> errorHandler, bool autocomplete)
-        {
-            _autoComplete = autocomplete;
-            _channel = channel;
-            _handler = (msg, c) => { c.ThrowIfCancellationRequested(); return handler(msg); };
-            _errorHandler = (ex, c) => { c.ThrowIfCancellationRequested(); return errorHandler(ex); };
-        }
-
-        public AsyncQueueMessageReceiverForModel(IModel channel, Func<TModel, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, bool autocomplete)
-        {
-            _autoComplete = autocomplete;
-            _channel = channel;
-            _handler = handler;
-            _errorHandler = errorHandler;
-        }
-
-        public override async Task HandleBasicDeliver(string consumerTag, ulong deliveryTag, bool redelivered, string exchange, string routingKey, IBasicProperties properties, ReadOnlyMemory<byte> body)
-        {
-            var model = JsonSerializer.Deserialize<TModel>(body.ToArray(), new JsonSerializerOptions(JsonSerializerDefaults.Web));
-            using var activivy = this.CreateMessageReceivedActivity(properties, exchange, routingKey);
-            try
-            {
-                var message = new ReceivedMessage();
-                message.AddBody(BinaryData.FromBytes(body), true);
-                message.PopulateUserProperties(properties.Headers);
-
-                RabbitMQClientExtensions.AddTagsToActivity(activivy, exchange, routingKey, body.ToArray());
-
-                var response = await _handler(model, CancellationToken.None);
-
-                if (!_autoComplete && response == MessageReceivedStatus.Deadletter)
-                {
-                    _channel.BasicNack(deliveryTag, false, false);
-                    return;
-                }
-
-                if (!_autoComplete && response == MessageReceivedStatus.Abandoned)
-                {
-                    _channel.BasicReject(deliveryTag, true);
-                    return;
-                }
-
-                if (!_autoComplete)
-                    _channel.BasicAck(deliveryTag, false);
-
-            }
-            catch (Exception ex)
-            {
-                if (!_autoComplete)
-                    _channel.BasicNack(deliveryTag, false, false);
-                await _errorHandler(ex, CancellationToken.None);
-            }
-        }
     }
 
 
-    public class QueueMessageReceiver : EventingBasicConsumer
+    public class QueueMessageReceiver(IModel channel, Func<ReceivedMessage, MessageReceivedStatus> handler, Action<Exception> errorHandler, bool autocomplete)
+                : EventingBasicConsumer(channel)
     {
-        private readonly IModel _channel;
-        private readonly Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatus>> _handler;
-        private readonly Func<Exception, CancellationToken, Task> _errorHandler;
-        private readonly bool _autoComplete;
-
-        public QueueMessageReceiver(IModel channel, Func<ReceivedMessage, MessageReceivedStatus> handler, Action<Exception> errorHandler, bool autocomplete) : base(channel)
-        {
-            _autoComplete = autocomplete;
-            _channel = channel;
-            _handler = (msg, c) =>
-            {
-                c.ThrowIfCancellationRequested();
-                return Task.FromResult(handler(msg));
-            };
-            _errorHandler = (ex, c) =>
-            {
-                c.ThrowIfCancellationRequested();
-                errorHandler(ex);
-                return Task.CompletedTask;
-            };
-        }
-
-        public QueueMessageReceiver(IModel channel, Func<ReceivedMessage, Task<MessageReceivedStatus>> handler, Func<Exception, Task> errorHandler, bool autocomplete) : base(channel)
-        {
-            _autoComplete = autocomplete;
-            _channel = channel;
-            _handler = (msg, c) => { c.ThrowIfCancellationRequested(); return handler(msg); };
-            _errorHandler = (ex, c) => { c.ThrowIfCancellationRequested(); return errorHandler(ex); };
-        }
-
-        public QueueMessageReceiver(IModel channel, Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, bool autocomplete) : base(channel)
-        {
-            _autoComplete = autocomplete;
-            _channel = channel;
-            _handler = handler;
-            _errorHandler = errorHandler;
-        }
+        private readonly IModel _channel = channel;
+        private readonly Func<ReceivedMessage, MessageReceivedStatus> _handler = handler;
+        private readonly Action<Exception> _errorHandler = errorHandler;
+        private readonly bool _autoComplete = autocomplete;
 
         public override void HandleBasicDeliver(string consumerTag, ulong deliveryTag, bool redelivered, string exchange, string routingKey, IBasicProperties properties, ReadOnlyMemory<byte> body)
         {
             base.HandleBasicDeliver(consumerTag, deliveryTag, redelivered, exchange, routingKey, properties, body);
-
             using var activivy = this.CreateMessageReceivedActivity(properties, exchange, routingKey);
             try
             {
-                var message = new ReceivedMessage();
-                message.AddBody(BinaryData.FromBytes(body), true);
-                message.PopulateUserProperties(properties.Headers);
-
+                var message = body.CreateReceivedMessage(properties.Headers);
                 RabbitMQClientExtensions.AddTagsToActivity(activivy, exchange, routingKey, body.ToArray());
-
-                var response = _handler(message, CancellationToken.None).GetAwaiter().GetResult();
-
-                if (!_autoComplete && response == MessageReceivedStatus.Deadletter)
-                {
-                    _channel.BasicNack(deliveryTag, false, false);
-                    return;
-                }
-
-                if (!_autoComplete && response == MessageReceivedStatus.Abandoned)
-                {
-                    _channel.BasicReject(deliveryTag, true);
-                    return;
-                }
-
-                if (!_autoComplete)
-                    _channel.BasicAck(deliveryTag, false);
-
+                var response = _handler(message);
+                _channel.ProcessMessage(deliveryTag, response, _autoComplete);
             }
             catch (Exception ex)
             {
-                if (!_autoComplete)
-                    _channel.BasicNack(deliveryTag, false, false);
-                _errorHandler(ex, CancellationToken.None).Wait();
+                _channel.ProcessErrorMessage(deliveryTag, _autoComplete);
+                _errorHandler(ex);
             }
         }
 
     }
 
-    public class QueueMessageReceiverForModel<TModel> : DefaultBasicConsumer
+    public class QueueMessageReceiverForModel<TModel>(IModel channel, Func<TModel, MessageReceivedStatus> handler, Action<Exception> errorHandler, bool autocomplete)
+        : QueueMessageReceiver(channel, (msg) => {
+                var model = msg.GetBody<TModel>();
+                return handler(model);
+            }, errorHandler, autocomplete)
     {
-        private readonly IModel _channel;
-        private readonly Func<TModel, CancellationToken, Task<MessageReceivedStatus>> _handler;
-        private readonly Func<Exception, CancellationToken, Task> _errorHandler;
-        private readonly bool _autoComplete;
-
-        public QueueMessageReceiverForModel(IModel channel, Func<TModel, MessageReceivedStatus> handler, Action<Exception> errorHandler, bool autocomplete)
-        {
-            _autoComplete = autocomplete;
-            _channel = channel;
-            _handler = (msg, c) =>
-            {
-                c.ThrowIfCancellationRequested();
-                return Task.FromResult(handler(msg));
-            };
-            _errorHandler = (ex, c) =>
-            {
-                c.ThrowIfCancellationRequested();
-                errorHandler(ex);
-                return Task.CompletedTask;
-            };
-        }
-
-        public QueueMessageReceiverForModel(IModel channel, Func<TModel, Task<MessageReceivedStatus>> handler, Func<Exception, Task> errorHandler, bool autocomplete)
-        {
-            _autoComplete = autocomplete;
-            _channel = channel;
-            _handler = (msg, c) => { c.ThrowIfCancellationRequested(); return handler(msg); };
-            _errorHandler = (ex, c) => { c.ThrowIfCancellationRequested(); return errorHandler(ex); };
-        }
-
-        public QueueMessageReceiverForModel(IModel channel, Func<TModel, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, bool autocomplete)
-        {
-            _autoComplete = autocomplete;
-            _channel = channel;
-            _handler = handler;
-            _errorHandler = errorHandler;
-        }
-
-        public override void HandleBasicDeliver(string consumerTag, ulong deliveryTag, bool redelivered, string exchange, string routingKey, IBasicProperties properties, ReadOnlyMemory<byte> body)
-        {
-            using var activivy = this.CreateMessageReceivedActivity(properties, exchange, routingKey);
-            try
-            {
-                var model = JsonSerializer.Deserialize<TModel>(body.ToArray(), new JsonSerializerOptions(JsonSerializerDefaults.Web));
-
-                RabbitMQClientExtensions.AddTagsToActivity(activivy, exchange, routingKey, body.ToArray());
-
-                var response = _handler(model, CancellationToken.None).GetAwaiter().GetResult();
-
-                if (!_autoComplete && response == MessageReceivedStatus.Deadletter)
-                {
-                    _channel.BasicNack(deliveryTag, false, false);
-                    return;
-                }
-
-                if (!_autoComplete && response == MessageReceivedStatus.Abandoned)
-                {
-                    _channel.BasicReject(deliveryTag, true);
-                    return;
-                }
-
-                if (!_autoComplete)
-                    _channel.BasicAck(deliveryTag, false);
-
-            }
-            catch (Exception ex)
-            {
-                if (!_autoComplete)
-                    _channel.BasicNack(deliveryTag, false, false);
-                _errorHandler(ex, CancellationToken.None).Wait();
-            }
-        }
     }
 }
