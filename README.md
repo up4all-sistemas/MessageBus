@@ -56,7 +56,7 @@ Add the following code to your Dependency Injection:
 	builder.Services.AddMessageBusQueueClient<RabbitMQQueueClient>(builder.Configuration);
 
 
-	In your consumer class, implement the IMessageBusQueueConsumer interface:
+	In your consumer class, just inject the IMessageBusQueueConsumer and register your handler like below:
 	public class YourConsumerClass
 	{
 		private readonly IMessageBusQueueConsumer _messageBusQueueConsumer;
