@@ -4,10 +4,7 @@ using Up4All.Framework.MessageBus.Abstractions.Options;
 
 namespace Up4All.Framework.MessageBus.Abstractions
 {
-    public abstract class MessageBusQueueClient : MessageBusClientBase
+    public abstract class MessageBusQueueClient(IOptions<MessageBusOptions> messageBusOptions) : MessageBusClientBase(messageBusOptions)
     {
-        protected MessageBusQueueClient(IOptions<MessageBusOptions> messageBusOptions) : base(messageBusOptions)
-        {
-        }
     }
 }

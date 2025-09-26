@@ -159,10 +159,33 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
 
         }
 
+        public static string CreateActivityName(this IBasicConsumer consumer, string activityName, string exchangeName, string routingKey)
+        {
+            return $"{activityName} {exchangeName} {routingKey} {consumer.Model.CurrentQueue}";
+        }
+
+        public static string CreateMessageReceivedActivityName(this IBasicConsumer consumer, string exchangeName, string routingKey)
+        {
+            return consumer.CreateActivityName("message-received", exchangeName, routingKey);    
+        }
+
         public static Activity ProcessOpenTelemetryActivity(string activityName, ActivityKind kind, ActivityContext parent = default)
         {
             var activity = activitySource.StartActivity(activityName, kind, parent);
             return activity;
+        }
+
+        public static Activity CreateActivity(this IBasicProperties properties, string activityName, ActivityKind kind)
+        {
+            var parentContext = GetParentPropagationContext(properties);
+            var activity = ProcessOpenTelemetryActivity(activityName, kind, parentContext.ActivityContext);
+            return activity;
+        }
+
+        public static Activity CreateMessageReceivedActivity(this IBasicConsumer consumer, IBasicProperties properties, string exchangeName, string routingKey)
+        {
+            var activityName = consumer.CreateMessageReceivedActivityName(exchangeName, routingKey);
+            return properties.CreateActivity(activityName, ActivityKind.Consumer);
         }
 
         public static void InjectPropagationContext(Activity activity, IBasicProperties props)

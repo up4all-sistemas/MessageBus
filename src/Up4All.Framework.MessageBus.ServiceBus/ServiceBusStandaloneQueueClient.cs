@@ -74,9 +74,9 @@ namespace Up4All.Framework.MessageBus.ServiceBus
 
         public void Close()
         {
-            if (_processor != null) _processor.CloseAsync().Wait();
-            if (_queueClient != null) _queueClient.CloseAsync().Wait();
-            if (_queueClient != null) _queueClient.DisposeAsync();
+            _processor?.CloseAsync().Wait();
+            _queueClient?.CloseAsync().Wait();
+            _queueClient?.DisposeAsync();
         }
 
         protected override void Dispose(bool disposing)

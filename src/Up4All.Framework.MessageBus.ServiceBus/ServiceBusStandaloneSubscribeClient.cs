@@ -12,19 +12,12 @@ using Up4All.Framework.MessageBus.Abstractions.Messages;
 
 namespace Up4All.Framework.MessageBus.ServiceBus
 {
-    public class ServiceBusStandaloneSubscribeClient : MessageBusStandaloneSubscribeClient, IMessageBusStandaloneConsumer, IServiceBusClient
+    public class ServiceBusStandaloneSubscribeClient(string connectionString, string topicName, string subscriptionName, int connectionAttempts = 8) : MessageBusStandaloneSubscribeClient(connectionString, topicName, subscriptionName), IMessageBusStandaloneConsumer, IServiceBusClient
     {
-        private readonly ServiceBusClient _client;
-        private readonly string _topicName;
-        private readonly string _subscriptionName;
+        private readonly ServiceBusClient _client = ServiceBusClientExtensions.CreateClient(connectionString, connectionAttempts);
+        private readonly string _topicName = topicName;
+        private readonly string _subscriptionName = subscriptionName;
         private ServiceBusProcessor _processor;
-
-        public ServiceBusStandaloneSubscribeClient(string connectionString, string topicName, string subscriptionName, int connectionAttempts = 8) : base(connectionString, topicName, subscriptionName)
-        {
-            _topicName = topicName;
-            _subscriptionName = subscriptionName;
-            _client = ServiceBusClientExtensions.CreateClient(connectionString, connectionAttempts);
-        }
 
         public void RegisterHandler(Func<ReceivedMessage, MessageReceivedStatus> handler, Action<Exception> errorHandler, Action onIdle = null, bool autoComplete = false)
         {
@@ -53,8 +46,8 @@ namespace Up4All.Framework.MessageBus.ServiceBus
 
         public void Close()
         {
-            if (_processor != null) _processor.CloseAsync().Wait();
-            if (_client != null) _client.DisposeAsync();
+            _processor?.CloseAsync().Wait();
+            _client?.DisposeAsync();
         }
 
         protected override void Dispose(bool disposing)
@@ -63,19 +56,12 @@ namespace Up4All.Framework.MessageBus.ServiceBus
         }
     }
 
-    public class ServiceBusStandaloneSubscribeAsyncClient : MessageBusStandaloneSubscribeClient, IMessageBusStandaloneAsyncConsumer, IServiceBusClient
+    public class ServiceBusStandaloneSubscribeAsyncClient(string connectionString, string topicName, string subscriptionName, int connectionAttempts = 8) : MessageBusStandaloneSubscribeClient(connectionString, topicName, subscriptionName), IMessageBusStandaloneAsyncConsumer, IServiceBusClient
     {
-        private readonly ServiceBusClient _client;
-        private readonly string _topicName;
-        private readonly string _subscriptionName;
+        private readonly ServiceBusClient _client = ServiceBusClientExtensions.CreateClient(connectionString, connectionAttempts);
+        private readonly string _topicName = topicName;
+        private readonly string _subscriptionName = subscriptionName;
         private ServiceBusProcessor _processor;
-
-        public ServiceBusStandaloneSubscribeAsyncClient(string connectionString, string topicName, string subscriptionName, int connectionAttempts = 8) : base(connectionString, topicName, subscriptionName)
-        {
-            _topicName = topicName;
-            _subscriptionName = subscriptionName;
-            _client = ServiceBusClientExtensions.CreateClient(connectionString, connectionAttempts);
-        }
 
         public async Task RegisterHandlerAsync(Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
         {

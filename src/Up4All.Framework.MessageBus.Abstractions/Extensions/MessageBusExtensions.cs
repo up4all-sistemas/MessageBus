@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -90,7 +91,13 @@ namespace Up4All.Framework.MessageBus.Abstractions.Extensions
         public static bool TryGetUserPropertyAsDateTime(this MessageBusMessage message, string userPropertyKey, out DateTime value)
         {
             value = default;
-            return message.TryGetUserPropertyAsString(userPropertyKey, out var valueStr) && DateTime.TryParse(valueStr, out value);
+            return message.TryGetUserPropertyAsString(userPropertyKey, out var valueStr) && DateTime.TryParse(valueStr, CultureInfo.InvariantCulture, DateTimeStyles.None, out value);
+        }
+
+        public static bool TryGetUserPropertyAsDateTime(this MessageBusMessage message, IFormatProvider formatProvider, DateTimeStyles dateTimeStyles, string userPropertyKey, out DateTime value)
+        {
+            value = default;
+            return message.TryGetUserPropertyAsString(userPropertyKey, out var valueStr) && DateTime.TryParse(valueStr, formatProvider, dateTimeStyles, out value);
         }
 
         public static bool TryGetUserPropertyAs<T>(this MessageBusMessage message, string userPropertyKey, out T value) where T : class
