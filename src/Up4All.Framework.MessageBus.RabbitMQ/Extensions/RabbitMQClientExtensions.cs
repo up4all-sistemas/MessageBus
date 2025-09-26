@@ -13,7 +13,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Threading.Channels;
 
+using Up4All.Framework.MessageBus.Abstractions.Enums;
 using Up4All.Framework.MessageBus.Abstractions.Extensions;
 using Up4All.Framework.MessageBus.Abstractions.Messages;
 using Up4All.Framework.MessageBus.Abstractions.Options;
@@ -220,6 +222,30 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             activity.SetTag("messaging.system", "rabbitmq");
             activity.SetTag("messaging.destination", exchangeName);
             activity.SetTag("messaging.rabbitmq.routing_key", routingKey);
+        }
+
+        public static void ProcessMessage(this IModel channel, ulong deliveryTag, MessageReceivedStatus status, bool autoComplete)
+        {
+            if (!autoComplete && status == MessageReceivedStatus.Deadletter)
+            {
+                channel.BasicNack(deliveryTag, false, false);
+                return;
+            }
+
+            if (!autoComplete && status == MessageReceivedStatus.Abandoned)
+            {
+                channel.BasicReject(deliveryTag, true);
+                return;
+            }
+
+            if (!autoComplete)
+                channel.BasicAck(deliveryTag, false);
+        }
+
+        public static void ProcessErrorMessage(this IModel _channel, ulong deliveryTag, bool autoComplete)
+        {
+            if (!autoComplete)
+                _channel.BasicNack(deliveryTag, false, false);
         }
     }
 }

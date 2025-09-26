@@ -1,6 +1,8 @@
 ﻿using RabbitMQ.Client;
 
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 using Up4All.Framework.MessageBus.Abstractions.Messages;
@@ -23,6 +25,14 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             properties.Headers = new Dictionary<string, object>();
             foreach (var prop in message.UserProperties)
                 properties.Headers.Add(prop);
+        }
+
+        internal static ReceivedMessage CreateReceivedMessage(this ReadOnlyMemory<byte> body, IDictionary<string, object> properties)
+        {
+            var message = new ReceivedMessage();
+            message.AddBody(BinaryData.FromBytes(body), true);
+            message.PopulateUserProperties(properties);
+            return message;
         }
     }
 }
