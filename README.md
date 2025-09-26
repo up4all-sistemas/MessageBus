@@ -70,8 +70,11 @@ Add the following code to your Dependency Injection:
 		{
 			_messageBusQueueConsumer.RegisterHandler((ReceivedMessage message) => {
 				return MessageReceivedStatus.Completed; //or MessageReceivedStatus.Abandoned based on your logic
-			}, (Exception ex) => { //do something with exception }, () => { //Do something in idle }, autoComplete: false);
-			
+			}, (Exception ex) => { 
+				//do something with exception 
+			}, () => { 
+				//Do something in idle 
+			}, autoComplete: false);			
 		}
 	}
 ````
