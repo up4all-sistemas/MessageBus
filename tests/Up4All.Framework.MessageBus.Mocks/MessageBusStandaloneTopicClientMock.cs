@@ -1,8 +1,4 @@
-﻿
-using System.Collections.Generic;
-
-using Up4All.Framework.MessageBus.Abstractions.Interfaces;
-using Up4All.Framework.MessageBus.Abstractions.Messages;
+﻿using Up4All.Framework.MessageBus.Abstractions.Interfaces;
 
 namespace Up4All.Framework.MessageBus.Mocks
 {
@@ -11,9 +7,5 @@ namespace Up4All.Framework.MessageBus.Mocks
         protected MessageBusStandaloneTopicClientMock() : base()
         {
         }
-        public abstract void Send(MessageBusMessage message);
-        public abstract void Send(IEnumerable<MessageBusMessage> messages);
-        public abstract void Send<TModel>(TModel model);
-        public abstract void SendMany<TModel>(IEnumerable<TModel> models);
     }
 }
