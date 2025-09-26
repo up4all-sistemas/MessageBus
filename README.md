@@ -15,25 +15,66 @@ Up4All.MessageBus is a .NET library designed to facilitate message-based communi
 
 To install Up4All.MessageBus with RabbitMQ or Azure Service Bus support, use the following NuGet commands:
 
+#### Abstractions
+
+```bash
+dotnet add package Up4All.MessageBus.Abstractions --version <latest-version>
+```
+
 #### RabbitMQ
 
-````````
-````````markdown
+```bash
+dotnet add package Up4All.MessageBus.RabbitMQ --version <latest-version>
+```
 
 #### Azure Service Bus
 
-````````
-````````markdown
+```bash
+dotnet add package Up4All.MessageBus.ServiceBus --version <latest-version>
+```
 
 Replace `<latest-version>` with the desired version number.
 
-Add the package to your project using NuGet: 
-````````
-````````markdown
-### Usage Example
+### Get Started
 
-````````
-````````markdown
+Add the following code to your Dependency Injection:
+
+````json
+{
+  "MessageBusOptions": {
+	"ConnectionString": "<Your_Connection_String>",
+	"QueueName": "<Your Azure ServiceBus Queue Name or RabbitMQ Queue Name>"
+  }
+}
+````
+
+````csharp
+    //For ServiceBus Queue Consumers
+	builder.Services.AddMessageBusQueueClient<ServiceBusQueueClient>(builder.Configuration);
+
+	//For RabbitMQ Queue Consumers
+	builder.Services.AddMessageBusQueueClient<RabbitMQQueueClient>(builder.Configuration);
+
+
+	In your consumer class, implement the IMessageBusQueueConsumer interface:
+	public class YourConsumerClass
+	{
+		private readonly IMessageBusQueueConsumer _messageBusQueueConsumer;
+
+		public YourConsumerClass(IMessageBusQueueConsumer messageBusQueueConsumer)
+		{
+			_messageBusQueueConsumer = messageBusQueueConsumer;
+		}
+
+		public void StartConsuming()
+		{
+			_messageBusQueueConsumer.RegisterHandler((ReceivedMessage message) => {
+				return MessageReceivedStatus.Completed; //or MessageReceivedStatus.Abandoned based on your logic
+			}, (Exception ex) => { //do something with exception }, () => { //Do something in idle }, autoComplete: false);
+			
+		}
+	}
+````
 
 ## Target Frameworks
 
