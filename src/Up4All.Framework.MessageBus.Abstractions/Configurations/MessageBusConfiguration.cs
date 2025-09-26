@@ -78,14 +78,14 @@ namespace Up4All.Framework.MessageBus.Abstractions.Configurations
             services.AddSingleton<IMessageBusStandalonePublisher>(instance);
         }
 
-        public static void AddStandaloneTopicAsyncClient(this IServiceCollection services, Func<IServiceProvider, IMessageBusStandalonePublisherAsync> instance)
-        {
-            services.AddSingleton(instance);
-        }
-
         public static void AddStandaloneTopicClient(this IServiceCollection services, Func<IServiceProvider, IMessageBusStandaloneConsumer> instance)
         {
             services.AddSingleton<IMessageBusStandaloneConsumer>(instance);
+        }
+
+        public static void AddStandaloneTopicAsyncClient(this IServiceCollection services, Func<IServiceProvider, IMessageBusStandalonePublisherAsync> instance)
+        {
+            services.AddSingleton(instance);
         }
 
         public static void AddMessageBusNamedQueueClient(this IServiceCollection services, IConfiguration configuration, string key, Func<IServiceProvider, MessageBusOptions, IMessageBusStandaloneQueueClient> createInstance)

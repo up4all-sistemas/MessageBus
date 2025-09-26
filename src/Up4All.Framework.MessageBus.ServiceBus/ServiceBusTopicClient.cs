@@ -4,17 +4,11 @@ using Up4All.Framework.MessageBus.Abstractions.Options;
 
 namespace Up4All.Framework.MessageBus.ServiceBus
 {
-    public class ServiceBusTopicClient : ServiceBusStandaloneTopicClient
+    public class ServiceBusTopicClient(IOptions<MessageBusOptions> messageOptions) : ServiceBusStandaloneTopicClient(messageOptions.Value.ConnectionString, messageOptions.Value.TopicName)
     {
-        public ServiceBusTopicClient(IOptions<MessageBusOptions> messageOptions) : base(messageOptions.Value.ConnectionString, messageOptions.Value.TopicName)
-        {
-        }
     }
 
-    public class ServiceBusTopicAsyncClient : ServiceBusStandaloneTopicAsyncClient
+    public class ServiceBusTopicAsyncClient(IOptions<MessageBusOptions> messageOptions) : ServiceBusStandaloneTopicAsyncClient(messageOptions.Value.ConnectionString, messageOptions.Value.TopicName)
     {
-        public ServiceBusTopicAsyncClient(IOptions<MessageBusOptions> messageOptions) : base(messageOptions.Value.ConnectionString, messageOptions.Value.TopicName)
-        {
-        }
     }
 }

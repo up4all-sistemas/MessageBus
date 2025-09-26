@@ -7,14 +7,9 @@ using Up4All.Framework.MessageBus.Abstractions.Interfaces;
 
 namespace Up4All.Framework.MessageBus.Abstractions.Factories
 {
-    public class MessageBusFactory
+    public class MessageBusFactory(IServiceProvider provider)
     {
-        private readonly IServiceProvider _provider;
-
-        public MessageBusFactory(IServiceProvider provider)
-        {
-            _provider = provider;
-        }
+        private readonly IServiceProvider _provider = provider;
 
         public IMessageBusStandaloneQueueClient GetQueueClient(string key)
         {

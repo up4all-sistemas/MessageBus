@@ -11,9 +11,6 @@ namespace Up4All.Framework.MessageBus.Mocks
         protected MessageBusStandaloneTopicClientMock() : base()
         {
         }
-
-        public string TopicName => string.Empty;
-
         public abstract void Send(MessageBusMessage message);
         public abstract void Send(IEnumerable<MessageBusMessage> messages);
         public abstract void Send<TModel>(TModel model);

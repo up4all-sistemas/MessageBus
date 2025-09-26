@@ -4,13 +4,8 @@ using Up4All.Framework.MessageBus.Abstractions.Options;
 
 namespace Up4All.Framework.MessageBus.Abstractions
 {
-    public abstract class MessageBusStreamClient : MessageBusClientBase
+    public abstract class MessageBusStreamClient(IOptions<MessageBusOptions> messageBusOptions, object offset) : MessageBusClientBase(messageBusOptions)
     {
-        protected readonly object Offset;
-
-        protected MessageBusStreamClient(IOptions<MessageBusOptions> messageBusOptions, object offset) : base(messageBusOptions)
-        {
-            this.Offset = offset;
-        }
+        protected readonly object Offset = offset;
     }
 }

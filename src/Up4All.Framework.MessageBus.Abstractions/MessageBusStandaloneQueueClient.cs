@@ -1,16 +1,9 @@
 ﻿namespace Up4All.Framework.MessageBus.Abstractions
 {
-    public abstract class MessageBusStandaloneQueueClient : MessageBusStandaloneClientBase
+    public abstract class MessageBusStandaloneQueueClient(string connectionString, string queueName) : MessageBusStandaloneClientBase
     {
-        protected string ConnectionString { get; private set; }
-        public string QueueName { get; private set; }
-        public string TopicName => string.Empty;
-
-        protected MessageBusStandaloneQueueClient(string connectionString, string queueName)
-        {
-            ConnectionString = connectionString;
-            QueueName = queueName;
-        }
-
+        protected string ConnectionString { get; private set; } = connectionString;
+        public string QueueName { get; private set; } = queueName;
+        public string TopicName { get; } = string.Empty;
     }
 }
