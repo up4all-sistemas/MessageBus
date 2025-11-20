@@ -4,6 +4,10 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Moq" Version="4.20.72" />
+  </ItemGroup>
   
   <ItemGroup>
     <ProjectReference Include="..\..\src\Up4All.Framework.MessageBus.Abstractions\Up4All.Framework.MessageBus.Abstractions.csproj" />

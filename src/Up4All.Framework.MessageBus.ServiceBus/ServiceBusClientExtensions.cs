@@ -79,6 +79,10 @@ namespace Up4All.Framework.MessageBus.ServiceBus
 
         public static ServiceBusMessage PrepareMesssage(MessageBusMessage message)
         {
+            message.AddUserProperty("mb-timestamp", DateTime.UtcNow.ToString("o"));
+            message.AddUserProperty("mb-messagebus", "servicebus");
+            message.AddUserProperty("mb-id", Guid.NewGuid());
+
             var sbMessage = new ServiceBusMessage(message.Body);
             if (message.UserProperties.Any())
                 foreach (var prop in message.UserProperties)
@@ -97,6 +101,11 @@ namespace Up4All.Framework.MessageBus.ServiceBus
                 Body = BinaryData.FromString(JsonSerializer.Serialize(message.CreateMessagebusMessage(), new JsonSerializerOptions(JsonSerializerDefaults.Web))),
                 ContentType = "application/json"
             };
+
+            sbMessage.ApplicationProperties.Add("mb-timestamp", DateTime.UtcNow.ToString("o"));
+            sbMessage.ApplicationProperties.Add("mb-messagebus", "servicebus");
+            sbMessage.ApplicationProperties.Add("mb-id", Guid.NewGuid());
+
             return sbMessage;
         }
 

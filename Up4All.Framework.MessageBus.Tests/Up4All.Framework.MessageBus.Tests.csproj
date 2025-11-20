@@ -22,17 +22,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\src\Up4All.Framework.MessageBus.Abstractions\Up4All.Framework.MessageBus.Abstractions.csproj" />
-    <ProjectReference Include="..\src\Up4All.Framework.MessageBus.RabbitMQ\Up4All.Framework.MessageBus.RabbitMQ.csproj" />
+    <ProjectReference Include="..\tests\Up4All.Framework.MessageBus.Mocks\Up4All.Framework.MessageBus.Mocks.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Using Include="NUnit.Framework" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="appsettings.local.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 
 </Project>
