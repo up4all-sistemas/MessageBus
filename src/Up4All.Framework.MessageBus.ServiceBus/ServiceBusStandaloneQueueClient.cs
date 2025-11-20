@@ -46,7 +46,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus
 
         public void Send(IEnumerable<MessageBusMessage> messages)
         {
-            var sbMessages = messages.Select(x => ServiceBusClientExtensions.PrepareMesssage(x));
+            var sbMessages = messages.Select(ServiceBusClientExtensions.PrepareMesssage);
             _queueClient.SendMessagesAsync(sbMessages).Wait();
         }
 
@@ -104,7 +104,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus
 
         public async Task SendAsync(IEnumerable<MessageBusMessage> messages, CancellationToken cancellationToken = default)
         {
-            var sbMessages = messages.Select(x => ServiceBusClientExtensions.PrepareMesssage(x));
+            var sbMessages = messages.Select(ServiceBusClientExtensions.PrepareMesssage);
             await _queueClient.SendMessagesAsync(sbMessages, cancellationToken);
         }
 
@@ -115,7 +115,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus
 
         public async Task SendManyAsync<TModel>(IEnumerable<TModel> models, CancellationToken cancellationToken = default)
         {
-            var sbMessages = models.Select(x => ServiceBusClientExtensions.PrepareMesssage(x));
+            var sbMessages = models.Select(ServiceBusClientExtensions.PrepareMesssage);
             await _queueClient.SendMessagesAsync(sbMessages, cancellationToken);
         }
 
