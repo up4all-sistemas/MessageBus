@@ -81,7 +81,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus
         {
             message.AddUserProperty("mb-timestamp", DateTime.UtcNow.ToString("o"));
             message.AddUserProperty("mb-messagebus", "servicebus");
-            message.AddUserProperty("mb-id", Guid.NewGuid());
+            message.AddUserProperty("mb-id", Guid.NewGuid().ToString());
 
             var sbMessage = new ServiceBusMessage(message.Body);
             if (message.UserProperties.Any())
@@ -104,7 +104,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus
 
             sbMessage.ApplicationProperties.Add("mb-timestamp", DateTime.UtcNow.ToString("o"));
             sbMessage.ApplicationProperties.Add("mb-messagebus", "servicebus");
-            sbMessage.ApplicationProperties.Add("mb-id", Guid.NewGuid());
+            sbMessage.ApplicationProperties.Add("mb-id", Guid.NewGuid().ToString());
 
             return sbMessage;
         }
