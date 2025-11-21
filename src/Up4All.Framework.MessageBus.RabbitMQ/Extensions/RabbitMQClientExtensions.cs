@@ -74,7 +74,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
         {
             msg.AddUserProperty("mb-timestamp", DateTime.UtcNow.ToString("o"));
             msg.AddUserProperty("mb-messagebus", "rabbitmq");
-            msg.AddUserProperty("mb-id", Guid.NewGuid());
+            msg.AddUserProperty("mb-id", Guid.NewGuid().ToString());
 
             var activityName = $"message-send {topicName} {queueName}";
             var basicProps = channel.CreateBasicProperties();
