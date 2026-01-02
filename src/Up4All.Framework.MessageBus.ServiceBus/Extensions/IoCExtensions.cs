@@ -2,11 +2,54 @@
 using Microsoft.Extensions.DependencyInjection;
 
 using Up4All.Framework.MessageBus.Abstractions.Configurations;
+using Up4All.Framework.MessageBus.Abstractions.Interfaces;
 
 namespace Up4All.Framework.MessageBus.ServiceBus.Extensions
 {
     public static class IoCExtensions
     {
+        public static IServiceCollection AddServiceBusQueueClient(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.AddConfigurationBinder(configuration);
+            services.AddSingleton<IMessageBusQueueClient, ServiceBusQueueClient>();
+            return services;
+        }
+
+        public static IServiceCollection AddServiceBusQueueAsyncClient(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.AddConfigurationBinder(configuration);
+            services.AddSingleton<IMessageBusQueueAsyncClient, ServiceBusQueueAsyncClient>();
+            return services;
+        }
+
+        public static IServiceCollection AddServiceBusTopicClient(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.AddConfigurationBinder(configuration);
+            services.AddSingleton<IMessageBusPublisher, ServiceBusTopicClient>();
+            return services;
+        }
+
+        public static IServiceCollection AddServiceBusTopicAsyncClient(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.AddConfigurationBinder(configuration);
+            services.AddSingleton<IMessageBusPublisherAsync, ServiceBusTopicAsyncClient>();
+            return services;
+        }
+
+        public static IServiceCollection AddServiceBusSubscriptionClient(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.AddConfigurationBinder(configuration);
+            services.AddSingleton<IMessageBusConsumer, ServiceBusSubscribeClient>();
+            return services;
+        }
+
+        public static IServiceCollection AddServiceBusSubscriptionAsyncClient(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.AddConfigurationBinder(configuration);
+            services.AddSingleton<IMessageBusAsyncConsumer, ServiceBusSubscribeAsyncClient>();
+            return services;
+        }
+
         public static IServiceCollection AddServiceBusNamedQueueClient(this IServiceCollection services, string key, IConfiguration configuration)
         {
             services.AddMessageBusNamedQueueClient(configuration, key, (provider, opts) =>
