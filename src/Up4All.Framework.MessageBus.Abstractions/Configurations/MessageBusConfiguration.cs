@@ -13,26 +13,34 @@ namespace Up4All.Framework.MessageBus.Abstractions.Configurations
 {
     public static class MessageBusConfiguration
     {
-        public static void AddConfigurationBinder(this IServiceCollection services, IConfiguration configuration)
+        public static void AddMessageBusOptions(this IServiceCollection services, IConfiguration configuration, string configurationKey = "MessageBusOptions")
         {
-            services.Configure<MessageBusOptions>(config => configuration.GetSection("MessageBusOptions").Bind(config));
+            services.AddMessageBusOptions<MessageBusOptions>(configuration, configurationKey);
+        }
+
+        public static void AddMessageBusOptions<TOptions>(this IServiceCollection services, IConfiguration configuration, string configurationKey = "MessageBusOptions")
+            where TOptions : MessageBusOptions, new()
+        {
+            services.AddOptions<TOptions>()
+                .BindConfiguration(configurationKey)
+                .ValidateDataAnnotations();
         }
 
         private static void AddInstanceFactory(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddConfigurationBinder(configuration);
+            services.AddMessageBusOptions(configuration);
             services.AddSingleton<MessageBusFactory>();
         }
 
         public static void AddMessageBusQueueClient<T>(this IServiceCollection services, IConfiguration configuration) where T : class, IMessageBusQueueClient
         {
-            services.AddConfigurationBinder(configuration);
+            services.AddMessageBusOptions(configuration);
             services.AddSingleton<IMessageBusQueueClient, T>();
         }
 
         public static void AddMessageBusStreamClient<T>(this IServiceCollection services, IConfiguration configuration, Func<ILogger<T>, IOptions<MessageBusOptions>, T> builder) where T : class, IMessageBusStreamClient
         {
-            services.AddConfigurationBinder(configuration);
+            services.AddMessageBusOptions(configuration);
             services.AddSingleton<IMessageBusStreamClient, T>(provider =>
             {
                 var logger = provider.GetRequiredService<ILogger<T>>();
@@ -43,13 +51,13 @@ namespace Up4All.Framework.MessageBus.Abstractions.Configurations
 
         public static void AddMessageBusTopicClient<T>(this IServiceCollection services, IConfiguration configuration) where T : class, IMessageBusPublisher
         {
-            services.AddConfigurationBinder(configuration);
+            services.AddMessageBusOptions(configuration);
             services.AddSingleton<IMessageBusPublisher, T>();
         }
 
         public static void AddMessageBusSubscribeClient<T>(this IServiceCollection services, IConfiguration configuration) where T : class, IMessageBusConsumer
         {
-            services.AddConfigurationBinder(configuration);
+            services.AddMessageBusOptions(configuration);
             services.AddSingleton<IMessageBusConsumer, T>();
         }
 
