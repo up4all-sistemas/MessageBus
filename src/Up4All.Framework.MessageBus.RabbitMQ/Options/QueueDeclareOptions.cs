@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Up4All.Framework.MessageBus.RabbitMQ.Enums;
 
@@ -34,6 +35,20 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Options
             Bindings.Add(binding);
         }
 
+        public static implicit operator QueueDeclareOptions(ProvisioningOptions opts)
+        {
+            if (opts is null) return null;
+
+            return new QueueDeclareOptions
+            {
+                Exclusive = opts.Exclusive,
+                Durable = opts.Durable,
+                AutoDelete = opts.AutoDelete,
+                Args = opts.Args,
+                Bindings = [.. opts.Bindings.Select(x => (QueueBindOptions)x)]
+            };
+        }
+
     }
 
     public class QueueBindOptions
@@ -54,6 +69,15 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Options
         {
             RoutingKey = routingkey;
             Args.Add(defaultArgKey, defaultArgValue);
+        }
+
+        public static implicit operator QueueBindOptions(ProvisioningBindingOptions opts)
+        {
+            return new QueueBindOptions(opts.ExchangeName)
+            {
+                RoutingKey = opts.RoutingKey,
+                Args = opts.Args
+            };
         }
     }
 }

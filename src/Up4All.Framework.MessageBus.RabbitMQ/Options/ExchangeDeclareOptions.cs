@@ -14,5 +14,17 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Options
         {
             Durable = true;
         }
+
+        public static implicit operator ExchangeDeclareOptions(ProvisioningOptions opts)
+        {
+            if (opts is null) return null;
+
+            return new ExchangeDeclareOptions()
+            {
+                Durable = opts.Durable,
+                AutoDelete = opts.AutoDelete,
+                Args = opts.Args
+            };
+        }
     }
 }
