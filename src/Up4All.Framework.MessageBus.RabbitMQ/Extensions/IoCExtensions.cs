@@ -44,10 +44,6 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             services.AddSingleton<IMessageBusQueueAsyncClient, RabbitMQQueueAsyncClient>(provider =>
             {
                 var options = provider.GetRequiredService<IOptions<MessageBusOptions>>();
-
-                var declareOpts = RabbitMQConsts.DefaultQueueDeclareOptions;
-                //configureDeclareOpts?.Invoke(declareOpts);
-
                 return new RabbitMQQueueAsyncClient(options, ConfigureDeclareOpts(options.Value, configureDeclareOpts));
             });
 
@@ -482,7 +478,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             if (configureDeclareOpts == null)
                 return null;
 
-            var declareOpts = new StreamDeclareOptions();
+            var declareOpts = RabbitMQConsts.DefaultStreamDeclareOptions;
             configureDeclareOpts(provider, options, declareOpts);
             return declareOpts;
         }
@@ -502,7 +498,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             if (configureDeclareOpts == null)
                 return null;
 
-            var declareOpts = new StreamDeclareOptions();
+            var declareOpts = RabbitMQConsts.DefaultStreamDeclareOptions;
             configureDeclareOpts(options, declareOpts);
             return declareOpts;
         }
@@ -522,7 +518,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             if (configureDeclareOpts == null)
                 return null;
 
-            var declareOpts = new QueueDeclareOptions();
+            var declareOpts = RabbitMQConsts.DefaultQueueDeclareOptions;
             configureDeclareOpts(provider, options, declareOpts);
             return declareOpts;
         }
@@ -542,7 +538,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             if (configureDeclareOpts == null)
                 return null;
 
-            var declareOpts = new QueueDeclareOptions();
+            var declareOpts = RabbitMQConsts.DefaultQueueDeclareOptions;
             configureDeclareOpts(options, declareOpts);
             return declareOpts;
         }
