@@ -46,7 +46,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus
                 .ExecuteAndCapture(() =>
                 {
                     logger.LogDebug("Creating connection to ServiceBus server");
-                    var client = new ServiceBusClient(connectionString);
+                    var client = new ServiceBusClient(connectionString, new ServiceBusClientOptions { Identifier = $"up4-{Environment.MachineName.ToLower()}" });
                     var queueClient = client.CreateSender(entityName);
                     return (client, queueClient);
                 });
@@ -68,7 +68,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus
                 })
                 .ExecuteAndCapture(() =>
                 {
-                    return new ServiceBusClient(connectionString);
+                    return new ServiceBusClient(connectionString, new ServiceBusClientOptions { Identifier = $"up4-{Environment.MachineName.ToLower()}" });
                 });
 
             if (result.Outcome == OutcomeType.Successful)

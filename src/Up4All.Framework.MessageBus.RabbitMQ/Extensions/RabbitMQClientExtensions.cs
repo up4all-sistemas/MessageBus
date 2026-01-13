@@ -37,7 +37,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             var args = new Dictionary<string, object> { };
             if (offset != null) args.Add(Arguments.StreamOffsetKey, offset);
 
-            client.Channel.BasicConsume(queue: queueName, autoAck: autoComplete, consumer: receiver, arguments: args);
+            client.Channel.BasicConsume(receiver, queueName, autoAck: autoComplete, arguments: args, consumerTag: $"up4-{Environment.MachineName.ToLower()}");
         }
 
         public static void ConfigureAsyncHandler<TModel>(this IRabbitMQClient client, string queueName, AsyncQueueMessageReceiverForModel<TModel> receiver, bool autoComplete, object offset = null)
@@ -47,7 +47,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             var args = new Dictionary<string, object> { };
             if (offset != null) args.Add(Arguments.StreamOffsetKey, offset);
 
-            client.Channel.BasicConsume(queue: queueName, autoAck: autoComplete, consumer: receiver, arguments: args);
+            client.Channel.BasicConsume(receiver, queueName, autoAck: autoComplete, arguments: args, consumerTag: $"up4-{Environment.MachineName.ToLower()}");
         }
 
         public static void ConfigureHandler(this IRabbitMQClient client, string queueName, QueueMessageReceiver receiver, bool autoComplete, object offset = null)
@@ -57,7 +57,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             var args = new Dictionary<string, object> { };
             if (offset != null) args.Add(Arguments.StreamOffsetKey, offset);
 
-            client.Channel.BasicConsume(queue: queueName, autoAck: autoComplete, consumer: receiver, arguments: args);
+            client.Channel.BasicConsume(receiver, queueName, autoAck: autoComplete, arguments: args, consumerTag: $"up4-{Environment.MachineName.ToLower()}");
         }
 
         public static void ConfigureHandler<TModel>(this IRabbitMQClient client, string queueName, QueueMessageReceiverForModel<TModel> receiver, bool autoComplete, object offset = null)
@@ -67,7 +67,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             var args = new Dictionary<string, object> { };
             if (offset != null) args.Add(Arguments.StreamOffsetKey, offset);
 
-            client.Channel.BasicConsume(queue: queueName, autoAck: autoComplete, consumer: receiver, arguments: args);
+            client.Channel.BasicConsume(receiver, queueName, autoAck: autoComplete, arguments: args, consumerTag: $"up4-{Environment.MachineName.ToLower()}");
         }
 
         public static void SendMessage(this IModel channel, string topicName, string queueName, MessageBusMessage msg)
