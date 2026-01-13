@@ -50,6 +50,20 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             return services;
         }
 
+        public static IServiceCollection AddRabbitMQQueueAsyncClient(this IServiceCollection services, IConfiguration configuration
+            , Action<IServiceProvider, MessageBusOptions, QueueDeclareOptions> configureDeclareOpts = null)
+        {
+            services.AddConfigurationBinder(configuration);
+
+            services.AddSingleton<IMessageBusQueueAsyncClient, RabbitMQQueueAsyncClient>(provider =>
+            {
+                var options = provider.GetRequiredService<IOptions<MessageBusOptions>>();
+                return new RabbitMQQueueAsyncClient(options, ConfigureDeclareOpts(provider, options.Value, configureDeclareOpts));
+            });
+
+            return services;
+        }
+
         public static IServiceCollection AddRabbitMQStreamClient(this IServiceCollection services, IConfiguration configuration, object offset
             , Action<MessageBusOptions, StreamDeclareOptions> configureDeclareOpts = null)
         {
@@ -86,6 +100,20 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             return services;
         }
 
+        public static IServiceCollection AddRabbitMQStreamAsyncClient(this IServiceCollection services, IConfiguration configuration, object offset
+            , Action<IServiceProvider, MessageBusOptions, StreamDeclareOptions> configureDeclareOpts = null)
+        {
+            services.AddConfigurationBinder(configuration);
+
+            services.AddSingleton<IMessageBusStreamAsyncClient, RabbitMQStreamAsyncClient>(provider =>
+            {
+                var options = provider.GetRequiredService<IOptions<MessageBusOptions>>();                
+                return new RabbitMQStreamAsyncClient(options, offset, ConfigureDeclareOpts(provider, options.Value, configureDeclareOpts));
+            });
+
+            return services;
+        }
+
         public static IServiceCollection AddRabbitMQTopicClient(this IServiceCollection services, IConfiguration configuration, string type = ExchangeType.Direct
             , Action<MessageBusOptions, ExchangeDeclareOptions> configureDeclareOpts = null)
         {
@@ -115,6 +143,20 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
                 var declareOpts = RabbitMQConsts.DefaultExchangeDeclareOptions;
                 //configureDeclareOpts?.Invoke(declareOpts);
                 return new RabbitMQTopicAsyncClient(options, type, ConfigureDeclareOpts(options.Value, configureDeclareOpts));
+            });
+
+            return services;
+        }
+
+        public static IServiceCollection AddRabbitMQTopicAsyncClient(this IServiceCollection services, IConfiguration configuration, string type = ExchangeType.Direct
+            , Action<IServiceProvider, MessageBusOptions, ExchangeDeclareOptions> configureDeclareOpts = null)
+        {
+            services.AddConfigurationBinder(configuration);
+
+            services.AddSingleton<IMessageBusPublisherAsync, RabbitMQTopicAsyncClient>(provider =>
+            {
+                var options = provider.GetRequiredService<IOptions<MessageBusOptions>>();
+                return new RabbitMQTopicAsyncClient(options, type, ConfigureDeclareOpts(provider, options.Value, configureDeclareOpts));
             });
 
             return services;
