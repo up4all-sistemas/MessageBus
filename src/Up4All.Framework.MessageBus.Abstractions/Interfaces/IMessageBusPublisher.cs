@@ -6,19 +6,6 @@ using Up4All.Framework.MessageBus.Abstractions.Messages;
 
 namespace Up4All.Framework.MessageBus.Abstractions.Interfaces
 {
-    public interface IMessageBusPublisher
-    {
-        string TopicName { get; }
-
-        void Send<TModel>(TModel model);
-
-        void Send(MessageBusMessage message);
-
-        void Send(IEnumerable<MessageBusMessage> messages);
-
-        void SendMany<TModel>(IEnumerable<TModel> models);
-    }
-
     public interface IMessageBusPublisherAsync
     {
         string TopicName { get; }

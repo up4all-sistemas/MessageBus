@@ -2,9 +2,10 @@
 
 namespace Up4All.Framework.MessageBus.Mocks
 {
-    public abstract class MessageBusStandaloneSubscribeClientMock : MessageBusClientBaseMock, IMessageBusStandaloneConsumer
+
+    public abstract class MessageBusStandaloneSubscriptionAsyncClientMock : MessageBusAsyncClientBaseMock, IMessageBusStandaloneAsyncConsumer
     {
-        protected MessageBusStandaloneSubscribeClientMock() : base()
+        protected MessageBusStandaloneSubscriptionAsyncClientMock() : base()
         {
         }
     }

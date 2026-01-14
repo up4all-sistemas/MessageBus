@@ -7,17 +7,6 @@ using Up4All.Framework.MessageBus.Abstractions.Messages;
 
 namespace Up4All.Framework.MessageBus.Abstractions.Interfaces
 {
-    public interface IMessageBusConsumer
-    {
-        public string QueueName { get; }
-
-        void RegisterHandler(Func<ReceivedMessage, MessageReceivedStatus> handler, Action<Exception> errorHandler, Action onIdle = null, bool autoComplete = false);
-
-        void RegisterHandler<TModel>(Func<TModel, MessageReceivedStatus> handler, Action<Exception> errorHandler, Action onIdle = null, bool autoComplete = false);
-
-        void Close();
-    }
-
     public interface IMessageBusAsyncConsumer
     {
         public string QueueName { get; }
@@ -26,6 +15,6 @@ namespace Up4All.Framework.MessageBus.Abstractions.Interfaces
 
         Task RegisterHandlerAsync<TModel>(Func<TModel, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default);
 
-        Task Close();
+        Task CloseAsync(CancellationToken cancellationToken = default);
     }
 }

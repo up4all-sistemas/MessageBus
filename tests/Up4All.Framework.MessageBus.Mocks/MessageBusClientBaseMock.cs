@@ -45,6 +45,6 @@ namespace Up4All.Framework.MessageBus.Mocks
         public abstract Task SendAsync(IEnumerable<MessageBusMessage> messages, CancellationToken cancellationToken = default);
         public abstract Task SendAsync<TModel>(TModel model, CancellationToken cancellationToken = default);
         public abstract Task SendManyAsync<TModel>(IEnumerable<TModel> models, CancellationToken cancellationToken = default);
-        public abstract Task Close();
+        public abstract Task CloseAsync(CancellationToken cancellationToken = default);
     }
 }
