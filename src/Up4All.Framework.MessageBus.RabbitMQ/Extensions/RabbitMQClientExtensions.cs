@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-
-using OpenTelemetry;
+﻿using OpenTelemetry;
 using OpenTelemetry.Context.Propagation;
 
 using Polly;
@@ -13,12 +11,12 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
-using System.Threading.Channels;
+using System.Threading;
+using System.Threading.Tasks;
 
 using Up4All.Framework.MessageBus.Abstractions.Enums;
 using Up4All.Framework.MessageBus.Abstractions.Extensions;
 using Up4All.Framework.MessageBus.Abstractions.Messages;
-using Up4All.Framework.MessageBus.Abstractions.Options;
 using Up4All.Framework.MessageBus.RabbitMQ.Consumers;
 using Up4All.Framework.MessageBus.RabbitMQ.Enums;
 using Up4All.Framework.MessageBus.RabbitMQ.Options;
@@ -30,54 +28,37 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
         private static readonly ActivitySource activitySource = new(Consts.OpenTelemetrySourceName);
         private static readonly TextMapPropagator Propagator = Propagators.DefaultTextMapPropagator;
 
-        public static void ConfigureAsyncHandler(this IRabbitMQClient client, string queueName, AsyncQueueMessageReceiver receiver, bool autoComplete, object offset = null)
+        public static async Task ConfigureAsyncHandler(this IRabbitMQClient client, string queueName
+            , AsyncQueueMessageReceiver receiver, bool autoComplete, CancellationToken cancellationToken
+            , object offset = null)
         {
-            client.Channel.BasicQos(0, 1, false);
+            await client.Channel.BasicQosAsync(0, 1, false, cancellationToken: cancellationToken);
 
             var args = new Dictionary<string, object> { };
             if (offset != null) args.Add(Arguments.StreamOffsetKey, offset);
 
-            client.Channel.BasicConsume(receiver, queueName, autoAck: autoComplete, arguments: args, consumerTag: $"up4-{Environment.MachineName.ToLower()}");
+            await client.Channel.BasicConsumeAsync(queueName, autoComplete, $"up4-{Environment.MachineName.ToLower()}", args, receiver, cancellationToken);
         }
 
-        public static void ConfigureAsyncHandler<TModel>(this IRabbitMQClient client, string queueName, AsyncQueueMessageReceiverForModel<TModel> receiver, bool autoComplete, object offset = null)
+        public static async Task ConfigureAsyncHandler<TModel>(this IRabbitMQClient client, string queueName, AsyncQueueMessageReceiverForModel<TModel> receiver
+            , bool autoComplete, CancellationToken cancellationToken, object offset = null)
         {
-            client.Channel.BasicQos(0, 1, false);
+            await client.Channel.BasicQosAsync(0, 1, false, cancellationToken: cancellationToken);
 
             var args = new Dictionary<string, object> { };
             if (offset != null) args.Add(Arguments.StreamOffsetKey, offset);
 
-            client.Channel.BasicConsume(receiver, queueName, autoAck: autoComplete, arguments: args, consumerTag: $"up4-{Environment.MachineName.ToLower()}");
+            await client.Channel.BasicConsumeAsync(queueName, autoComplete, $"up4-{Environment.MachineName.ToLower()}", args, receiver, cancellationToken);
         }
 
-        public static void ConfigureHandler(this IRabbitMQClient client, string queueName, QueueMessageReceiver receiver, bool autoComplete, object offset = null)
-        {
-            client.Channel.BasicQos(0, 1, false);
-
-            var args = new Dictionary<string, object> { };
-            if (offset != null) args.Add(Arguments.StreamOffsetKey, offset);
-
-            client.Channel.BasicConsume(receiver, queueName, autoAck: autoComplete, arguments: args, consumerTag: $"up4-{Environment.MachineName.ToLower()}");
-        }
-
-        public static void ConfigureHandler<TModel>(this IRabbitMQClient client, string queueName, QueueMessageReceiverForModel<TModel> receiver, bool autoComplete, object offset = null)
-        {
-            client.Channel.BasicQos(0, 1, false);
-
-            var args = new Dictionary<string, object> { };
-            if (offset != null) args.Add(Arguments.StreamOffsetKey, offset);
-
-            client.Channel.BasicConsume(receiver, queueName, autoAck: autoComplete, arguments: args, consumerTag: $"up4-{Environment.MachineName.ToLower()}");
-        }
-
-        public static void SendMessage(this IModel channel, string topicName, string queueName, MessageBusMessage msg)
+        public static async Task SendMessageAsync(this IChannel channel, string topicName, string queueName, MessageBusMessage msg, bool mandatory = false, CancellationToken cancellationToken = default)
         {
             msg.AddUserProperty("mb-timestamp", DateTime.UtcNow.ToString("o"));
             msg.AddUserProperty("mb-messagebus", "rabbitmq");
             msg.AddUserProperty("mb-id", Guid.NewGuid().ToString());
 
             var activityName = $"message-send {topicName} {queueName}";
-            var basicProps = channel.CreateBasicProperties();
+            var basicProps = new BasicProperties();
             basicProps.PopulateHeaders(msg);
 
             using var activity = ProcessOpenTelemetryActivity(activityName, ActivityKind.Producer);
@@ -89,53 +70,22 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             InjectPropagationContext(activity, basicProps);
             AddTagsToActivity(activity, topicName, routingKey, msg.Body);
 
-            channel.BasicPublish(topicName, routingKey, basicProps, msg.Body);
-
+            await channel.BasicPublishAsync(topicName, routingKey, mandatory, basicProps, msg.Body, cancellationToken);
         }
 
-        public static IConnection GetConnection(this IRabbitMQClient client, MessageBusOptions opts, ILogger<IRabbitMQClient> logger)
+        public static async Task<IConnection> GetConnectionAsync(this IRabbitMQClient client, string connectionString, int connectionAttempts, CancellationToken cancellationToken)
         {
             if (client.Connection != null) return client.Connection;
 
             IConnection conn = null;
-            var result = Policy
+            var result = await Policy
                 .Handle<BrokerUnreachableException>()
-                .WaitAndRetry(opts.ConnectionAttempts, retryAttempt =>
-                {
-                    TimeSpan wait = TimeSpan.FromSeconds(Math.Pow(2, retryAttempt));
-                    logger.LogInformation("Failed to connect in RabbitMQ server, retrying in {Wait}", wait);
-                    return wait;
-                })
-                .ExecuteAndCapture(() =>
-                {
-                    logger.LogDebug("Trying to connect in RabbitMQ server");
-                    conn = new ConnectionFactory() { Uri = new Uri(opts.ConnectionString) }.CreateConnection();
-                });
-
-            if (result.Outcome != OutcomeType.Successful)
-                throw result.FinalException;
-
-            client.Connection = conn;
-            return conn;
-        }
-
-        public static IConnection GetConnection(this IRabbitMQClient client, string connectionString, int connectionAttempts, bool isAsyncConsumer = false)
-        {
-            if (client.Connection != null) return client.Connection;
-
-            IConnection conn = null;
-            var result = Policy
-                .Handle<BrokerUnreachableException>()
-                .WaitAndRetry(connectionAttempts, retryAttempt =>
-                {
-                    TimeSpan wait = TimeSpan.FromSeconds(Math.Pow(2, retryAttempt));
-                    return wait;
-                })
-                .ExecuteAndCapture(() =>
+                .WaitAndRetryAsync(connectionAttempts, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)))
+                .ExecuteAndCaptureAsync(async (c) =>
                 {
                     if (conn != null && conn.IsOpen) return;
-                    conn = new ConnectionFactory() { Uri = new Uri(connectionString), DispatchConsumersAsync = isAsyncConsumer }.CreateConnection();
-                });
+                    conn = await new ConnectionFactory() { Uri = new Uri(connectionString) }.CreateConnectionAsync(c);
+                }, cancellationToken);
 
             if (result.Outcome != OutcomeType.Successful)
                 throw result.FinalException;
@@ -144,35 +94,63 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             return conn;
         }
 
-        public static IModel CreateChannel(this IRabbitMQClient client)
+        public static async Task<IChannel> CreateChannelAsync(this IRabbitMQClient client, CancellationToken cancellationToken)
         {
-            var channel = client.Connection.CreateModel();
-            return channel;
+            if (client.Channel is not null) return client.Channel;
+            return await client.Connection.CreateChannelAsync(cancellationToken: cancellationToken);
         }
 
-        public static void ConfigureQueueDeclare(this IModel channel, string queueName, QueueDeclareOptions declareOpts)
+        public static async Task ConfigureQueueDeclareAsync(this IChannel channel, string queueName, QueueDeclareOptions declareOpts, CancellationToken cancellationToken)
         {
             if (declareOpts == null) return;
 
             if (!declareOpts.Args.ContainsKey("x-queue-type"))
                 declareOpts.Args.Add("x-queue-type", declareOpts.Type);
 
-            channel.QueueDeclare(queue: queueName, durable: declareOpts.Durable, exclusive: declareOpts.Exclusive, autoDelete: declareOpts.AutoDelete, arguments: declareOpts.Args);
+            await channel.QueueDeclareAsync(queue: queueName, durable: declareOpts.Durable, exclusive: declareOpts.Exclusive, autoDelete: declareOpts.AutoDelete
+                , arguments: declareOpts.Args, cancellationToken: cancellationToken);
 
             if (declareOpts.Bindings.Any())
                 foreach (var bind in declareOpts.Bindings)
-                    channel.QueueBind(queueName, bind.ExchangeName, bind.RoutingKey ?? "", bind.Args);
+                    await channel.QueueBindAsync(queueName, bind.ExchangeName, bind.RoutingKey ?? ""
+                        , bind.Args, cancellationToken: cancellationToken);
 
         }
 
-        public static string CreateActivityName(this IBasicConsumer consumer, string activityName, string exchangeName, string routingKey)
+        public static async Task ProcessMessageAsync(this IChannel channel, ulong deliveryTag, MessageReceivedStatus status, bool autoComplete, CancellationToken cancellationToken)
         {
-            return $"{activityName} {exchangeName} {routingKey} {consumer.Model.CurrentQueue}";
+            if (!autoComplete && status == MessageReceivedStatus.Deadletter)
+            {
+                await channel.BasicNackAsync(deliveryTag, false, false, cancellationToken);
+                return;
+            }
+
+            if (!autoComplete && status == MessageReceivedStatus.Abandoned)
+            {
+                await channel.BasicRejectAsync(deliveryTag, true, cancellationToken);
+                return;
+            }
+
+            if (!autoComplete)
+                await channel.BasicAckAsync(deliveryTag, false, cancellationToken);
         }
 
-        public static string CreateMessageReceivedActivityName(this IBasicConsumer consumer, string exchangeName, string routingKey)
+        public static async Task ProcessErrorMessageAsync(this IChannel _channel, ulong deliveryTag, bool autoComplete, CancellationToken cancellationToken)
         {
-            return consumer.CreateActivityName("message-received", exchangeName, routingKey);    
+            if (!autoComplete)
+                await _channel.BasicNackAsync(deliveryTag, false, false, cancellationToken);
+        }
+
+        #region Opentelemetry Extensions
+
+        public static string CreateActivityName(this IAsyncBasicConsumer consumer, string activityName, string exchangeName, string routingKey)
+        {
+            return $"{activityName} {exchangeName} {routingKey} {consumer.Channel.CurrentQueue}";
+        }
+
+        public static string CreateMessageReceivedActivityName(this IAsyncBasicConsumer consumer, string exchangeName, string routingKey)
+        {
+            return consumer.CreateActivityName("message-received", exchangeName, routingKey);
         }
 
         public static Activity ProcessOpenTelemetryActivity(string activityName, ActivityKind kind, ActivityContext parent = default)
@@ -181,14 +159,14 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             return activity;
         }
 
-        public static Activity CreateActivity(this IBasicProperties properties, string activityName, ActivityKind kind)
+        public static Activity CreateActivity(this IReadOnlyBasicProperties properties, string activityName, ActivityKind kind)
         {
             var parentContext = GetParentPropagationContext(properties);
             var activity = ProcessOpenTelemetryActivity(activityName, kind, parentContext.ActivityContext);
             return activity;
         }
 
-        public static Activity CreateMessageReceivedActivity(this IBasicConsumer consumer, IBasicProperties properties, string exchangeName, string routingKey)
+        public static Activity CreateMessageReceivedActivity(this IAsyncBasicConsumer consumer, IReadOnlyBasicProperties properties, string exchangeName, string routingKey)
         {
             var activityName = consumer.CreateMessageReceivedActivityName(exchangeName, routingKey);
             return properties.CreateActivity(activityName, ActivityKind.Consumer);
@@ -205,12 +183,12 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             });
         }
 
-        public static PropagationContext GetParentPropagationContext(IBasicProperties props)
+        public static PropagationContext GetParentPropagationContext(IReadOnlyBasicProperties props)
         {
             var parent = Propagator.Extract(default, props, (x, key) =>
             {
                 if (x.Headers.TryGetValue(key, out var value))
-                    return [ Encoding.UTF8.GetString((byte[])value) ];
+                    return [Encoding.UTF8.GetString((byte[])value)];
                 return [];
             });
             Baggage.Current = parent.Baggage;
@@ -228,28 +206,6 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             activity.SetTag("messaging.rabbitmq.routing_key", routingKey);
         }
 
-        public static void ProcessMessage(this IModel channel, ulong deliveryTag, MessageReceivedStatus status, bool autoComplete)
-        {
-            if (!autoComplete && status == MessageReceivedStatus.Deadletter)
-            {
-                channel.BasicNack(deliveryTag, false, false);
-                return;
-            }
-
-            if (!autoComplete && status == MessageReceivedStatus.Abandoned)
-            {
-                channel.BasicReject(deliveryTag, true);
-                return;
-            }
-
-            if (!autoComplete)
-                channel.BasicAck(deliveryTag, false);
-        }
-
-        public static void ProcessErrorMessage(this IModel _channel, ulong deliveryTag, bool autoComplete)
-        {
-            if (!autoComplete)
-                _channel.BasicNack(deliveryTag, false, false);
-        }
+        #endregion
     }
 }

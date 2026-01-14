@@ -103,7 +103,7 @@ namespace Up4All.Framework.MessageBus.Abstractions.Extensions
         public static bool TryGetUserPropertyAs<T>(this MessageBusMessage message, string userPropertyKey, out T value) where T : class
         {
             value = default;
-            if (message.TryGetUserPropertyAsString(userPropertyKey, out var valueStr)) 
+            if (message.TryGetUserPropertyAsString(userPropertyKey, out var valueStr))
             {
                 try
                 {

@@ -14,22 +14,11 @@ using System.Threading.Tasks;
 using Up4All.Framework.MessageBus.Abstractions.Enums;
 using Up4All.Framework.MessageBus.Abstractions.Extensions;
 using Up4All.Framework.MessageBus.Abstractions.Messages;
-using Up4All.Framework.MessageBus.Abstractions.Options;
 
 namespace Up4All.Framework.MessageBus.ServiceBus
 {
     public static class ServiceBusClientExtensions
     {
-
-        public static (ServiceBusClient, ServiceBusSender) CreateClient(MessageBusOptions opts, bool isTopicClient = false)
-        {
-            var entitypath = opts.QueueName;
-
-            if (isTopicClient)
-                entitypath = opts.TopicName;
-
-            return CreateClient(opts.ConnectionString, entitypath, opts.ConnectionAttempts);
-        }
 
         public static (ServiceBusClient, ServiceBusSender) CreateClient(string connectionString, string entityName, int attempts)
         {
@@ -117,79 +106,11 @@ namespace Up4All.Framework.MessageBus.ServiceBus
             return Task.CompletedTask;
         }
 
-        public static Task RegisterHandleMessageAsync<TModel>(this ServiceBusProcessor client, Func<TModel, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
-        {
-
-
-            client.ProcessMessageAsync += async (arg) => await ProcessMessageAsync(arg, handler, DefineIdleHandler(onIdle), autoComplete, cancellationToken);
-            client.ProcessErrorAsync += async (ex) => await ProcessOnError(ex.Exception, errorHandler, cancellationToken);
-
-            return Task.CompletedTask;
-        }
-
-        public static void RegisterHandleMessage(this ServiceBusProcessor client, Func<ReceivedMessage, MessageReceivedStatus> handler, Action<Exception> errorHandler, Action onIdle = null, bool autoComplete = false)
-        {
-            client.RegisterHandleMessageAsync((msg, token) =>
-            {
-                return Task.FromResult(handler(msg));
-            }, (ex, token) =>
-            {
-                errorHandler.Invoke(ex);
-                return Task.CompletedTask;
-            }, (token) =>
-            {
-                onIdle.Invoke();
-                return Task.CompletedTask;
-            }, autoComplete);
-        }
-
-        public static void RegisterHandleMessage<TModel>(this ServiceBusProcessor client, Func<TModel, MessageReceivedStatus> handler, Action<Exception> errorHandler, Action onIdle = null, bool autoComplete = false)
-        {
-            client.RegisterHandleMessageAsync((msg, token) =>
-            {
-                var model = msg.GetBody<TModel>();
-                return Task.FromResult(handler(model));
-            }, (ex, token) =>
-            {
-                errorHandler.Invoke(ex);
-                return Task.CompletedTask;
-            }, (token) =>
-            {
-                onIdle.Invoke();
-                return Task.CompletedTask;
-            }, autoComplete);
-        }
-
         private static ILogger<T> CreateLogger<T>()
         {
             return LoggerFactory
                     .Create(cfg => { })
                     .CreateLogger<T>();
-        }
-
-        private static async Task ProcessMessageAsync<TModel>(ProcessMessageEventArgs arg
-            , Func<TModel, CancellationToken, Task<MessageReceivedStatus>> handler
-            , Func<CancellationToken, Task> onIdle
-            , bool autoComplete
-            , CancellationToken cancellationToken)
-        {
-            if (cancellationToken.IsCancellationRequested)
-                await arg.AbandonMessageAsync(arg.Message, cancellationToken: cancellationToken);
-
-            var received = CreateMessage(arg);
-
-            try
-            {
-                var model = received.GetBody<TModel>();
-                await ProcessHandleResult(arg, await handler(model, cancellationToken), autoComplete, cancellationToken);
-            }
-            catch (Exception)
-            {
-                await arg.AbandonMessageAsync(arg.Message, cancellationToken: cancellationToken);
-                throw;
-            }
-
-            await onIdle.Invoke(cancellationToken);
         }
 
         private static async Task ProcessMessageAsync(ProcessMessageEventArgs arg
