@@ -84,6 +84,7 @@ Add the following code to your Dependency Injection:
 - .NET Standard 2.0
 - .NET Standard 2.1
 - .NET 8
+- .NET 10
 
 ## Contributing
 
