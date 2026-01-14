@@ -82,6 +82,12 @@ namespace Up4All.Framework.MessageBus.Abstractions.Extensions
             return message.TryGetUserPropertyAsString(userPropertyKey, out var valueStr) && int.TryParse(valueStr, out value);
         }
 
+        public static bool TryGetUserPropertyAsInt64(this MessageBusMessage message, string userPropertyKey, out long value)
+        {
+            value = default;
+            return message.TryGetUserPropertyAsString(userPropertyKey, out var valueStr) && long.TryParse(valueStr, out value);
+        }
+
         public static bool TryGetUserPropertyAsDecimal(this MessageBusMessage message, string userPropertyKey, out decimal value)
         {
             value = default;
@@ -115,6 +121,19 @@ namespace Up4All.Framework.MessageBus.Abstractions.Extensions
                     // Handle deserialization failure
                     return false;
                 }
+            }
+
+            return false;
+        }
+
+        public static bool TryGetUserProperty<T>(this MessageBusMessage message, string userPropertyKey, out T value) where T : struct
+        {
+            value = default;
+
+            if (message.UserProperties.TryGetValue(userPropertyKey, out var userPropertyValue))
+            {
+                value = (T)Convert.ChangeType(userPropertyValue, typeof(T));
+                return true;
             }
 
             return false;

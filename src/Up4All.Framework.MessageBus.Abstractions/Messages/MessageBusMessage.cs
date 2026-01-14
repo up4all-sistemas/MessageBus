@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Text.Json;
 
+using Up4All.Framework.MessageBus.Abstractions.Extensions;
 using Up4All.Framework.MessageBus.Abstractions.Interfaces;
 
 namespace Up4All.Framework.MessageBus.Abstractions.Messages
@@ -74,6 +75,52 @@ namespace Up4All.Framework.MessageBus.Abstractions.Messages
         {
             if (UserProperties.ContainsKey(key))
                 UserProperties.Remove(key);
+        }
+
+        public void SetMessageId<TMessageKey>(TMessageKey value, JsonSerializerOptions opts = null)
+            where TMessageKey : class
+        {
+            opts ??= new JsonSerializerOptions(JsonSerializerDefaults.Web) { DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault };
+            AddUserProperty("message-id", Encoding.UTF8.GetBytes(JsonSerializer.Serialize(value, opts)));
+        }
+
+        public void SetMessageIdFromStruct<TMessageKey>(TMessageKey value)
+            where TMessageKey : struct
+        {
+            AddUserProperty("message-id", value);
+        }
+
+        public void SetMessageId(int value)
+        {
+            AddUserProperty("message-id", value);
+        }
+
+        public void SetMessageId(long value)
+        {
+            AddUserProperty("message-id", value);
+        }
+
+        public void SetMessageId(Guid value)
+        {
+            AddUserProperty("message-id", value.ToString());
+        }
+
+        public TMessageKey GetMessageId<TMessageKey>()
+            where TMessageKey : class
+        {
+            if(this.TryGetUserPropertyAs<TMessageKey>("message-id", out var result))
+                return result;
+
+            return default;
+        }
+
+        public TMessageKey GetMessageIdForStruct<TMessageKey>()
+            where TMessageKey : struct
+        {
+            if (this.TryGetUserProperty<TMessageKey>("message-id", out var result))
+                return result;
+
+            return default;
         }
     }
 }

@@ -17,7 +17,7 @@ using Up4All.Framework.MessageBus.RabbitMQ.Options;
 
 namespace Up4All.Framework.MessageBus.RabbitMQ
 {
-    public class RabbitMQStandaloneStreamAsyncClient : MessageBusStandaloneStreamClient, IRabbitMQClient, IMessageBusStandaloneStreamAsyncClient
+    public class RabbitMQStandaloneStreamAsyncClient : MessageBusStandaloneStreamClient, IRabbitMQClient, IMessageBusStandaloneAsyncConsumer
     {
         private readonly string _streamname;
         private readonly StreamDeclareOptions _declareopts;
