@@ -56,8 +56,15 @@ namespace Up4All.Framework.MessageBus.Abstractions.Messages
         {
             if (UserProperties.ContainsKey(prop.Key) && !replace) return;
 
-            UserProperties.Remove(prop.Key);
-            UserProperties.Add(prop);
+            try
+            {
+                UserProperties.Remove(prop.Key);
+                UserProperties.Add(prop);
+            }
+            catch (Exception)
+            {
+                //ignored
+            }
         }
 
         public void AddUserProperty(string key, object value, bool replace = false)
