@@ -11,12 +11,13 @@ using Up4All.Framework.MessageBus.RabbitMQ.Extensions;
 
 namespace Up4All.Framework.MessageBus.RabbitMQ.Consumers
 {
-    public class AsyncQueueMessageReceiver(IChannel channel, Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, bool autocomplete)
+    public class AsyncQueueMessageReceiver(IChannel channel, Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> idleHandler, bool autocomplete)
         : AsyncEventingBasicConsumer(channel)
     {
         private readonly IChannel _channel = channel;
         private readonly Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatus>> _handler = handler;
         private readonly Func<Exception, CancellationToken, Task> _errorHandler = errorHandler;
+        private readonly Func<CancellationToken, Task> _idleHandler = idleHandler;
         private readonly bool _autoComplete = autocomplete;
 
         public override async Task HandleBasicDeliverAsync(string consumerTag, ulong deliveryTag, bool redelivered, string exchange, string routingKey, IReadOnlyBasicProperties properties, ReadOnlyMemory<byte> body, CancellationToken cancellationToken = default)
@@ -29,6 +30,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Consumers
                 RabbitMQClientExtensions.AddTagsToActivity(activity, exchange, routingKey, body.ToArray());
                 var response = await _handler(message, cancellationToken);
                 await _channel.ProcessMessageAsync(deliveryTag, response, _autoComplete, cancellationToken);
+                await _idleHandler?.Invoke(cancellationToken);
             }
             catch (Exception ex)
             {
@@ -38,12 +40,12 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Consumers
         }
     }
 
-    public class AsyncQueueMessageReceiverForModel<TModel>(IChannel channel, Func<TModel, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, bool autocomplete)
+    public class AsyncQueueMessageReceiverForModel<TModel>(IChannel channel, Func<TModel, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> idleHandler, bool autocomplete)
         : AsyncQueueMessageReceiver(channel, (msg, ct) =>
         {
             var model = msg.GetBody<TModel>();
             return handler(model, ct);
-        }, errorHandler, autocomplete)
+        }, errorHandler, idleHandler, autocomplete)
     {
     }
 }

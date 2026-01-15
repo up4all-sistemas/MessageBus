@@ -46,13 +46,13 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
         public async Task RegisterHandlerAsync(Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
         {
             await InitializeAsync(cancellationToken);
-            var receiver = new AsyncQueueMessageReceiver(Channel, handler, errorHandler, autoComplete);
+            var receiver = new AsyncQueueMessageReceiver(Channel, handler, errorHandler, onIdle, autoComplete);
             await this.ConfigureAsyncHandler(_streamname, receiver, false, cancellationToken, Offset);
         }
         public async Task RegisterHandlerAsync<TModel>(Func<TModel, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
         {
             await InitializeAsync(cancellationToken);
-            var receiver = new AsyncQueueMessageReceiverForModel<TModel>(Channel, handler, errorHandler, autoComplete);
+            var receiver = new AsyncQueueMessageReceiverForModel<TModel>(Channel, handler, errorHandler, onIdle, autoComplete);
             await this.ConfigureAsyncHandler(_streamname, receiver, false, cancellationToken, Offset);
 
         }
