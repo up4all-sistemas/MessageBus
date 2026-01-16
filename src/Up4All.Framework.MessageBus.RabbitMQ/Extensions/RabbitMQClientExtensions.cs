@@ -1,4 +1,6 @@
-﻿using OpenTelemetry;
+﻿using Microsoft.Extensions.Logging;
+
+using OpenTelemetry;
 using OpenTelemetry.Context.Propagation;
 
 using Polly;
@@ -51,8 +53,10 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             await client.Channel.BasicConsumeAsync(queueName, autoComplete, $"up4-{Environment.MachineName.ToLower()}", args, receiver, cancellationToken);
         }
 
-        public static async Task SendMessageAsync(this IChannel channel, string topicName, string queueName, MessageBusMessage msg, bool mandatory = false, CancellationToken cancellationToken = default)
+        public static async Task SendMessageAsync(this IChannel channel, ILogger logger, string topicName, string queueName, MessageBusMessage msg, bool mandatory = false, CancellationToken cancellationToken = default)
         {
+            logger.LogDebug("Sending message to {Target}", topicName ?? queueName);
+
             msg.AddUserProperty("mb-timestamp", DateTime.UtcNow.ToString("o"));
             msg.AddUserProperty("mb-messagebus", "rabbitmq");
             msg.AddUserProperty("mb-id", Guid.NewGuid().ToString());

@@ -1,4 +1,6 @@
-﻿using RabbitMQ.Client;
+﻿using Microsoft.Extensions.Logging;
+
+using RabbitMQ.Client;
 
 using System;
 using System.Collections.Generic;
@@ -17,21 +19,16 @@ using Up4All.Framework.MessageBus.RabbitMQ.Options;
 
 namespace Up4All.Framework.MessageBus.RabbitMQ
 {
-    public class RabbitMQStandaloneQueueAsyncClient : MessageBusStandaloneQueueClient, IRabbitMQClient, IMessageBusStandaloneQueueAsyncClient
+    public class RabbitMQStandaloneQueueAsyncClient(ILogger<RabbitMQStandaloneQueueAsyncClient> logger, string connectionString, string queuename, int connectionAttempts = 8
+            , QueueDeclareOptions declareOpts = null)
+        : MessageBusStandaloneQueueClient(connectionString, queuename, connectionAttempts), IRabbitMQClient, IMessageBusStandaloneQueueAsyncClient
     {
-        private readonly string _queuename;
-        private readonly QueueDeclareOptions _declareopts;
+        private readonly string _queuename = queuename;
+        private readonly QueueDeclareOptions _declareopts = declareOpts;
+        protected readonly ILogger<RabbitMQStandaloneQueueAsyncClient> _logger = logger;
 
         public IConnection Connection { get; set; }
         public IChannel Channel { get; private set; }
-
-        public RabbitMQStandaloneQueueAsyncClient(string connectionString, string queuename, int connectionAttempts = 8
-            , QueueDeclareOptions declareOpts = null)
-            : base(connectionString, queuename, connectionAttempts)
-        {
-            _queuename = queuename;
-            _declareopts = declareOpts;
-        }
 
         private async Task InitializeAsync(CancellationToken cancellationToken)
         {
@@ -45,13 +42,13 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
         public async Task RegisterHandlerAsync(Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
         {
             await InitializeAsync(cancellationToken);
-            var receiver = new AsyncQueueMessageReceiver(Channel, handler, errorHandler, onIdle, autoComplete);
+            var receiver = new AsyncQueueMessageReceiver(Channel, handler, errorHandler, onIdle, autoComplete, _logger);
             await this.ConfigureAsyncHandler(_queuename, receiver, autoComplete, cancellationToken);
         }
         public async Task RegisterHandlerAsync<TModel>(Func<TModel, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
         {
             await InitializeAsync(cancellationToken);
-            var receiver = new AsyncQueueMessageReceiverForModel<TModel>(Channel, handler, errorHandler, onIdle, autoComplete);
+            var receiver = new AsyncQueueMessageReceiverForModel<TModel>(Channel, handler, errorHandler, onIdle, autoComplete, _logger);
             await this.ConfigureAsyncHandler(_queuename, receiver, autoComplete, cancellationToken);
 
         }
@@ -63,7 +60,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
         public async Task SendAsync(MessageBusMessage message, CancellationToken cancellationToken = default)
         {
             await InitializeAsync(cancellationToken);
-            await Channel.SendMessageAsync("", _queuename, message, cancellationToken: cancellationToken);
+            await Channel.SendMessageAsync(_logger, "", _queuename, message, cancellationToken: cancellationToken);
 
         }
         public async Task SendAsync(IEnumerable<MessageBusMessage> messages, CancellationToken cancellationToken = default)
@@ -71,7 +68,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
             await InitializeAsync(cancellationToken);
             foreach (var message in messages)
             {
-                await Channel.SendMessageAsync("", _queuename, message, cancellationToken: cancellationToken);
+                await Channel.SendMessageAsync(_logger, "", _queuename, message, cancellationToken: cancellationToken);
             }
         }
         public async Task SendManyAsync<TModel>(IEnumerable<TModel> models, CancellationToken cancellationToken = default)

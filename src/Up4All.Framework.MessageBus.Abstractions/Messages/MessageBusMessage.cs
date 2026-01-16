@@ -59,7 +59,7 @@ namespace Up4All.Framework.MessageBus.Abstractions.Messages
             try
             {
                 UserProperties.Remove(prop.Key);
-                UserProperties.Add(prop);
+                UserProperties.Add(prop.Key, prop.Value);
             }
             catch (Exception)
             {

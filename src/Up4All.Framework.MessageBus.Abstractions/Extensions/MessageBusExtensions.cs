@@ -126,16 +126,27 @@ namespace Up4All.Framework.MessageBus.Abstractions.Extensions
             return false;
         }
 
-        public static bool TryGetUserProperty<T>(this MessageBusMessage message, string userPropertyKey, out T value) where T : struct
+        public static bool TryGetUserPropertyValue(this MessageBusMessage message, string userPropertyKey, out object value)
         {
             value = default;
 
             if (message.UserProperties.TryGetValue(userPropertyKey, out var userPropertyValue))
             {
-                value = (T)Convert.ChangeType(userPropertyValue, typeof(T));
+                value = userPropertyValue;
                 return true;
             }
 
+            return false;
+        }
+
+        public static bool TryGetUserProperty<T>(this MessageBusMessage message, string userPropertyKey, out T value) where T : struct
+        {
+            value = default;
+            if(TryGetUserPropertyValue(message, userPropertyKey, out var vlr))
+            {
+                value = (T)Convert.ChangeType(vlr, typeof(T));
+                return true;
+            }
             return false;
         }
     }

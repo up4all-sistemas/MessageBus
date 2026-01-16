@@ -1,6 +1,8 @@
 ﻿
 using Azure.Messaging.ServiceBus;
 
+using Microsoft.Extensions.Logging;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,18 +22,23 @@ namespace Up4All.Framework.MessageBus.ServiceBus
         private readonly ServiceBusSender _queueClient;
         private readonly string _queueName;
         private readonly ServiceBusClient _client;
+        protected readonly ILogger<ServiceBusStandaloneQueueAsyncClient> _logger;
         private ServiceBusProcessor _processor;
 
-        public ServiceBusStandaloneQueueAsyncClient(string connectionString, string queuename, int connectionAttemps = 8) : base(connectionString, queuename)
+        public ServiceBusStandaloneQueueAsyncClient(ILogger<ServiceBusStandaloneQueueAsyncClient> logger, string connectionString, string queuename, int connectionAttemps = 8) 
+            : base(connectionString, queuename)
         {
+            _logger = logger;
             _queueName = queuename;
-            (_client, _queueClient) = ServiceBusClientExtensions.CreateClient(connectionString, queuename, connectionAttemps);
+            (_client, _queueClient) = ServiceBusClientExtensions.CreateClient(_logger, connectionString, queuename, connectionAttemps);
         }
 
         public async Task RegisterHandlerAsync(Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
         {
             _processor = _client.CreateQueueProcessor(_queueName, autoComplete);
-            await _processor.RegisterHandleMessageAsync(handler, errorHandler, onIdle, autoComplete, cancellationToken);
+            await _processor.RegisterHandleMessageAsync(_logger, handler, errorHandler, onIdle, autoComplete, cancellationToken);
+
+            _logger.LogDebug("Start listening {EntityPath}", _processor.EntityPath);
             await _processor.StartProcessingAsync();
         }
 
@@ -62,6 +69,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus
 
         public async Task CloseAsync(CancellationToken cancellationToken = default)
         {
+            _logger.LogDebug("Closing connection to {EntityPath}", _processor.EntityPath);
             if (_processor != null) await _processor.CloseAsync(cancellationToken);
             if (_queueClient != null) await _queueClient.CloseAsync(cancellationToken);
             if (_queueClient != null) await _queueClient.DisposeAsync().AsTask();

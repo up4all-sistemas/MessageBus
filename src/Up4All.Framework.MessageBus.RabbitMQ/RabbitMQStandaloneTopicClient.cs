@@ -1,4 +1,6 @@
-﻿using RabbitMQ.Client;
+﻿using Microsoft.Extensions.Logging;
+
+using RabbitMQ.Client;
 
 using System.Collections.Generic;
 using System.Linq;
@@ -14,23 +16,18 @@ using Up4All.Framework.MessageBus.RabbitMQ.Options;
 
 namespace Up4All.Framework.MessageBus.RabbitMQ
 {
-    public class RabbitMQStandaloneTopicAsyncClient : MessageBusStandaloneTopicClient, IRabbitMQClient, IMessageBusStandalonePublisherAsync
+    public class RabbitMQStandaloneTopicAsyncClient(ILogger<RabbitMQStandaloneTopicAsyncClient> logger, string connectionString, string topicName, int connectionAttemps = 8, string type = ExchangeType.Topic
+            , ExchangeDeclareOptions declareOpts = null)
+        : MessageBusStandaloneTopicClient(connectionString, topicName, connectionAttemps), IRabbitMQClient, IMessageBusStandalonePublisherAsync
     {
-        private readonly string _topicName;
-        private readonly string _type;
-        private readonly ExchangeDeclareOptions _declareOpts;
+        private readonly string _topicName = topicName;
+        private readonly string _type = type;
+        private readonly ExchangeDeclareOptions _declareOpts = declareOpts;
+        protected readonly ILogger<RabbitMQStandaloneTopicAsyncClient> _logger = logger;
 
         public IConnection Connection { get; set; }
 
         public IChannel Channel { get; private set; }
-
-        public RabbitMQStandaloneTopicAsyncClient(string connectionString, string topicName, int connectionAttemps = 8, string type = ExchangeType.Topic
-            , ExchangeDeclareOptions declareOpts = null) : base(connectionString, topicName, connectionAttemps)
-        {
-            _topicName = topicName;
-            _declareOpts = declareOpts;
-            _type = type;
-        }
 
         private async Task InitializeAsync(CancellationToken cancellationToken)
         {
@@ -52,7 +49,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
         public async Task SendAsync(MessageBusMessage message, CancellationToken cancellationToken = default)
         {
             await InitializeAsync(cancellationToken);
-            await Channel.SendMessageAsync(_topicName, string.Empty, message, cancellationToken: cancellationToken);
+            await Channel.SendMessageAsync(_logger, _topicName, string.Empty, message, cancellationToken: cancellationToken);
         }
 
         public async Task SendAsync(IEnumerable<MessageBusMessage> messages, CancellationToken cancellationToken = default)
