@@ -67,8 +67,8 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
 
         protected override void Dispose(bool disposing)
         {
-            Channel.CloseAsync().Wait();
-            Connection.CloseAsync().Wait();
+            Channel?.CloseAsync().Wait();
+            Connection?.CloseAsync().Wait();
         }
     }
 }
