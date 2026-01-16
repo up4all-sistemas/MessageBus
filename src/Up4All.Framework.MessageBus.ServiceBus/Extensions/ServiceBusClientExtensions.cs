@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Polly;
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading;
@@ -15,15 +16,13 @@ using Up4All.Framework.MessageBus.Abstractions.Enums;
 using Up4All.Framework.MessageBus.Abstractions.Extensions;
 using Up4All.Framework.MessageBus.Abstractions.Messages;
 
-namespace Up4All.Framework.MessageBus.ServiceBus
+namespace Up4All.Framework.MessageBus.ServiceBus.Extensions
 {
     public static class ServiceBusClientExtensions
     {
 
-        public static (ServiceBusClient, ServiceBusSender) CreateClient(string connectionString, string entityName, int attempts)
+        public static (ServiceBusClient, ServiceBusSender) CreateClient(ILogger logger, string connectionString, string entityName, int attempts)
         {
-            var logger = CreateLogger<IServiceBusClient>();
-
             var result = Policy
                 .Handle<Exception>()
                 .WaitAndRetry(attempts, retryAttempt =>
@@ -98,23 +97,30 @@ namespace Up4All.Framework.MessageBus.ServiceBus
             return sbMessage;
         }
 
-        public static Task RegisterHandleMessageAsync(this ServiceBusProcessor client, Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
+        public static Task RegisterHandleMessageAsync(this ServiceBusProcessor client, ILogger logger, Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
         {
-            client.ProcessMessageAsync += async (arg) => await ProcessMessageAsync(arg, handler, DefineIdleHandler(onIdle), autoComplete, cancellationToken);
+            logger.LogDebug("Registrating Deliver Consumer to {EntityPath}", client.EntityPath);
+            client.ProcessMessageAsync += async (arg) => await ProcessMessageAsync(logger, arg, handler, errorHandler, DefineIdleHandler(onIdle), autoComplete, cancellationToken);
             client.ProcessErrorAsync += async (ex) => await ProcessOnError(ex.Exception, errorHandler, cancellationToken);
 
             return Task.CompletedTask;
         }
 
-        private static ILogger<T> CreateLogger<T>()
+        public static Task SendMessageBusMessageAsync(this ServiceBusSender sender, ILogger logger, MessageBusMessage message, CancellationToken cancellationToken)
         {
-            return LoggerFactory
-                    .Create(cfg => { })
-                    .CreateLogger<T>();
+            logger.LogDebug("Sending message to {EntityPath}", sender.EntityPath);
+            return sender.SendMessageAsync(PrepareMesssage(message), cancellationToken);
         }
 
-        private static async Task ProcessMessageAsync(ProcessMessageEventArgs arg
+        public static Task SendMessageBusMessageAsync(this ServiceBusSender sender, ILogger logger, IEnumerable<MessageBusMessage> messages, CancellationToken cancellationToken)
+        {
+            logger.LogDebug("Sending messages to {EntityPath}", sender.EntityPath);
+            return sender.SendMessagesAsync(messages.Select(PrepareMesssage), cancellationToken);
+        }
+
+        private static async Task ProcessMessageAsync(ILogger logger, ProcessMessageEventArgs arg
             , Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatus>> handler
+            , Func<Exception, CancellationToken, Task> onError
             , Func<CancellationToken, Task> onIdle
             , bool autoComplete
             , CancellationToken cancellationToken)
@@ -122,16 +128,19 @@ namespace Up4All.Framework.MessageBus.ServiceBus
             if (cancellationToken.IsCancellationRequested)
                 await arg.AbandonMessageAsync(arg.Message, cancellationToken: cancellationToken);
 
+            logger.LogDebug("Receiving message from {EntityPath}", arg.EntityPath);
+
             var received = CreateMessage(arg);
 
             try
             {
-                await ProcessHandleResult(arg, await handler(received, cancellationToken), autoComplete, cancellationToken);
+                await ProcessHandleResult(arg, await handler.Invoke(received, cancellationToken), autoComplete, cancellationToken);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                logger.LogError(ex, "", ex.Message);
                 await arg.AbandonMessageAsync(arg.Message, cancellationToken: cancellationToken);
-                throw;
+                await onError.Invoke(ex, cancellationToken);
             }
 
             await onIdle.Invoke(cancellationToken);

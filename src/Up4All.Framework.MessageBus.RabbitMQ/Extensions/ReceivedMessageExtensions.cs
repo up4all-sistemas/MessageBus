@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 using Up4All.Framework.MessageBus.Abstractions.Messages;
 
@@ -10,11 +11,13 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
 {
     internal static class ReceivedMessageExtensions
     {
-        internal static void PopulateUserProperties(this ReceivedMessage message, IDictionary<string, object> headers)
+        internal static void PopulateUserProperties(this ReceivedMessage message, IReadOnlyBasicProperties properties)
         {
-            if (headers != null)
-                foreach (var prop in headers)
-                    message.AddUserProperty(prop.Key, prop.Value);
+            if (!properties.IsHeadersPresent()) return;
+
+            foreach (var prop in properties.Headers)
+                message.AddUserProperty(prop.Key, ConvertPropertyValue(prop.Value));
+
         }
 
         internal static void PopulateHeaders(this IBasicProperties properties, MessageBusMessage message)
@@ -26,12 +29,20 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
                 properties.Headers.Add(prop);
         }
 
-        internal static ReceivedMessage CreateReceivedMessage(this ReadOnlyMemory<byte> body, IDictionary<string, object> properties)
+        internal static ReceivedMessage CreateReceivedMessage(this ReadOnlyMemory<byte> body, IReadOnlyBasicProperties properties)
         {
             var message = new ReceivedMessage();
             message.AddBody(BinaryData.FromBytes(body), true);
             message.PopulateUserProperties(properties);
             return message;
+        }
+
+        internal static object ConvertPropertyValue(object rawValue)
+        {
+            if (rawValue is byte[] bytedValue)
+                return Encoding.UTF8.GetString(bytedValue);
+            else
+                return rawValue;
         }
     }
 }

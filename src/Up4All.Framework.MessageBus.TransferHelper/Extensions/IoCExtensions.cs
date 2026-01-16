@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Up4All.Framework.MessageBus.Abstractions.Interfaces;
 using Up4All.Framework.MessageBus.Abstractions.Messages;
 using Up4All.Framework.MessageBus.Abstractions.Options;
+using Up4All.Framework.MessageBus.TransferHelper.Handlers;
 using Up4All.Framework.MessageBus.TransferHelper.Options;
 using Up4All.Framework.MessageBus.TransferHelper.Transformations;
 
@@ -24,37 +25,56 @@ namespace Up4All.Framework.MessageBus.TransferHelper.Extensions
                 .ValidateDataAnnotations();
         }
 
-        public static TransferPipelineBuilder AddTransferClient<TSourceConsumer,TSourceOptions,TDestinationPublisher,TDestinationOptions>(this IServiceCollection services
-            , Func<IServiceProvider, TSourceOptions, TSourceConsumer> injectSource
-            , Func<IServiceProvider, TDestinationOptions, TDestinationPublisher> injectDestination
-            , Func<ReceivedMessage, CancellationToken, Task<MessageBusMessage>>? _funcTransform = null
+        public static TransferPipelineBuilder AddTransferClient<TSourceOptions, TDestinationOptions>(this IServiceCollection services
             , string configurationKey = "MessageBusTransferOptions")
-            where TSourceConsumer : class, IMessageBusAsyncConsumer
             where TSourceOptions : MessageBusOptions, new()
-            where TDestinationPublisher : class, IMessageBusPublisherAsync
             where TDestinationOptions : MessageBusOptions, new()
         {
+            services.AddTransferTransformationHandler<DefaultTransformationHandler>();
+            services.AddBeforeTransferHandler<DefaultBeforeTransferHandler>();
             services.AddTransferMessageBusOptions<TSourceOptions, TDestinationOptions>(configurationKey);
-
-            services.AddSingleton<IMessageBusAsyncConsumer>(sp => {
-                var opts = sp.GetRequiredService<IOptions<TransferOptions<TSourceOptions,TDestinationOptions>>>();
-                return injectSource(sp, opts.Value.Source);
-            });
-
-            services.AddSingleton<IMessageBusPublisherAsync>(sp => {
-                var opts = sp.GetRequiredService<IOptions<TransferOptions<TSourceOptions, TDestinationOptions>>>();
-                return injectDestination(sp, opts.Value.Destination);
-            });
-
-            services.AddSingleton<IMessageBusTransferClient, MessageBusTransferClient>();
+            services.AddSingleton<IMessageBusTransferClient, MessageBusTransferClient<TSourceOptions, TDestinationOptions>>();
 
             return new TransferPipelineBuilder(services);
         }
 
-        public static TransferPipelineBuilder AddTransferTransformationHandler<TTransferHandler>(this TransferPipelineBuilder pipeline)
-            where TTransferHandler : class, ITransformationHandler
+        public static TransferPipelineBuilder AddTransferClient<TSourceOptions,TDestinationOptions>(this IServiceCollection services
+            , Func<IServiceProvider, TSourceOptions, IMessageBusAsyncConsumer> injectSource
+            , Func<IServiceProvider, TDestinationOptions, IMessageBusPublisherAsync> injectDestination            
+            , string configurationKey = "MessageBusTransferOptions")
+            where TSourceOptions : MessageBusOptions, new()            
+            where TDestinationOptions : MessageBusOptions, new()
         {
-            pipeline.Services.AddTransient<ITransformationHandler, TTransferHandler>();
+            services.AddTransferTransformationHandler<DefaultTransformationHandler>();
+            services.AddBeforeTransferHandler<DefaultBeforeTransferHandler>();
+            services.AddTransferMessageBusOptions<TSourceOptions, TDestinationOptions>(configurationKey);
+
+            services.AddSingleton(sp => {
+                var opts = sp.GetRequiredService<IOptions<TransferOptions<TSourceOptions,TDestinationOptions>>>();
+                return injectSource(sp, opts.Value.Source);
+            });
+
+            services.AddSingleton(sp => {
+                var opts = sp.GetRequiredService<IOptions<TransferOptions<TSourceOptions, TDestinationOptions>>>();
+                return injectDestination(sp, opts.Value.Destination);
+            });
+
+            services.AddSingleton<IMessageBusTransferClient, MessageBusTransferClient<TSourceOptions,TDestinationOptions>>();
+
+            return new TransferPipelineBuilder(services);
+        }
+
+        public static TransferPipelineBuilder AddTransferTransformationHandler<TBeforeTransferHandler>(this TransferPipelineBuilder pipeline)
+            where TBeforeTransferHandler : class, ITransformationHandler
+        {
+            pipeline.Services.AddTransferTransformationHandler<TBeforeTransferHandler>();
+            return pipeline;
+        }
+
+        public static TransferPipelineBuilder AddBeforeTransferHandler<TBeforeTransferHandler>(this TransferPipelineBuilder pipeline)
+            where TBeforeTransferHandler : class, IBeforeTransferHandler
+        {
+            pipeline.Services.AddBeforeTransferHandler<TBeforeTransferHandler>();
             return pipeline;
         }
 
@@ -62,6 +82,18 @@ namespace Up4All.Framework.MessageBus.TransferHelper.Extensions
         {
             pipeline.Services.AddHostedService<MessageBusTransferHostedService>();
             return pipeline;
+        }
+
+        private static void AddTransferTransformationHandler<TTransferHandler>(this IServiceCollection services)
+            where TTransferHandler : class, ITransformationHandler
+        {
+            services.AddTransient<ITransformationHandler, TTransferHandler>();
+        }
+
+        private static void AddBeforeTransferHandler<TBeforeTransferHandler>(this IServiceCollection services)
+            where TBeforeTransferHandler : class, IBeforeTransferHandler
+        {
+            services.AddTransient<IBeforeTransferHandler, TBeforeTransferHandler>();
         }
     }
 
