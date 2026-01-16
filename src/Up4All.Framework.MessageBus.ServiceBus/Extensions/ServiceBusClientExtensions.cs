@@ -186,6 +186,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Extensions
             if (arg.Message.ApplicationProperties.Any())
                 received.AddUserProperties(arg.Message.ApplicationProperties.ToDictionary(x => x.Key, x => x.Value));
 
+            received.SetMessageId(arg.Message.MessageId);
             return received;
         }
     }

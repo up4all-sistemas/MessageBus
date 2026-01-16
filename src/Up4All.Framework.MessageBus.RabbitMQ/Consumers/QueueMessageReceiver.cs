@@ -34,6 +34,8 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Consumers
             {
                 _logger.LogDebug("Receiving message from {QueueName}", _channel.CurrentQueue);
                 var message = body.CreateReceivedMessage(properties);
+                message.SetMessageId(Guid.NewGuid());
+
                 RabbitMQClientExtensions.AddTagsToActivity(activity, exchange, routingKey, body.ToArray());
                 var response = await _handler(message, cancellationToken);
                 await _channel.ProcessMessageAsync(deliveryTag, response, _autoComplete, cancellationToken);

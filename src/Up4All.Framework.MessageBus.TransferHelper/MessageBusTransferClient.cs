@@ -43,7 +43,10 @@ namespace Up4All.Framework.MessageBus.TransferHelper
                 _logger.LogDebug("Receiving message from {SourceQueueName} for transfer to {DestinationTopicName}", _consumer.QueueName, _publisher.TopicName);
 
                 if (!await _beforeTransferHandler.CanTransfer(sourceMessage, cancellationToken))
+                {
+                    _logger.LogDebug("Skipping message {MessageId} transfer", sourceMessage.GetMessageId<object>());
                     return MessageReceivedStatus.Completed;
+                }   
 
                 var destMessage = await _transformHandler.TransformAsync(sourceMessage, _transformationsOptions, cancellationToken);
 

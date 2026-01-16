@@ -10,6 +10,8 @@ namespace Up4All.Framework.MessageBus.Abstractions.Messages
 {
     public class MessageBusMessage : IMessage
     {
+        public const string MessageIdkey = "mb-id";
+
         public byte[] Body { get; private set; }
 
         public IDictionary<string, object> UserProperties { get; private set; }
@@ -84,39 +86,47 @@ namespace Up4All.Framework.MessageBus.Abstractions.Messages
                 UserProperties.Remove(key);
         }
 
+        public void SetMessageIdFromStruct<TMessageKey>(TMessageKey value)
+            where TMessageKey : struct
+        {
+            AddUserProperty(MessageIdkey, value);
+        }
+
         public void SetMessageId<TMessageKey>(TMessageKey value, JsonSerializerOptions opts = null)
             where TMessageKey : class
         {
             opts ??= new JsonSerializerOptions(JsonSerializerDefaults.Web) { DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault };
-            AddUserProperty("message-id", Encoding.UTF8.GetBytes(JsonSerializer.Serialize(value, opts)));
+            AddUserProperty(MessageIdkey, Encoding.UTF8.GetBytes(JsonSerializer.Serialize(value, opts)));
         }
 
-        public void SetMessageIdFromStruct<TMessageKey>(TMessageKey value)
-            where TMessageKey : struct
+        public void SetMessageId(string value)
         {
-            AddUserProperty("message-id", value);
+            AddUserProperty(MessageIdkey, value);
         }
 
         public void SetMessageId(int value)
         {
-            AddUserProperty("message-id", value);
+            AddUserProperty(MessageIdkey, value);
         }
 
         public void SetMessageId(long value)
         {
-            AddUserProperty("message-id", value);
+            AddUserProperty(MessageIdkey, value);
         }
 
         public void SetMessageId(Guid value)
         {
-            AddUserProperty("message-id", value.ToString());
+            AddUserProperty(MessageIdkey, value.ToString());
         }
 
         public TMessageKey GetMessageId<TMessageKey>()
             where TMessageKey : class
         {
-            if(this.TryGetUserPropertyAs<TMessageKey>("message-id", out var result))
+            if(this.TryGetUserPropertyAs<TMessageKey>(MessageIdkey, out var result))
                 return result;
+
+            if (this.TryGetUserPropertyValue(MessageIdkey, out var rawValue))
+                return (TMessageKey)Convert.ChangeType(rawValue, typeof(TMessageKey));
 
             return default;
         }
@@ -124,7 +134,7 @@ namespace Up4All.Framework.MessageBus.Abstractions.Messages
         public TMessageKey GetMessageIdForStruct<TMessageKey>()
             where TMessageKey : struct
         {
-            if (this.TryGetUserProperty<TMessageKey>("message-id", out var result))
+            if (this.TryGetUserProperty<TMessageKey>(MessageIdkey, out var result))
                 return result;
 
             return default;
