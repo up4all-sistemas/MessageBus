@@ -70,7 +70,11 @@ namespace Up4All.Framework.MessageBus.Abstractions.Extensions
             value = default;
             if (message.UserProperties.TryGetValue(userPropertyKey, out var rawValue))
             {
-                value = Encoding.UTF8.GetString((byte[])rawValue);
+                if (rawValue is byte[] bytedValue)
+                    value = Encoding.UTF8.GetString((byte[])rawValue);
+                else
+                    return false;
+
                 return true;
             }
             return false;
@@ -79,31 +83,78 @@ namespace Up4All.Framework.MessageBus.Abstractions.Extensions
         public static bool TryGetUserPropertyAsInt32(this MessageBusMessage message, string userPropertyKey, out int value)
         {
             value = default;
-            return message.TryGetUserPropertyAsString(userPropertyKey, out var valueStr) && int.TryParse(valueStr, out value);
+
+            if (message.UserProperties.TryGetValue(userPropertyKey, out var rawValue))
+            {
+                if (rawValue is byte[])
+                    return false;
+                else
+                    value = Convert.ToInt32(rawValue);
+
+                return true;
+            }
+
+            return false;
         }
 
         public static bool TryGetUserPropertyAsInt64(this MessageBusMessage message, string userPropertyKey, out long value)
         {
             value = default;
-            return message.TryGetUserPropertyAsString(userPropertyKey, out var valueStr) && long.TryParse(valueStr, out value);
+            if (message.UserProperties.TryGetValue(userPropertyKey, out var rawValue))
+            {
+                if (rawValue is byte[])
+                    return false;
+                else
+                    value = Convert.ToInt64(rawValue);
+
+                return true;
+            }
+
+            return false;
         }
 
         public static bool TryGetUserPropertyAsDecimal(this MessageBusMessage message, string userPropertyKey, out decimal value)
         {
             value = default;
-            return message.TryGetUserPropertyAsString(userPropertyKey, out var valueStr) && decimal.TryParse(valueStr, out value);
+            if (message.UserProperties.TryGetValue(userPropertyKey, out var rawValue))
+            {
+                if (rawValue is byte[])
+                    return false;
+                else
+                    value = Convert.ToDecimal(rawValue);
+
+                return true;
+            }
+
+            return false;
         }
 
         public static bool TryGetUserPropertyAsDateTime(this MessageBusMessage message, string userPropertyKey, out DateTime value)
         {
             value = default;
-            return message.TryGetUserPropertyAsString(userPropertyKey, out var valueStr) && DateTime.TryParse(valueStr, CultureInfo.InvariantCulture, DateTimeStyles.None, out value);
+            if (message.UserProperties.TryGetValue(userPropertyKey, out var rawValue))
+            {
+                if (rawValue is byte[])
+                    value = Convert.ToDateTime(rawValue);
+                else
+                    return false;
+            }
+
+            return false;
         }
 
-        public static bool TryGetUserPropertyAsDateTime(this MessageBusMessage message, IFormatProvider formatProvider, DateTimeStyles dateTimeStyles, string userPropertyKey, out DateTime value)
+        public static bool TryGetUserPropertyAsDateTime(this MessageBusMessage message, IFormatProvider formatProvider, string userPropertyKey, out DateTime value)
         {
             value = default;
-            return message.TryGetUserPropertyAsString(userPropertyKey, out var valueStr) && DateTime.TryParse(valueStr, formatProvider, dateTimeStyles, out value);
+            if (message.UserProperties.TryGetValue(userPropertyKey, out var rawValue))
+            {
+                if (rawValue is byte[])
+                    value = Convert.ToDateTime(rawValue, formatProvider);
+                else
+                    return false;
+            }
+
+            return false;
         }
 
         public static bool TryGetUserPropertyAs<T>(this MessageBusMessage message, string userPropertyKey, out T value) where T : class
@@ -132,7 +183,14 @@ namespace Up4All.Framework.MessageBus.Abstractions.Extensions
 
             if (message.UserProperties.TryGetValue(userPropertyKey, out var userPropertyValue))
             {
-                value = userPropertyValue;
+                if (userPropertyValue is byte[] bytedvalue)
+                {
+                    value = bytedvalue;
+                    return true;
+                }
+                else
+                    value = userPropertyValue;
+                
                 return true;
             }
 
@@ -142,7 +200,7 @@ namespace Up4All.Framework.MessageBus.Abstractions.Extensions
         public static bool TryGetUserProperty<T>(this MessageBusMessage message, string userPropertyKey, out T value) where T : struct
         {
             value = default;
-            if(TryGetUserPropertyValue(message, userPropertyKey, out var vlr))
+            if (TryGetUserPropertyValue(message, userPropertyKey, out var vlr))
             {
                 value = (T)Convert.ChangeType(vlr, typeof(T));
                 return true;
