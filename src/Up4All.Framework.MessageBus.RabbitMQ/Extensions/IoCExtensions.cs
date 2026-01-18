@@ -92,9 +92,9 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
         public static IServiceCollection AddRabbitMQNamedStreamAsyncClient(this IServiceCollection services, string key, object offset
             , Action<StreamDeclareOptions> configureDeclareOpts = null, string configurationBindKey = "MessageBusOptions")
         {
-            services.AddMessageBusNamedStreamAsyncClient(key, (provider, opts) =>
+            services.AddMessageBusNamedStreamAsyncClient<RabbitMQStandaloneStreamAsyncClient,RabbitMQMessageBusOptions>(key, (provider, opts) =>
             {
-                return new RabbitMQStandaloneStreamAsyncClient(provider.GetLogger<RabbitMQStandaloneStreamAsyncClient>(), opts.ConnectionString, key, offset, declareOpts: ConfigureDeclareOpts(configureDeclareOpts));
+                return new RabbitMQStandaloneStreamAsyncClient(provider.GetLogger<RabbitMQStandaloneStreamAsyncClient>(), opts.ConnectionString, key, offset, opts.PersistentMessages, declareOpts: ConfigureDeclareOpts(configureDeclareOpts));
             }, configurationBindKey);
             return services;
         }
@@ -102,9 +102,9 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
         public static IServiceCollection AddRabbitMQNamedStreamAsyncClient(this IServiceCollection services, string key, object offset
             , Action<IServiceProvider, StreamDeclareOptions> configureDeclareOpts, string configurationBindKey = "MessageBusOptions")
         {
-            services.AddMessageBusNamedStreamAsyncClient(key, (provider, opts) =>
+            services.AddMessageBusNamedStreamAsyncClient<RabbitMQStandaloneStreamAsyncClient, RabbitMQMessageBusOptions>(key, (provider, opts) =>
             {
-                return new RabbitMQStandaloneStreamAsyncClient(provider.GetLogger<RabbitMQStandaloneStreamAsyncClient>(), opts.ConnectionString, key, offset, declareOpts: ConfigureDeclareOpts(provider, configureDeclareOpts));
+                return new RabbitMQStandaloneStreamAsyncClient(provider.GetLogger<RabbitMQStandaloneStreamAsyncClient>(), opts.ConnectionString, key, offset, opts.PersistentMessages, declareOpts: ConfigureDeclareOpts(provider, configureDeclareOpts));
             }, configurationBindKey);
             return services;
         }
@@ -112,9 +112,9 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
         public static IServiceCollection AddRabbitMQNamedQueueAsyncClient(this IServiceCollection services, string key
             , Action<QueueDeclareOptions> configureDeclareOpts = null, string configurationBindKey = "MessageBusOptions")
         {
-            services.AddMessageBusNamedQueueAsyncClient(key, (provider, opts) =>
+            services.AddMessageBusNamedQueueAsyncClient<RabbitMQStandaloneQueueAsyncClient,RabbitMQMessageBusOptions>(key, (provider, opts) =>
             {
-                return new RabbitMQStandaloneQueueAsyncClient(provider.GetLogger<RabbitMQQueueAsyncClient>(), opts.ConnectionString, key, declareOpts: ConfigureDeclareOpts(configureDeclareOpts));
+                return new RabbitMQStandaloneQueueAsyncClient(provider.GetLogger<RabbitMQQueueAsyncClient>(), opts.ConnectionString, key, opts.PersistentMessages, declareOpts: ConfigureDeclareOpts(configureDeclareOpts));
             }, configurationBindKey);
             return services;
         }
@@ -122,9 +122,9 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
         public static IServiceCollection AddRabbitMQNamedQueueAsyncClient(this IServiceCollection services, string key
             , Action<IServiceProvider, QueueDeclareOptions> configureDeclareOpts, string configurationBindKey = "MessageBusOptions")
         {
-            services.AddMessageBusNamedQueueAsyncClient(key, (provider, opts) =>
+            services.AddMessageBusNamedQueueAsyncClient<RabbitMQStandaloneQueueAsyncClient,RabbitMQMessageBusOptions>(key, (provider, opts) =>
             {
-                return new RabbitMQStandaloneQueueAsyncClient(provider.GetLogger<RabbitMQQueueAsyncClient>(), opts.ConnectionString, key, declareOpts: ConfigureDeclareOpts(provider, configureDeclareOpts));
+                return new RabbitMQStandaloneQueueAsyncClient(provider.GetLogger<RabbitMQQueueAsyncClient>(), opts.ConnectionString, key, opts.PersistentMessages, declareOpts: ConfigureDeclareOpts(provider, configureDeclareOpts));
             }, configurationBindKey);
             return services;
         }
@@ -132,9 +132,9 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
         public static IServiceCollection AddRabbitMQNamedTopicAsyncClient(this IServiceCollection services, string key, string type
             , Action<ExchangeDeclareOptions> configureDeclareOpts = null, string configurationBindKey = "MessageBusOptions")
         {
-            services.AddMessageBusNamedTopicAsyncClient(key, (provider, opts) =>
+            services.AddMessageBusNamedTopicAsyncClient<RabbitMQStandaloneTopicAsyncClient,RabbitMQMessageBusOptions>(key, (provider, opts) =>
             {
-                return new RabbitMQStandaloneTopicAsyncClient(provider.GetLogger<RabbitMQStandaloneTopicAsyncClient>(), opts.ConnectionString, key, 8, type, ConfigureDeclareOpts(configureDeclareOpts));
+                return new RabbitMQStandaloneTopicAsyncClient(provider.GetLogger<RabbitMQStandaloneTopicAsyncClient>(), opts.ConnectionString, key, opts.PersistentMessages, 8, type, ConfigureDeclareOpts(configureDeclareOpts));
             }, configurationBindKey);
             return services;
         }
@@ -142,9 +142,9 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
         public static IServiceCollection AddRabbitMQNamedTopicAsyncClient(this IServiceCollection services, string key, string type
             , Action<IServiceProvider, ExchangeDeclareOptions> configureDeclareOpts, string configurationBindKey = "MessageBusOptions")
         {
-            services.AddMessageBusNamedTopicAsyncClient(key, (provider, opts) =>
+            services.AddMessageBusNamedTopicAsyncClient<RabbitMQStandaloneTopicAsyncClient, RabbitMQMessageBusOptions>(key, (provider, opts) =>
             {
-                return new RabbitMQStandaloneTopicAsyncClient(provider.GetLogger<RabbitMQStandaloneTopicAsyncClient>(), opts.ConnectionString, key, 8, type, ConfigureDeclareOpts(provider, configureDeclareOpts));
+                return new RabbitMQStandaloneTopicAsyncClient(provider.GetLogger<RabbitMQStandaloneTopicAsyncClient>(), opts.ConnectionString, key, opts.PersistentMessages, 8, type, ConfigureDeclareOpts(provider, configureDeclareOpts));
             }, configurationBindKey);
             return services;
         }

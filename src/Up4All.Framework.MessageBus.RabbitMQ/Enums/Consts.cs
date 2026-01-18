@@ -31,4 +31,12 @@
     {
         public const string StreamOffsetKey = "x-stream-offset";
     }
+
+    public struct Properties
+    {
+        public const string Timestamp = "mb-timestamp";
+        public const string Provider = "mb-messagebus";
+        public const string MessageId = "mb-id";
+        public const string IsPersistent = "mb-is-persistent";
+    }
 }

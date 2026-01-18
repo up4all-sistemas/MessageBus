@@ -52,20 +52,6 @@ namespace Up4All.Framework.MessageBus.Kafka.Extensions
             return services;
         }
 
-        public static IServiceCollection AddKafkaWithStructKeySubscriptionAsyncClient<TMessageKey>(this IServiceCollection services, string configurationBindKey = "MessageBusOptions")
-            where TMessageKey : struct
-        {
-            services.AddMessageBusOptions<KafkaMessageBusOptions>(configurationBindKey);
-
-            services.AddSingleton<IMessageBusAsyncConsumer, KafkaStandaloneWithStructKeySubscriptionAsyncClient<TMessageKey>>(provider =>
-            {
-                var options = provider.GetRequiredService<IOptions<KafkaMessageBusOptions>>();
-                return new KafkaWithStructKeySubscriptionAsyncClient<TMessageKey>(options);
-            });
-
-            return services;
-        }
-
         public static IServiceCollection AddKafkaSubscriptionAsyncClient<TMessageKey>(this IServiceCollection services, string configurationBindKey = "MessageBusOptions")
             where TMessageKey : class
         {
@@ -75,6 +61,20 @@ namespace Up4All.Framework.MessageBus.Kafka.Extensions
             {
                 var options = provider.GetRequiredService<IOptions<KafkaMessageBusOptions>>();
                 return new KafkaGenericSubscriptionAsyncClient<TMessageKey>(options);
+            });
+
+            return services;
+        }
+
+        public static IServiceCollection AddKafkaWithStructKeySubscriptionAsyncClient<TMessageKey>(this IServiceCollection services, string configurationBindKey = "MessageBusOptions")
+            where TMessageKey : struct
+        {
+            services.AddMessageBusOptions<KafkaMessageBusOptions>(configurationBindKey);
+
+            services.AddSingleton<IMessageBusAsyncConsumer, KafkaStandaloneWithStructKeySubscriptionAsyncClient<TMessageKey>>(provider =>
+            {
+                var options = provider.GetRequiredService<IOptions<KafkaMessageBusOptions>>();
+                return new KafkaWithStructKeySubscriptionAsyncClient<TMessageKey>(options);
             });
 
             return services;
@@ -99,6 +99,13 @@ namespace Up4All.Framework.MessageBus.Kafka.Extensions
             return services;
         }
 
+        public static IServiceCollection AddKafkaStandaloneTopicAsyncClient(this IServiceCollection services
+            , Func<IServiceProvider, KafkaStandaloneTopicAsyncClient>? builder = null, string configurationBindKey = "MessageBusOptions")
+        {
+            services.AddKafkaStandaloneTopicAsyncClient<string>(builder, configurationBindKey);
+            return services;
+        }
+
         public static IServiceCollection AddKafkaStandaloneWithStructKeyTopicAsyncClient<TMessageKey>(this IServiceCollection services
             , Func<IServiceProvider, KafkaStandaloneWithStructKeyTopicAsyncClient<TMessageKey>>? builder = null, string configurationBindKey = "MessageBusOptions")
             where TMessageKey : struct
@@ -115,13 +122,6 @@ namespace Up4All.Framework.MessageBus.Kafka.Extensions
                 return new KafkaStandaloneWithStructKeyTopicAsyncClient<TMessageKey>(opts.Value.ConnectionString, opts.Value.TopicName, opts.Value.ConnectionAttempts);
             });
 
-            return services;
-        }
-
-        public static IServiceCollection AddKafkaStandaloneTopicAsyncClient(this IServiceCollection services
-            , Func<IServiceProvider, KafkaStandaloneTopicAsyncClient>? builder = null, string configurationBindKey = "MessageBusOptions")
-        {
-            services.AddKafkaStandaloneTopicAsyncClient<string>(builder, configurationBindKey);
             return services;
         }
 
@@ -144,6 +144,13 @@ namespace Up4All.Framework.MessageBus.Kafka.Extensions
             return services;
         }
 
+        public static IServiceCollection AddKafkaStandaloneSubscriptionAsyncClient(this IServiceCollection services
+            , Func<IServiceProvider, KafkaStandaloneSubscriptionAsyncClient>? builder = null, string configurationBindKey = "MessageBusOptions")
+        {
+            services.AddKafkaStandaloneSubscriptionAsyncClient<string>(builder, configurationBindKey);
+            return services;
+        }
+
         public static IServiceCollection AddKafkaStandaloneWithStructKeySubscriptionAsyncClient<TMessageKey>(this IServiceCollection services
             , Func<IServiceProvider, KafkaStandaloneWithStructKeySubscriptionAsyncClient<TMessageKey>>? builder = null, string configurationBindKey = "MessageBusOptions")
             where TMessageKey : struct
@@ -163,38 +170,16 @@ namespace Up4All.Framework.MessageBus.Kafka.Extensions
             return services;
         }
 
-        public static IServiceCollection AddKafkaStandaloneSubscriptionAsyncClient(this IServiceCollection services
-            , Func<IServiceProvider, KafkaStandaloneSubscriptionAsyncClient>? builder = null, string configurationBindKey = "MessageBusOptions")
-        {
-            services.AddKafkaStandaloneSubscriptionAsyncClient<string>(builder, configurationBindKey);
-            return services;
-        }
-
         public static IServiceCollection AddKafkaNamedTopicAsyncClient<TMessageKey>(this IServiceCollection services, string name
             , Func<IServiceProvider, KafkaStandaloneGenericTopicAsyncClient<TMessageKey>>? builder = null, string configurationBindKey = "MessageBusOptions")
             where TMessageKey : class
         {
-            services.AddMessageBusNamedTopicAsyncClient<KafkaMessageBusOptions>(name, (provider, opts) =>
+            services.AddMessageBusNamedTopicAsyncClient<KafkaStandaloneGenericTopicAsyncClient<TMessageKey>,KafkaMessageBusOptions>(name, (provider, opts) =>
             {
                 if (builder is not null)
                     return builder(provider);
 
                 return new KafkaStandaloneGenericTopicAsyncClient<TMessageKey>(opts.ConnectionString, opts.TopicName, opts.ConnectionAttempts);
-            }, configurationBindKey);
-
-            return services;
-        }
-
-        public static IServiceCollection AddKafkaNamedWithStructKeyTopicAsyncClient<TMessageKey>(this IServiceCollection services, string name
-            , Func<IServiceProvider, KafkaStandaloneWithStructKeyTopicAsyncClient<TMessageKey>>? builder = null, string configurationBindKey = "MessageBusOptions")
-            where TMessageKey : struct
-        {
-            services.AddMessageBusNamedTopicAsyncClient<KafkaMessageBusOptions>(name, (provider, opts) =>
-            {
-                if (builder is not null)
-                    return builder(provider);
-
-                return new KafkaStandaloneWithStructKeyTopicAsyncClient<TMessageKey>(opts.ConnectionString, opts.TopicName, opts.ConnectionAttempts);
             }, configurationBindKey);
 
             return services;
@@ -208,16 +193,16 @@ namespace Up4All.Framework.MessageBus.Kafka.Extensions
             return services;
         }
 
-        public static IServiceCollection AddKafkaNamedSubscriptionAsyncClient<TMessageKey>(this IServiceCollection services, string name
-            , Func<IServiceProvider, KafkaStandaloneGenericSubscriptionAsyncClient<TMessageKey>>? builder = null, string configurationBindKey = "MessageBusOptions")
-            where TMessageKey : class
+        public static IServiceCollection AddKafkaNamedWithStructKeyTopicAsyncClient<TMessageKey>(this IServiceCollection services, string name
+            , Func<IServiceProvider, KafkaStandaloneWithStructKeyTopicAsyncClient<TMessageKey>>? builder = null, string configurationBindKey = "MessageBusOptions")
+            where TMessageKey : struct
         {
-            services.AddMessageBusNamedSubscriptionAsyncClient<KafkaMessageBusOptions>(name, (provider, opts) =>
+            services.AddMessageBusNamedTopicAsyncClient<KafkaStandaloneWithStructKeyTopicAsyncClient<TMessageKey>, KafkaMessageBusOptions>(name, (provider, opts) =>
             {
                 if (builder is not null)
                     return builder(provider);
 
-                return new KafkaStandaloneGenericSubscriptionAsyncClient<TMessageKey>(opts.ConnectionString, opts.TopicName, opts.SubscriptionName);
+                return new KafkaStandaloneWithStructKeyTopicAsyncClient<TMessageKey>(opts.ConnectionString, opts.TopicName, opts.ConnectionAttempts);
             }, configurationBindKey);
 
             return services;
@@ -237,6 +222,22 @@ namespace Up4All.Framework.MessageBus.Kafka.Extensions
 
             return services;
         }
+
+        public static IServiceCollection AddKafkaNamedSubscriptionAsyncClient<TMessageKey>(this IServiceCollection services, string name
+            , Func<IServiceProvider, KafkaStandaloneGenericSubscriptionAsyncClient<TMessageKey>>? builder = null, string configurationBindKey = "MessageBusOptions")
+            where TMessageKey : class
+        {
+            services.AddMessageBusNamedSubscriptionAsyncClient<KafkaMessageBusOptions>(name, (provider, opts) =>
+            {
+                if (builder is not null)
+                    return builder(provider);
+
+                return new KafkaStandaloneGenericSubscriptionAsyncClient<TMessageKey>(opts.ConnectionString, opts.TopicName, opts.SubscriptionName);
+            }, configurationBindKey);
+
+            return services;
+        }
+
 
         public static IServiceCollection AddKafkaNamedSubscriptionAsyncClient(this IServiceCollection services, string name
             , Func<IServiceProvider, KafkaStandaloneSubscriptionAsyncClient>? builder = null, string configurationBindKey = "MessageBusOptions")

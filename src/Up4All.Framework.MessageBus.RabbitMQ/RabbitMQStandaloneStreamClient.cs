@@ -19,12 +19,15 @@ using Up4All.Framework.MessageBus.RabbitMQ.Options;
 
 namespace Up4All.Framework.MessageBus.RabbitMQ
 {
-    public class RabbitMQStandaloneStreamAsyncClient(ILogger<RabbitMQStandaloneStreamAsyncClient> logger, string connectionString, string streamname, object offset, int connectionAttempts = 8
+    public class RabbitMQStandaloneStreamAsyncClient(ILogger<RabbitMQStandaloneStreamAsyncClient> logger, string connectionString, string streamname, object offset
+            , bool persistent
+            , int connectionAttempts = 8
             , StreamDeclareOptions declareOpts = null)
         : MessageBusStandaloneStreamClient(connectionString, streamname, offset, connectionAttempts)
         , IRabbitMQClient, IMessageBusStandaloneStreamAsyncClient
     {
         private readonly string _streamname = streamname;
+        private readonly bool _persistent = persistent;
         private readonly StreamDeclareOptions _declareopts = declareOpts;
         protected readonly ILogger<RabbitMQStandaloneStreamAsyncClient> _logger = logger;
 
@@ -62,14 +65,14 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
         public async Task SendAsync(MessageBusMessage message, CancellationToken cancellationToken = default)
         {
             await InitializeAsync(cancellationToken);
-            await Channel.SendMessageAsync(_logger, "", _streamname, message);
+            await Channel.SendMessageAsync(_logger, "", _streamname, message, persistent: _persistent, cancellationToken: cancellationToken);
         }
         public async Task SendAsync(IEnumerable<MessageBusMessage> messages, CancellationToken cancellationToken = default)
         {
             await InitializeAsync(cancellationToken);
             foreach (var message in messages)
             {
-                await Channel.SendMessageAsync(_logger, "", _streamname, message, cancellationToken: cancellationToken);
+                await Channel.SendMessageAsync(_logger, "", _streamname, message, persistent: _persistent, cancellationToken: cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
             }
         }

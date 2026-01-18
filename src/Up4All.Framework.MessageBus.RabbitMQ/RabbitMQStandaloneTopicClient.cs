@@ -16,12 +16,15 @@ using Up4All.Framework.MessageBus.RabbitMQ.Options;
 
 namespace Up4All.Framework.MessageBus.RabbitMQ
 {
-    public class RabbitMQStandaloneTopicAsyncClient(ILogger<RabbitMQStandaloneTopicAsyncClient> logger, string connectionString, string topicName, int connectionAttemps = 8, string type = ExchangeType.Topic
+    public class RabbitMQStandaloneTopicAsyncClient(ILogger<RabbitMQStandaloneTopicAsyncClient> logger, string connectionString, string topicName
+            , bool persistent
+            , int connectionAttemps = 8, string type = ExchangeType.Topic
             , ExchangeDeclareOptions declareOpts = null)
         : MessageBusStandaloneTopicClient(connectionString, topicName, connectionAttemps), IRabbitMQClient, IMessageBusStandalonePublisherAsync
     {
         private readonly string _topicName = topicName;
         private readonly string _type = type;
+        private readonly bool _persistent = persistent;
         private readonly ExchangeDeclareOptions _declareOpts = declareOpts;
         protected readonly ILogger<RabbitMQStandaloneTopicAsyncClient> _logger = logger;
 
@@ -49,7 +52,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
         public async Task SendAsync(MessageBusMessage message, CancellationToken cancellationToken = default)
         {
             await InitializeAsync(cancellationToken);
-            await Channel.SendMessageAsync(_logger, _topicName, string.Empty, message, cancellationToken: cancellationToken);
+            await Channel.SendMessageAsync(_logger, _topicName, string.Empty, message, persistent: _persistent, cancellationToken: cancellationToken);
         }
 
         public async Task SendAsync(IEnumerable<MessageBusMessage> messages, CancellationToken cancellationToken = default)

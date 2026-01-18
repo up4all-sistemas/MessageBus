@@ -8,6 +8,8 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Options
 {
     public class RabbitMQMessageBusOptions : MessageBusOptions
     {
+        public bool PersistentMessages { get; set; } = true;
+
         public ProvisioningOptions ProvisioningOptions { get; set; } = null;
 
         public bool ProvisioningProvided => ProvisioningOptions is not null;

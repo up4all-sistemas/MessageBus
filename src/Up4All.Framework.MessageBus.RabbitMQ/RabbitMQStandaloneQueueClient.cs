@@ -19,11 +19,14 @@ using Up4All.Framework.MessageBus.RabbitMQ.Options;
 
 namespace Up4All.Framework.MessageBus.RabbitMQ
 {
-    public class RabbitMQStandaloneQueueAsyncClient(ILogger<RabbitMQStandaloneQueueAsyncClient> logger, string connectionString, string queuename, int connectionAttempts = 8
+    public class RabbitMQStandaloneQueueAsyncClient(ILogger<RabbitMQStandaloneQueueAsyncClient> logger, string connectionString, string queuename
+            , bool persistent
+            , int connectionAttempts = 8            
             , QueueDeclareOptions declareOpts = null)
         : MessageBusStandaloneQueueClient(connectionString, queuename, connectionAttempts), IRabbitMQClient, IMessageBusStandaloneQueueAsyncClient
     {
         private readonly string _queuename = queuename;
+        private readonly bool _persistent = persistent;
         private readonly QueueDeclareOptions _declareopts = declareOpts;
         protected readonly ILogger<RabbitMQStandaloneQueueAsyncClient> _logger = logger;
 
@@ -60,7 +63,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
         public async Task SendAsync(MessageBusMessage message, CancellationToken cancellationToken = default)
         {
             await InitializeAsync(cancellationToken);
-            await Channel.SendMessageAsync(_logger, "", _queuename, message, cancellationToken: cancellationToken);
+            await Channel.SendMessageAsync(_logger, "", _queuename, message, persistent: _persistent, cancellationToken: cancellationToken);
 
         }
         public async Task SendAsync(IEnumerable<MessageBusMessage> messages, CancellationToken cancellationToken = default)
@@ -68,7 +71,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
             await InitializeAsync(cancellationToken);
             foreach (var message in messages)
             {
-                await Channel.SendMessageAsync(_logger, "", _queuename, message, cancellationToken: cancellationToken);
+                await Channel.SendMessageAsync(_logger, "", _queuename, message, persistent: _persistent, cancellationToken: cancellationToken);
             }
         }
         public async Task SendManyAsync<TModel>(IEnumerable<TModel> models, CancellationToken cancellationToken = default)

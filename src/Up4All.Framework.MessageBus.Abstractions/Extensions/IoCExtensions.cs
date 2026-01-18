@@ -57,7 +57,23 @@ namespace Up4All.Framework.MessageBus.Abstractions.Extensions
             services.AddMessageBusNamedClient(key, createInstance, configurationBindkey);
         }
 
+        public static void AddMessageBusNamedQueueAsyncClient<TClient, TMessageBusOptions>(this IServiceCollection services, string key
+            , Func<IServiceProvider, TMessageBusOptions, TClient> createInstance, string configurationBindkey = "MessageBusOptions")
+            where TClient : class, IMessageBusStandaloneQueueAsyncClient
+            where TMessageBusOptions : MessageBusOptions, new()
+        {
+            services.AddMessageBusNamedClient(key, createInstance, configurationBindkey);
+        }
+
         public static void AddMessageBusNamedStreamAsyncClient(this IServiceCollection services, string key, Func<IServiceProvider, MessageBusOptions, IMessageBusStandaloneStreamAsyncClient> createInstance, string configurationBindkey = "MessageBusOptions")
+        {
+            services.AddMessageBusNamedClient(key, createInstance, configurationBindkey);
+        }
+
+        public static void AddMessageBusNamedStreamAsyncClient<TClient,TMessageBusOptions>(this IServiceCollection services, string key
+            , Func<IServiceProvider, TMessageBusOptions, TClient> createInstance, string configurationBindkey = "MessageBusOptions")
+            where TClient : class, IMessageBusStandaloneStreamAsyncClient
+            where TMessageBusOptions : MessageBusOptions, new()
         {
             services.AddMessageBusNamedClient(key, createInstance, configurationBindkey);
         }
@@ -67,7 +83,8 @@ namespace Up4All.Framework.MessageBus.Abstractions.Extensions
             services.AddMessageBusNamedClient(key, createInstance, configurationBindkey);
         }
 
-        public static void AddMessageBusNamedTopicAsyncClient<TMessageBusOptions>(this IServiceCollection services, string key, Func<IServiceProvider, TMessageBusOptions, IMessageBusStandalonePublisherAsync> createInstance, string configurationBindkey = "MessageBusOptions")
+        public static void AddMessageBusNamedTopicAsyncClient<TClient,TMessageBusOptions>(this IServiceCollection services, string key, Func<IServiceProvider, TMessageBusOptions, TClient> createInstance, string configurationBindkey = "MessageBusOptions")
+            where TClient : class, IMessageBusStandalonePublisherAsync
             where TMessageBusOptions : MessageBusOptions, new()
         {
             services.AddMessageBusNamedClient(key, createInstance, configurationBindkey);

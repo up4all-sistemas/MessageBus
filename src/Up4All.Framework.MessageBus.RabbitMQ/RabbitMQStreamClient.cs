@@ -8,8 +8,9 @@ using Up4All.Framework.MessageBus.RabbitMQ.Options;
 namespace Up4All.Framework.MessageBus.RabbitMQ
 {
 
-    public class RabbitMQStreamAsyncClient(ILogger<RabbitMQStreamAsyncClient> logger, IOptions<MessageBusOptions> messageOptions, object offset
-            , StreamDeclareOptions declareOpts = null) : RabbitMQStandaloneStreamAsyncClient(logger, messageOptions.Value.ConnectionString, messageOptions.Value.StreamName, offset, messageOptions.Value.ConnectionAttempts, declareOpts)
+    public class RabbitMQStreamAsyncClient(ILogger<RabbitMQStreamAsyncClient> logger, IOptions<RabbitMQMessageBusOptions> messageOptions, object offset
+            , StreamDeclareOptions declareOpts = null) : RabbitMQStandaloneStreamAsyncClient(logger, messageOptions.Value.ConnectionString, messageOptions.Value.StreamName, offset
+            , messageOptions.Value.PersistentMessages, messageOptions.Value.ConnectionAttempts, declareOpts)
         , IMessageBusStreamAsyncClient
     {
     }
