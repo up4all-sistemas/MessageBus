@@ -58,6 +58,6 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Consts
 
     public struct Properties
     {
-        public const string IsPersistent = "mb-is-persistent";
+        public const string IsPersistent = "mb-is-persistent";        
     }
 }

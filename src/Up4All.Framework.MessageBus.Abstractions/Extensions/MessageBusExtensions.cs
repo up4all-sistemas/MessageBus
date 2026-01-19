@@ -5,7 +5,7 @@ using System.Text;
 using System.Text.Json;
 
 using Up4All.Framework.MessageBus.Abstractions.Attributes;
-
+using Up4All.Framework.MessageBus.Abstractions.Consts;
 using Up4All.Framework.MessageBus.Abstractions.Messages;
 
 namespace Up4All.Framework.MessageBus.Abstractions.Extensions
@@ -207,6 +207,19 @@ namespace Up4All.Framework.MessageBus.Abstractions.Extensions
                 return true;
             }
             return false;
+        }
+
+        public static void SetCorrelationId(this MessageBusMessage message, Guid correlationId)
+        {
+            message.AddUserProperty(MessageBusProperties.CorrelationId, correlationId.ToString());
+        }
+
+        public static Guid? GetCorrelationId(this MessageBusMessage message)
+        {
+            if (message.TryGetUserPropertyAsString(MessageBusProperties.CorrelationId, out var stringValue))
+                return Guid.Parse(stringValue);
+
+            return null;
         }
     }
 }
