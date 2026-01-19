@@ -1,104 +1,48 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 
-using System;
-using System.Threading;
-using System.Threading.Tasks;
+using OpenTelemetry.Trace;
 
-using Up4All.Framework.MessageBus.Abstractions.Interfaces;
+using System.Diagnostics;
+
+using Up4All.Framework.MessageBus.Abstractions.Extensions;
 using Up4All.Framework.MessageBus.Abstractions.Messages;
 using Up4All.Framework.MessageBus.Abstractions.Options;
 using Up4All.Framework.MessageBus.TransferHelper.Handlers;
-using Up4All.Framework.MessageBus.TransferHelper.Options;
-using Up4All.Framework.MessageBus.TransferHelper.Transformations;
+using Up4All.Framework.MessageBus.TransferHelper.Pipelines;
 
 namespace Up4All.Framework.MessageBus.TransferHelper.Extensions
 {
     public static class IoCExtensions
     {
-        public static void AddTransferMessageBusOptions<TOptionsSource, TOptionsDestination>(this IServiceCollection services, string configurationKey = "MessageBusTransferOptions")
-            where TOptionsSource : MessageBusOptions, new()
-            where TOptionsDestination : MessageBusOptions, new()
-        {
-            services.AddOptions<TransferOptions<TOptionsSource, TOptionsDestination>>()
-                .BindConfiguration(configurationKey)
-                .ValidateDataAnnotations();
-        }
+        public static readonly ActivitySource ActivitySource = OpenTelemetryExtensions.CreateActivitySource<DefaultBeforeTransferHandler>();
 
-        public static TransferPipelineBuilder AddTransferClient<TSourceOptions, TDestinationOptions>(this IServiceCollection services
-            , string configurationKey = "MessageBusTransferOptions")
+        public static TransferPipeline<TSourceOptions, TDestinationOptions> AddTransfer<TSourceOptions, TDestinationOptions>(this IServiceCollection services, string configurationKey = "MessageBusTransferOptions")
             where TSourceOptions : MessageBusOptions, new()
             where TDestinationOptions : MessageBusOptions, new()
         {
-            services.AddTransferTransformationHandler<DefaultTransformationHandler>();
-            services.AddBeforeTransferHandler<DefaultBeforeTransferHandler>();
-            services.AddTransferMessageBusOptions<TSourceOptions, TDestinationOptions>(configurationKey);
-            services.AddSingleton<IMessageBusTransferClient, MessageBusTransferClient<TSourceOptions, TDestinationOptions>>();
-
-            return new TransferPipelineBuilder(services);
+            return new TransferPipeline<TSourceOptions, TDestinationOptions>(services, configurationKey);
         }
 
-        public static TransferPipelineBuilder AddTransferClient<TSourceOptions,TDestinationOptions>(this IServiceCollection services
-            , Func<IServiceProvider, TSourceOptions, IMessageBusAsyncConsumer> injectSource
-            , Func<IServiceProvider, TDestinationOptions, IMessageBusPublisherAsync> injectDestination            
-            , string configurationKey = "MessageBusTransferOptions")
-            where TSourceOptions : MessageBusOptions, new()            
-            where TDestinationOptions : MessageBusOptions, new()
+        public static TracerProviderBuilder AddOpenTelemetryForTransferBusMessageBus(this TracerProviderBuilder builder)
         {
-            services.AddTransferTransformationHandler<DefaultTransformationHandler>();
-            services.AddBeforeTransferHandler<DefaultBeforeTransferHandler>();
-            services.AddTransferMessageBusOptions<TSourceOptions, TDestinationOptions>(configurationKey);
-
-            services.AddSingleton(sp => {
-                var opts = sp.GetRequiredService<IOptions<TransferOptions<TSourceOptions,TDestinationOptions>>>();
-                return injectSource(sp, opts.Value.Source);
-            });
-
-            services.AddSingleton(sp => {
-                var opts = sp.GetRequiredService<IOptions<TransferOptions<TSourceOptions, TDestinationOptions>>>();
-                return injectDestination(sp, opts.Value.Destination);
-            });
-
-            services.AddSingleton<IMessageBusTransferClient, MessageBusTransferClient<TSourceOptions,TDestinationOptions>>();
-
-            return new TransferPipelineBuilder(services);
+            builder.AddSource(ActivitySource.Name);
+            return builder;
         }
 
-        public static TransferPipelineBuilder AddTransferTransformationHandler<TBeforeTransferHandler>(this TransferPipelineBuilder pipeline)
-            where TBeforeTransferHandler : class, ITransformationHandler
+        private static string CreateActivityName(this ReceivedMessage arg, string activityName, string entitypath)
         {
-            pipeline.Services.AddTransferTransformationHandler<TBeforeTransferHandler>();
-            return pipeline;
+            return $"{activityName} {entitypath}";
         }
 
-        public static TransferPipelineBuilder AddBeforeTransferHandler<TBeforeTransferHandler>(this TransferPipelineBuilder pipeline)
-            where TBeforeTransferHandler : class, IBeforeTransferHandler
+        private static string CreateMessageReceivedActivityName(this ReceivedMessage arg, string entitypath)
         {
-            pipeline.Services.AddBeforeTransferHandler<TBeforeTransferHandler>();
-            return pipeline;
+            return arg.CreateActivityName("message-transfer", entitypath);
         }
 
-        public static TransferPipelineBuilder AddTransferHostedService(this TransferPipelineBuilder pipeline)
+        public static Activity CreateMessageReceivedActivity(this ReceivedMessage arg, string entitypath)
         {
-            pipeline.Services.AddHostedService<MessageBusTransferHostedService>();
-            return pipeline;
+            var activityName = arg.CreateMessageReceivedActivityName(entitypath);
+            return ActivitySource.CreateActivity(arg.UserProperties, activityName, ActivityKind.Consumer);
         }
-
-        private static void AddTransferTransformationHandler<TTransferHandler>(this IServiceCollection services)
-            where TTransferHandler : class, ITransformationHandler
-        {
-            services.AddTransient<ITransformationHandler, TTransferHandler>();
-        }
-
-        private static void AddBeforeTransferHandler<TBeforeTransferHandler>(this IServiceCollection services)
-            where TBeforeTransferHandler : class, IBeforeTransferHandler
-        {
-            services.AddTransient<IBeforeTransferHandler, TBeforeTransferHandler>();
-        }
-    }
-
-    public class TransferPipelineBuilder(IServiceCollection services)
-    {
-        public IServiceCollection Services { get; private set; } = services;
     }
 }

@@ -16,7 +16,7 @@ namespace Up4All.Framework.MessageBus.Kafka
     public class KafkaStandaloneGenericSubscriptionAsyncClient<TMessageKey> : MessageBusStandaloneSubscriptonClient, IMessageBusStandaloneAsyncConsumer, IKafkaSubscriptionClient
         where TMessageKey : class
     {
-        private readonly IConsumer<TMessageKey, byte[]> _consumer;        
+        private readonly IConsumer<TMessageKey, byte[]> _consumer;
 
         public KafkaStandaloneGenericSubscriptionAsyncClient(string connectionString, string topicName, string subscriptionName)
             : base(connectionString, topicName, subscriptionName)
@@ -42,6 +42,8 @@ namespace Up4All.Framework.MessageBus.Kafka
                     var consume = _consumer.Consume(cancellationToken);
                     var message = consume.Message.ToReceivedMessage();
 
+                    this.AddActivityTrace<KafkaStandaloneGenericSubscriptionAsyncClient<TMessageKey>>(message);
+
                     var result = await handler(message, cancellationToken);
 
                     if (result == MessageReceivedStatus.Completed)
@@ -50,7 +52,7 @@ namespace Up4All.Framework.MessageBus.Kafka
                     if (onIdle is not null)
                         await onIdle(cancellationToken);
                 }
-                catch(OperationCanceledException)
+                catch (OperationCanceledException)
                 {
                     await CloseAsync(CancellationToken.None);
                 }
@@ -70,6 +72,8 @@ namespace Up4All.Framework.MessageBus.Kafka
                 {
                     var consume = _consumer.Consume(cancellationToken);
                     var message = consume.Message.ToReceivedMessage();
+
+                    this.AddActivityTrace<KafkaStandaloneGenericSubscriptionAsyncClient<TMessageKey>>(message);
 
                     var result = await handler(message.GetBody<TModel>(), cancellationToken);
 
@@ -125,6 +129,8 @@ namespace Up4All.Framework.MessageBus.Kafka
                     var consume = _consumer.Consume(cancellationToken);
                     var message = consume.Message.ToReceivedMessageWithStructKey();
 
+                    this.AddActivityTrace<KafkaStandaloneWithStructKeySubscriptionAsyncClient<TMessageKey>>(message);
+
                     var result = await handler(message, cancellationToken);
 
                     if (result == MessageReceivedStatus.Completed)
@@ -153,6 +159,8 @@ namespace Up4All.Framework.MessageBus.Kafka
                 {
                     var consume = _consumer.Consume(cancellationToken);
                     var message = consume.Message.ToReceivedMessageWithStructKey();
+
+                    this.AddActivityTrace<KafkaStandaloneWithStructKeySubscriptionAsyncClient<TMessageKey>>(message);
 
                     var result = await handler(message.GetBody<TModel>(), cancellationToken);
 

@@ -7,7 +7,7 @@ using Up4All.Framework.MessageBus.Abstractions.Messages;
 
 namespace Up4All.Framework.MessageBus.Kafka
 {
-    public class KafkaStandaloneTopicAsyncClient(string connectionString, string topicName, int connectionAttempts = 8) 
+    public class KafkaStandaloneTopicAsyncClient(string connectionString, string topicName, int connectionAttempts = 8)
         : KafkaStandaloneGenericTopicAsyncClient<string>(connectionString, topicName, connectionAttempts), IMessageBusStandalonePublisherAsync
     {
         public new async Task SendAsync(MessageBusMessage message, CancellationToken cancellationToken = default)

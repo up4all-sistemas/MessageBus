@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Text.Json;
 
+using Up4All.Framework.MessageBus.Abstractions.Consts;
 using Up4All.Framework.MessageBus.Abstractions.Extensions;
 using Up4All.Framework.MessageBus.Abstractions.Interfaces;
 
@@ -122,7 +123,7 @@ namespace Up4All.Framework.MessageBus.Abstractions.Messages
         public TMessageKey GetMessageId<TMessageKey>()
             where TMessageKey : class
         {
-            if(this.TryGetUserPropertyAs<TMessageKey>(MessageIdkey, out var result))
+            if (this.TryGetUserPropertyAs<TMessageKey>(MessageIdkey, out var result))
                 return result;
 
             if (this.TryGetUserPropertyValue(MessageIdkey, out var rawValue))
@@ -139,5 +140,13 @@ namespace Up4All.Framework.MessageBus.Abstractions.Messages
 
             return default;
         }
+
+        public void AddTraceProperties(string provider) 
+        {
+            AddUserProperty(MessageBusProperties.Timestamp, DateTime.UtcNow.ToString("o"));
+            AddUserProperty(MessageBusProperties.Provider, provider);
+            AddUserProperty(MessageBusProperties.MessageId, Guid.NewGuid().ToString());
+        }
+
     }
 }

@@ -39,7 +39,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus
 
         public Task SendManyAsync<TModel>(IEnumerable<TModel> models, CancellationToken cancellationToken = default)
             => SendAsync(models.Select(x => x.CreateMessagebusMessage()), cancellationToken);
-        
+
         protected override void Dispose(bool disposing)
         {
             _topicClient.CloseAsync().Wait();

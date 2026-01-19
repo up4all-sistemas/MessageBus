@@ -1,8 +1,32 @@
-﻿namespace Up4All.Framework.MessageBus.RabbitMQ.Enums
+﻿using Up4All.Framework.MessageBus.RabbitMQ.Options;
+
+namespace Up4All.Framework.MessageBus.RabbitMQ.Consts
 {
-    public struct Consts
+    public static class RabbitMQConsts
     {
         public const string OpenTelemetrySourceName = "RabbitMQ Up4All MessageBus";
+
+        public static QueueDeclareOptions DefaultQueueDeclareOptions => new();
+
+        public static StreamDeclareOptions DefaultStreamDeclareOptions => new();
+
+        public static ExchangeDeclareOptions DefaultExchangeDeclareOptions => new();
+
+        public static QueueDeclareOptions ToQueueDeclare(this ProvisioningOptions opts)
+        {
+            return opts;
+        }
+
+        public static StreamDeclareOptions ToStreamDeclare(this ProvisioningOptions opts)
+        {
+            return opts;
+        }
+
+        public static ExchangeDeclareOptions ToExchangeDeclare(this ProvisioningOptions opts)
+        {
+            return opts;
+        }
+
     }
 
     public struct ExchangeType
@@ -33,10 +57,7 @@
     }
 
     public struct Properties
-    {
-        public const string Timestamp = "mb-timestamp";
-        public const string Provider = "mb-messagebus";
-        public const string MessageId = "mb-id";
+    {        
         public const string IsPersistent = "mb-is-persistent";
     }
 }

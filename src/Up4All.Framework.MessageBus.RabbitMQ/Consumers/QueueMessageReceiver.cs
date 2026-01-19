@@ -4,10 +4,12 @@ using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Up4All.Framework.MessageBus.Abstractions.Enums;
+using Up4All.Framework.MessageBus.Abstractions.Extensions;
 using Up4All.Framework.MessageBus.Abstractions.Messages;
 using Up4All.Framework.MessageBus.RabbitMQ.Extensions;
 
@@ -29,14 +31,17 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Consumers
         {
             _logger.LogDebug("Registrating Deliver Consumer Async");
             await base.HandleBasicDeliverAsync(consumerTag, deliveryTag, redelivered, exchange, routingKey, properties, body, cancellationToken: cancellationToken);
-            using var activity = this.CreateMessageReceivedActivity(properties, exchange, routingKey);
+            
             try
             {
                 _logger.LogDebug("Receiving message from {QueueName}", _channel.CurrentQueue);
                 var message = body.CreateReceivedMessage(properties);
                 message.SetMessageId(Guid.NewGuid());
 
-                RabbitMQClientExtensions.AddTagsToActivity(activity, exchange, routingKey, body.ToArray());
+                using var activity = this.CreateMessageReceivedActivity(properties, exchange, routingKey);
+                activity?.InjectPropagationContext(message.UserProperties);
+                activity?.AddTagsToActivity("rabbitmq", body.ToArray(), exchange, new Dictionary<string, object> { { "messaging.rabbitmq.routing_key", "" } });
+                
                 var response = await _handler(message, cancellationToken);
                 await _channel.ProcessMessageAsync(deliveryTag, response, _autoComplete, cancellationToken);
                 await _idleHandler?.Invoke(cancellationToken);

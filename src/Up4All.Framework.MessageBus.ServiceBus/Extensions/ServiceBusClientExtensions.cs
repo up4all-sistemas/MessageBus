@@ -7,6 +7,7 @@ using Polly;
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text.Json;
 using System.Threading;
@@ -15,11 +16,13 @@ using System.Threading.Tasks;
 using Up4All.Framework.MessageBus.Abstractions.Enums;
 using Up4All.Framework.MessageBus.Abstractions.Extensions;
 using Up4All.Framework.MessageBus.Abstractions.Messages;
+using Up4All.Framework.MessageBus.ServiceBus.Consumers;
 
 namespace Up4All.Framework.MessageBus.ServiceBus.Extensions
 {
     public static class ServiceBusClientExtensions
     {
+        public static readonly ActivitySource ActivitySource = OpenTelemetryExtensions.CreateActivitySource<ServiceBusDefaultConsumer>();
 
         public static (ServiceBusClient, ServiceBusSender) CreateClient(ILogger logger, string connectionString, string entityName, int attempts)
         {
@@ -67,9 +70,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Extensions
 
         public static ServiceBusMessage PrepareMesssage(MessageBusMessage message)
         {
-            message.AddUserProperty("mb-timestamp", DateTime.UtcNow.ToString("o"));
-            message.AddUserProperty("mb-messagebus", "servicebus");
-            message.AddUserProperty("mb-id", Guid.NewGuid().ToString());
+            message.AddTraceProperties("servicebus");
 
             var sbMessage = new ServiceBusMessage(message.Body);
             if (message.UserProperties.Any())
@@ -109,13 +110,19 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Extensions
         public static Task SendMessageBusMessageAsync(this ServiceBusSender sender, ILogger logger, MessageBusMessage message, CancellationToken cancellationToken)
         {
             logger.LogDebug("Sending message to {EntityPath}", sender.EntityPath);
+            var activityName = $"message-send {sender.EntityPath}";
+            using var activity = ActivitySource.ProcessOpenTelemetryActivity(activityName, ActivityKind.Producer);
+
+            activity?.InjectPropagationContext(message.UserProperties);
+            activity?.AddTagsToActivity("servicebus", message.Body, sender.EntityPath);
+
             return sender.SendMessageAsync(PrepareMesssage(message), cancellationToken);
         }
 
-        public static Task SendMessageBusMessageAsync(this ServiceBusSender sender, ILogger logger, IEnumerable<MessageBusMessage> messages, CancellationToken cancellationToken)
+        public static async Task SendMessageBusMessageAsync(this ServiceBusSender sender, ILogger logger, IEnumerable<MessageBusMessage> messages, CancellationToken cancellationToken)
         {
-            logger.LogDebug("Sending messages to {EntityPath}", sender.EntityPath);
-            return sender.SendMessagesAsync(messages.Select(PrepareMesssage), cancellationToken);
+            foreach (var message in messages)
+                await sender.SendMessageBusMessageAsync(logger, message, cancellationToken);
         }
 
         private static async Task ProcessMessageAsync(ILogger logger, ProcessMessageEventArgs arg
@@ -134,6 +141,9 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Extensions
 
             try
             {
+                using var activity = arg.CreateMessageReceivedActivity();
+                activity?.InjectPropagationContext(received.UserProperties);
+                activity?.AddTagsToActivity("servicebus", received.Body, arg.EntityPath);
                 await ProcessHandleResult(arg, await handler.Invoke(received, cancellationToken), autoComplete, cancellationToken);
             }
             catch (Exception ex)
@@ -188,6 +198,22 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Extensions
 
             received.SetMessageId(arg.Message.MessageId);
             return received;
+        }
+
+        private static string CreateActivityName(this ProcessMessageEventArgs arg, string activityName)
+        {
+            return $"{activityName} {arg.EntityPath}";
+        }
+
+        private static string CreateMessageReceivedActivityName(this ProcessMessageEventArgs arg)
+        {
+            return arg.CreateActivityName("message-received");
+        }
+
+        private static Activity CreateMessageReceivedActivity(this ProcessMessageEventArgs arg)
+        {
+            var activityName = arg.CreateMessageReceivedActivityName();
+            return ActivitySource.CreateActivity(arg.Message.ApplicationProperties, activityName, ActivityKind.Consumer);
         }
     }
 

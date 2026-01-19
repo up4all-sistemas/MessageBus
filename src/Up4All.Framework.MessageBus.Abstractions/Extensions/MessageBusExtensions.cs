@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -190,7 +189,7 @@ namespace Up4All.Framework.MessageBus.Abstractions.Extensions
                 }
                 else
                     value = userPropertyValue;
-                
+
                 return true;
             }
 

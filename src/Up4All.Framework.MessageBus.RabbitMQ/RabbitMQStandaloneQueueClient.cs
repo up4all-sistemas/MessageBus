@@ -21,7 +21,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
 {
     public class RabbitMQStandaloneQueueAsyncClient(ILogger<RabbitMQStandaloneQueueAsyncClient> logger, string connectionString, string queuename
             , bool persistent
-            , int connectionAttempts = 8            
+            , int connectionAttempts = 8
             , QueueDeclareOptions declareOpts = null)
         : MessageBusStandaloneQueueClient(connectionString, queuename, connectionAttempts), IRabbitMQClient, IMessageBusStandaloneQueueAsyncClient
     {

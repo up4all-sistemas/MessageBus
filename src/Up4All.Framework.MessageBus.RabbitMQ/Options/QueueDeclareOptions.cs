@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-using Up4All.Framework.MessageBus.RabbitMQ.Enums;
+using Up4All.Framework.MessageBus.RabbitMQ.Consts;
 
 namespace Up4All.Framework.MessageBus.RabbitMQ.Options
 {

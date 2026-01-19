@@ -22,8 +22,8 @@ namespace Up4All.Framework.MessageBus.TransferHelper.Transformations
             MessageBusMessage mesage = receivedMessage;
             if (transformationOptions is null) return Task.FromResult(mesage);
 
-            if (transformationOptions.InHeader is not null)            
-                ProcessHeader(mesage, transformationOptions.InHeader!);                
+            if (transformationOptions.InHeader is not null)
+                ProcessHeader(mesage, transformationOptions.InHeader!);
 
             if (transformationOptions.InBody is null) return Task.FromResult(mesage);
 
@@ -31,15 +31,15 @@ namespace Up4All.Framework.MessageBus.TransferHelper.Transformations
         }
 
         private static void ProcessHeader(MessageBusMessage message, IEnumerable<TransferTransformation> transformations)
-        {   
-            foreach(var transformation in transformations)
+        {
+            foreach (var transformation in transformations)
             {
                 if (!message.UserProperties.ContainsKey(transformation.Key)) continue;
 
                 if (transformation?.Operation == Operation.Remove)
                     message.RemoveUserProperty(transformation.Key);
 
-                if(transformation?.Operation == Operation.Add)
+                if (transformation?.Operation == Operation.Add)
                     message.AddUserProperty(transformation!.Key, transformation.Value!);
 
                 if (transformation?.Operation == Operation.Update)
@@ -51,7 +51,7 @@ namespace Up4All.Framework.MessageBus.TransferHelper.Transformations
                     message.RemoveUserProperty(transformation.Key);
                     message.AddUserProperty(transformation!.Value!.ToString(), value);
                 }
-            }            
+            }
         }
     }
 }
