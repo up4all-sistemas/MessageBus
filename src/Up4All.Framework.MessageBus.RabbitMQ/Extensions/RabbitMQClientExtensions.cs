@@ -48,7 +48,8 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             await client.Channel.BasicConsumeAsync(queueName, autoComplete, $"up4-{Environment.MachineName.ToLower()}", args, receiver, cancellationToken);
         }
 
-        public static async Task SendMessageAsync(this IChannel channel, ILogger logger, string topicName, string queueName, MessageBusMessage msg, bool mandatory = false, bool persistent = true, CancellationToken cancellationToken = default)
+        public static async Task SendMessageAsync(this IChannel channel, ILogger logger, string topicName, string queueName, MessageBusMessage msg
+            , bool persistent = true, CancellationToken cancellationToken = default)
         {
             logger.LogDebug("Sending message to {Target}", topicName ?? queueName);
 
@@ -75,7 +76,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
                 { "messaging.rabbitmq.routing_key", routingKey }
             });
 
-            await channel.BasicPublishAsync(topicName, routingKey, mandatory, basicProps, msg.Body, cancellationToken);
+            await channel.BasicPublishAsync(topicName, routingKey, false, basicProps, msg.Body, cancellationToken);
         }
 
         public static async Task<IConnection> GetConnectionAsync(this IRabbitMQClient client, string connectionString, int connectionAttempts, CancellationToken cancellationToken)

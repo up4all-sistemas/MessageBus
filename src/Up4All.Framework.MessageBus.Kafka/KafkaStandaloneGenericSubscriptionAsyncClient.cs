@@ -1,4 +1,5 @@
 ﻿using Confluent.Kafka;
+using Confluent.Kafka.Admin;
 
 using System;
 using System.Threading;
@@ -13,32 +14,28 @@ using Up4All.Framework.MessageBus.Kafka.Interfaces;
 
 namespace Up4All.Framework.MessageBus.Kafka
 {
-    public abstract class KafkaStandaloneGenericSubscriptionAsyncClient<TMessageKey> : MessageBusStandaloneSubscriptonClient, IMessageBusStandaloneAsyncConsumer, IKafkaSubscriptionClient
+    public abstract class KafkaStandaloneGenericSubscriptionAsyncClient<TMessageKey>(string connectionString, string topicName, string subscriptionName)
+        : MessageBusStandaloneSubscriptonClient(connectionString, topicName, subscriptionName)
+        , IMessageBusStandaloneAsyncConsumer, IKafkaSubscriptionClient
     {
-        private readonly IConsumer<TMessageKey, byte[]> _consumer;
-
-        public KafkaStandaloneGenericSubscriptionAsyncClient(string connectionString, string topicName, string subscriptionName)
-            : base(connectionString, topicName, subscriptionName)
-        {
-            _consumer = CreateConsumer(connectionString, subscriptionName);
-        }
+        protected IConsumer<TMessageKey, byte[]> Consumer { get; private set; } = null!;
 
         public Task CloseAsync(CancellationToken cancellationToken = default)
         {
-            _consumer.Unsubscribe();
-            _consumer.Unassign();
-            _consumer.Close();
+            Consumer.Unsubscribe();
+            Consumer.Unassign();
+            Consumer.Close();
             return Task.CompletedTask;
         }
 
         public async Task RegisterHandlerAsync(Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task>? onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
         {
-            _consumer.Subscribe(TopicName);
+            Consumer.Subscribe(TopicName);
             while (!cancellationToken.IsCancellationRequested)
             {
                 try
                 {
-                    var consume = _consumer.Consume(cancellationToken);
+                    var consume = Consumer.Consume(cancellationToken);
                     var message = GetReceivedMessage(consume.Message);
 
                     this.AddActivityTrace<KafkaStandaloneGenericSubscriptionAsyncClient<TMessageKey>>(message);
@@ -46,7 +43,7 @@ namespace Up4All.Framework.MessageBus.Kafka
                     var result = await handler(message, cancellationToken);
 
                     if (result == MessageReceivedStatus.Completed)
-                        _consumer.Commit();
+                        Consumer.Commit();
 
                     if (onIdle is not null)
                         await onIdle(cancellationToken);
@@ -64,12 +61,12 @@ namespace Up4All.Framework.MessageBus.Kafka
 
         public async Task RegisterHandlerAsync<TModel>(Func<TModel, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task>? onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
         {
-            _consumer.Subscribe(TopicName);
+            Consumer.Subscribe(TopicName);
             while (!cancellationToken.IsCancellationRequested)
             {
                 try
                 {
-                    var consume = _consumer.Consume(cancellationToken);
+                    var consume = Consumer.Consume(cancellationToken);
                     var message = GetReceivedMessage(consume.Message);
 
                     this.AddActivityTrace<KafkaStandaloneGenericSubscriptionAsyncClient<TMessageKey>>(message);
@@ -77,7 +74,7 @@ namespace Up4All.Framework.MessageBus.Kafka
                     var result = await handler(message.GetBody<TModel>(), cancellationToken);
 
                     if (result == MessageReceivedStatus.Completed)
-                        _consumer.Commit();
+                        Consumer.Commit();
 
                     if (onIdle is not null)
                         await onIdle(cancellationToken);
@@ -93,25 +90,29 @@ namespace Up4All.Framework.MessageBus.Kafka
             }
         }
 
-        protected abstract IConsumer<TMessageKey, byte[]> CreateConsumer(string connectionString, string subscriptionName);
+        protected void SetConsumer(IConsumer<TMessageKey, byte[]> consumer) 
+        {
+            Consumer = consumer;
+        }
 
         protected abstract ReceivedMessage GetReceivedMessage(Message<TMessageKey, byte[]> consumeMessage);
 
         protected override void Dispose(bool disposing)
         {
             if (disposing)
-                _consumer.Dispose();
+                Consumer.Dispose();
         }
     }
 
-    public class KafkaStandaloneWithGenericSubscriptionAsyncClient<TMessageKey>(string connectionString, string topicName, string subscriptionName)
-        : KafkaStandaloneGenericSubscriptionAsyncClient<TMessageKey>(connectionString, topicName, subscriptionName)
+    public class KafkaStandaloneWithGenericSubscriptionAsyncClient<TMessageKey>
+        : KafkaStandaloneGenericSubscriptionAsyncClient<TMessageKey>
         , IMessageBusStandaloneAsyncConsumer, IKafkaSubscriptionClient
         where TMessageKey : class
     {
-        protected override IConsumer<TMessageKey, byte[]> CreateConsumer(string connectionString, string subscriptionName)
+        public KafkaStandaloneWithGenericSubscriptionAsyncClient(string connectionString, string topicName, string subscriptionName)
+            : base(connectionString, topicName, subscriptionName)
         {
-            return new ConsumerBuilder<TMessageKey, byte[]>(this.CreateConfig(connectionString, subscriptionName)).Build();
+            SetConsumer(new ConsumerBuilder<TMessageKey, byte[]>(this.CreateConfig(connectionString, subscriptionName)).Build());
         }
 
         protected override ReceivedMessage GetReceivedMessage(Message<TMessageKey, byte[]> consumeMessage)
@@ -120,14 +121,15 @@ namespace Up4All.Framework.MessageBus.Kafka
         }
     }
 
-    public class KafkaStandaloneWithStructKeySubscriptionAsyncClient<TMessageKey>(string connectionString, string topicName, string subscriptionName)
-        : KafkaStandaloneGenericSubscriptionAsyncClient<TMessageKey>(connectionString, topicName, subscriptionName)
+    public class KafkaStandaloneWithStructKeySubscriptionAsyncClient<TMessageKey>
+        : KafkaStandaloneGenericSubscriptionAsyncClient<TMessageKey>
         , IMessageBusStandaloneAsyncConsumer, IKafkaSubscriptionClient
         where TMessageKey : struct
     {
-        protected override IConsumer<TMessageKey, byte[]> CreateConsumer(string connectionString, string subscriptionName)
+        public KafkaStandaloneWithStructKeySubscriptionAsyncClient(string connectionString, string topicName, string subscriptionName)
+            : base(connectionString, topicName, subscriptionName)
         {
-            return new ConsumerBuilder<TMessageKey, byte[]>(this.CreateConfig(connectionString, subscriptionName)).Build();
+            SetConsumer(new ConsumerBuilder<TMessageKey, byte[]>(this.CreateConfig(connectionString, subscriptionName)).Build());
         }
 
         protected override ReceivedMessage GetReceivedMessage(Message<TMessageKey, byte[]> consumeMessage)
