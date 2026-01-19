@@ -9,7 +9,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Pipelines
         : MessageBusPipeline<RabbitMQMessageBusOptions>
     {
         private readonly RabbitMQMessageBusPublisherPipeline _producer;
-        private readonly RabbitMQMessageBusStreamQueuePipeline _queue;
+        private readonly RabbitMQMessageBusQueuePipeline _queue;
         private readonly RabbitMQMessageBusStreamQueuePipeline _stream;
 
         public RabbitMQMessageBusPipeline(IServiceCollection services, string configurationBindKey)
@@ -26,7 +26,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Pipelines
 
         public RabbitMQMessageBusStreamQueuePipeline Streams => _stream;
 
-        public RabbitMQMessageBusStreamQueuePipeline Queues => _queue;
+        public RabbitMQMessageBusQueuePipeline Queues => _queue;
 
         public RabbitMQMessageBusPublisherPipeline Producers => _producer;
 
