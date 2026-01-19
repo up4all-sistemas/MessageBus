@@ -56,7 +56,15 @@ namespace Up4All.Framework.MessageBus.Abstractions.Extensions
             var parent = Propagator.Extract(default, props, (x, key) =>
             {
                 if (x.Any(k => k.Key == key))
-                    return [Encoding.UTF8.GetString((byte[])x.First(k => k.Key == key).Value)];
+                {
+                    var vlr = x.First(k => k.Key == key).Value;
+
+                    if(vlr is string stringvlr)
+                        return [stringvlr];
+                    else
+                        return [Encoding.UTF8.GetString((byte[])vlr)];
+                }                    
+                    
                 return [];
             });
             Baggage.Current = parent.Baggage;

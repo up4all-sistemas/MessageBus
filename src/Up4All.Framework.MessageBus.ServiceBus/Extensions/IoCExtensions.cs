@@ -2,9 +2,6 @@
 
 using OpenTelemetry.Trace;
 
-using Up4All.Framework.MessageBus.Abstractions.Extensions;
-using Up4All.Framework.MessageBus.ServiceBus.Consts;
-using Up4All.Framework.MessageBus.ServiceBus.Consumers;
 using Up4All.Framework.MessageBus.ServiceBus.Pipelines;
 
 namespace Up4All.Framework.MessageBus.ServiceBus.Extensions
@@ -16,7 +13,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Extensions
             return new ServiceBusMessageBusPipeline(services, configurationBindKey);
         }
 
-        public static TracerProviderBuilder AddOpenTelemetryForMessageBus(this TracerProviderBuilder builder)
+        public static TracerProviderBuilder AddOpenTelemetryForServiceBusMessageBus(this TracerProviderBuilder builder)
         {
             builder.AddSource(ServiceBusClientExtensions.ActivitySource.Name);
             return builder;

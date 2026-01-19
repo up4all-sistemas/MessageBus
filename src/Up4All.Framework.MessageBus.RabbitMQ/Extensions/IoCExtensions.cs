@@ -13,7 +13,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             return new RabbitMQMessageBusPipeline(services, configurationBindKey);
         }
 
-        public static TracerProviderBuilder AddOpenTelemetryForMessageBus(this TracerProviderBuilder builder)
+        public static TracerProviderBuilder AddOpenTelemetryForRabbitMQMessageBus(this TracerProviderBuilder builder)
         {
             builder.AddSource(RabbitMQClientExtensions.ActivitySource.Name);
             return builder;
