@@ -79,6 +79,10 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Extensions
             if (message.IsJson)
                 sbMessage.ContentType = "application/json";
 
+            var correlationId = message.GetCorrelationId();
+            if (correlationId.HasValue)
+                sbMessage.CorrelationId = correlationId.Value.ToString();
+
             return sbMessage;
         }
 
@@ -181,6 +185,10 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Extensions
                 received.AddBody(arg.Message.Body, true);
             else
                 received.AddBody(arg.Message.Body.ToArray());
+
+            if(!string.IsNullOrEmpty(arg.Message.CorrelationId)
+                && Guid.TryParse(arg.Message.CorrelationId, out var correlationId))
+                received.SetCorrelationId(correlationId);
 
             if (arg.Message.ApplicationProperties.Any())
                 received.AddUserProperties(arg.Message.ApplicationProperties.ToDictionary(x => x.Key, x => x.Value));

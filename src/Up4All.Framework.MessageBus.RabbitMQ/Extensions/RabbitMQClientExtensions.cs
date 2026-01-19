@@ -62,6 +62,11 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             if (msg.UserProperties.TryGetValue(Properties.IsPersistent, out var isPersistent))
                 persistent = Convert.ToBoolean(isPersistent);
 
+            var correlationId = msg.GetCorrelationId();
+
+            if(correlationId.HasValue)
+                basicProps.CorrelationId = correlationId.Value.ToString();
+
             basicProps.Persistent = persistent;
             basicProps.DeliveryMode = persistent ? DeliveryModes.Persistent : DeliveryModes.Transient;
 

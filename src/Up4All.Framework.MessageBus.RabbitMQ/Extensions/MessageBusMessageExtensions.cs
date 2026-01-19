@@ -1,4 +1,7 @@
-﻿using Up4All.Framework.MessageBus.Abstractions.Messages;
+﻿using System;
+
+using Up4All.Framework.MessageBus.Abstractions.Extensions;
+using Up4All.Framework.MessageBus.Abstractions.Messages;
 using Up4All.Framework.MessageBus.RabbitMQ.Consts;
 
 namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
