@@ -17,10 +17,8 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Pipelines
     public class RabbitMQMessageBusStreamQueuePipeline(RabbitMQMessageBusPipeline pipeline)
         : MessageBusConsumerPipeline<RabbitMQMessageBusPipeline, RabbitMQMessageBusOptions>(pipeline)
     {
-        public RabbitMQMessageBusStreamQueuePipeline ListenStreamQueue<TMessageBusMessageHandler>(Action<IServiceProvider, RabbitMQMessageBusOptions, StreamDeclareOptions> queueDeclareBuilder = null)
-            where TMessageBusMessageHandler : class, IMessageBusMessageHandler
+        public RabbitMQMessageBusStreamQueuePipeline ListenStreamQueue(Action<IServiceProvider, RabbitMQMessageBusOptions, StreamDeclareOptions> queueDeclareBuilder = null)
         {
-            MainPipeline.Services.AddTransient<IMessageBusMessageHandler, TMessageBusMessageHandler>();
             MainPipeline.Services.AddSingleton<IMessageBusAsyncConsumer>(sp =>
             {
                 var opts = sp.GetRequiredService<IOptions<RabbitMQMessageBusOptions>>();
@@ -29,22 +27,19 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Pipelines
                 var declareOpts = RabbitMQConsts.ToStreamDeclare(opts.Value.ProvisioningOptions);
                 queueDeclareBuilder?.Invoke(sp, opts.Value, declareOpts);
                 return new RabbitMQStreamAsyncClient(logger, opts, declareOpts);
-            });
-            IsHandlerDefined = true;
+            });            
             return this;
         }
 
-        public RabbitMQMessageBusStreamQueuePipeline ListenStreamQueue<TMessageBusMessageHandler>(string connectionString, string queueName
+        public RabbitMQMessageBusStreamQueuePipeline ListenStreamQueue(string connectionString, string queueName
             , object offset
             , bool persistent = true
             , int connectionAttempts = 8
             , Action<IServiceProvider, StreamDeclareOptions> queueDeclareBuilder = null)
-            where TMessageBusMessageHandler : class, IMessageBusMessageHandler
-        {
-            MainPipeline.Services.AddTransient<IMessageBusMessageHandler, TMessageBusMessageHandler>();
+        {            
             MainPipeline.Services.AddSingleton<IMessageBusAsyncConsumer>(sp
                 => CreateClient(sp, connectionString, queueName, offset, persistent, connectionAttempts, queueDeclareBuilder));
-            IsHandlerDefined = true;
+            
             return this;
         }
 

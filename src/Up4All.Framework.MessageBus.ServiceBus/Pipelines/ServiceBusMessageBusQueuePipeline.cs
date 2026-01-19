@@ -16,9 +16,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Pipelines
     {
         public ServiceBusMessageBusQueuePipeline ListenQueue()
         {
-
             MainPipeline.Services.AddSingleton<IMessageBusAsyncConsumer, ServiceBusQueueAsyncClient>();
-
             return this;
         }
 
@@ -30,7 +28,6 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Pipelines
                 var logger = sp.GetRequiredService<ILogger<ServiceBusStandaloneQueueAsyncClient>>();
                 return new ServiceBusStandaloneQueueAsyncClient(logger, connectionString, queueName, connectionAttempts);
             });
-            IsHandlerDefined = true;
             return this;
         }
 

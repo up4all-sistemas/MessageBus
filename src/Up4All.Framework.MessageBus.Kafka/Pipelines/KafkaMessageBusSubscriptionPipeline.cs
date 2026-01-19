@@ -3,7 +3,6 @@
 using System;
 
 using Up4All.Framework.MessageBus.Abstractions.Consumers;
-using Up4All.Framework.MessageBus.Abstractions.Handlers;
 using Up4All.Framework.MessageBus.Abstractions.Interfaces;
 using Up4All.Framework.MessageBus.Abstractions.Interfaces.Pipelines;
 using Up4All.Framework.MessageBus.Abstractions.Pipelines;
@@ -14,61 +13,43 @@ namespace Up4All.Framework.MessageBus.Kafka.Pipelines
     public class KafkaMessageBusSubscriptionPipeline(KafkaMessageBusPipeline pipeline)
         : MessageBusConsumerPipeline<KafkaMessageBusPipeline, KafkaMessageBusOptions>(pipeline)
     {
-        public KafkaMessageBusSubscriptionPipeline ListenSubscription<TMessageBusMessageHandler>()
-            where TMessageBusMessageHandler : class, IMessageBusMessageHandler
-        {
-            MainPipeline.Services.AddTransient<IMessageBusMessageHandler, TMessageBusMessageHandler>();
-            MainPipeline.Services.AddSingleton<IMessageBusAsyncConsumer, KafkaSubscriptionAsyncClient>();
-            IsHandlerDefined = true;
+        public KafkaMessageBusSubscriptionPipeline ListenSubscription()
+        {            
+            MainPipeline.Services.AddSingleton<IMessageBusAsyncConsumer, KafkaSubscriptionAsyncClient>();            
             return this;
         }
 
-        public KafkaMessageBusSubscriptionPipeline ListenSubscription<TMessageKey, TMessageBusMessageHandler>()
+        public KafkaMessageBusSubscriptionPipeline ListenSubscription<TMessageKey>()
             where TMessageKey : class
-            where TMessageBusMessageHandler : class, IMessageBusMessageHandler
         {
-            MainPipeline.Services.AddTransient<IMessageBusMessageHandler, TMessageBusMessageHandler>();
-            MainPipeline.Services.AddSingleton<IMessageBusAsyncConsumer, KafkaGenericSubscriptionAsyncClient<TMessageKey>>();
-            IsHandlerDefined = true;
+            MainPipeline.Services.AddSingleton<IMessageBusAsyncConsumer, KafkaGenericSubscriptionAsyncClient<TMessageKey>>();            
             return this;
         }
 
-        public KafkaMessageBusSubscriptionPipeline ListenSubscription<TMessageBusMessageHandler>(string connectionString, string topicName, string subscriptionName)
-            where TMessageBusMessageHandler : class, IMessageBusMessageHandler
+        public KafkaMessageBusSubscriptionPipeline ListenSubscription(string connectionString, string topicName, string subscriptionName)
         {
-            MainPipeline.Services.AddTransient<IMessageBusMessageHandler, TMessageBusMessageHandler>();
             MainPipeline.Services.AddSingleton<IMessageBusAsyncConsumer>(sp => new KafkaStandaloneSubscriptionAsyncClient(connectionString, topicName, subscriptionName));
-            IsHandlerDefined = true;
             return this;
         }
 
-        public KafkaMessageBusSubscriptionPipeline ListenSubscription<TMessageKey, TMessageBusMessageHandler>(string connectionString, string topicName, string subscriptionName)
+        public KafkaMessageBusSubscriptionPipeline ListenSubscription<TMessageKey>(string connectionString, string topicName, string subscriptionName)
             where TMessageKey : class
-            where TMessageBusMessageHandler : class, IMessageBusMessageHandler
         {
-            MainPipeline.Services.AddTransient<IMessageBusMessageHandler, TMessageBusMessageHandler>();
-            MainPipeline.Services.AddSingleton<IMessageBusAsyncConsumer>(sp => new KafkaStandaloneWithGenericSubscriptionAsyncClient<TMessageKey>(connectionString, topicName, subscriptionName));
-            IsHandlerDefined = true;
+            MainPipeline.Services.AddSingleton<IMessageBusAsyncConsumer>(sp => new KafkaStandaloneWithGenericSubscriptionAsyncClient<TMessageKey>(connectionString, topicName, subscriptionName));            
             return this;
         }
 
-        public KafkaMessageBusSubscriptionPipeline ListenSubscriptionWithStructKey<TMessageKey, TMessageBusMessageHandler>()
+        public KafkaMessageBusSubscriptionPipeline ListenSubscriptionWithStructKey<TMessageKey>()
             where TMessageKey : struct
-            where TMessageBusMessageHandler : class, IMessageBusMessageHandler
         {
-            MainPipeline.Services.AddTransient<IMessageBusMessageHandler, TMessageBusMessageHandler>();
-            MainPipeline.Services.AddSingleton<IMessageBusAsyncConsumer, KafkaWithStructKeySubscriptionAsyncClient<TMessageKey>>();
-            IsHandlerDefined = true;
+            MainPipeline.Services.AddSingleton<IMessageBusAsyncConsumer, KafkaWithStructKeySubscriptionAsyncClient<TMessageKey>>();            
             return this;
         }
 
-        public KafkaMessageBusSubscriptionPipeline ListenSubscriptionWithStructKey<TMessageKey, TMessageBusMessageHandler>(string connectionString, string topicName, string subscriptionName)
+        public KafkaMessageBusSubscriptionPipeline ListenSubscriptionWithStructKey<TMessageKey>(string connectionString, string topicName, string subscriptionName)
             where TMessageKey : struct
-            where TMessageBusMessageHandler : class, IMessageBusMessageHandler
         {
-            MainPipeline.Services.AddTransient<IMessageBusMessageHandler, TMessageBusMessageHandler>();
             MainPipeline.Services.AddSingleton<IMessageBusAsyncConsumer>(sp => new KafkaStandaloneWithStructKeySubscriptionAsyncClient<TMessageKey>(connectionString, topicName, subscriptionName));
-            IsHandlerDefined = true;
             return this;
         }
 

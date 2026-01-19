@@ -17,8 +17,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Pipelines
 
         public IConsumerPipelineBuilder ListenSubscription()
         {
-            MainPipeline.Services.AddSingleton<IMessageBusAsyncConsumer, ServiceBusSubscriptionAsyncClient>();
-            IsHandlerDefined = true;
+            MainPipeline.Services.AddSingleton<IMessageBusAsyncConsumer, ServiceBusSubscriptionAsyncClient>();            
             return this;
         }
 
@@ -30,8 +29,6 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Pipelines
                 var logger = sp.GetRequiredService<ILogger<ServiceBusStandaloneSubscriptionAsyncClient>>();
                 return new ServiceBusStandaloneSubscriptionAsyncClient(logger, connectionString, topicName, subscriptionName, connectionAttempts);
             });
-
-            IsHandlerDefined = true;
             return this;
         }
 
