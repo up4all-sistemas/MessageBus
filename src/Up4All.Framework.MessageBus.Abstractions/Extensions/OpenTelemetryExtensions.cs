@@ -30,10 +30,10 @@ namespace Up4All.Framework.MessageBus.Abstractions.Extensions
             where TSource : class
         {
             var activitySource = CreateActivitySource<TSource>();
-            return CreateActivity(activitySource, properties,  activityName, kind);
+            return CreateActivity(activitySource, properties, activityName, kind);
         }
 
-        public static Activity CreateActivity(this ActivitySource activitySource, IEnumerable<KeyValuePair<string, object>> properties, string activityName, ActivityKind kind)         
+        public static Activity CreateActivity(this ActivitySource activitySource, IEnumerable<KeyValuePair<string, object>> properties, string activityName, ActivityKind kind)
         {
             var parentContext = GetParentPropagationContext(properties);
             var activity = ProcessOpenTelemetryActivity(activitySource, activityName, kind, parentContext.ActivityContext);
@@ -59,12 +59,12 @@ namespace Up4All.Framework.MessageBus.Abstractions.Extensions
                 {
                     var vlr = x.First(k => k.Key == key).Value;
 
-                    if(vlr is string stringvlr)
+                    if (vlr is string stringvlr)
                         return [stringvlr];
                     else
                         return [Encoding.UTF8.GetString((byte[])vlr)];
-                }                    
-                    
+                }
+
                 return [];
             });
             Baggage.Current = parent.Baggage;
@@ -80,7 +80,7 @@ namespace Up4All.Framework.MessageBus.Abstractions.Extensions
             activity.SetTag("messaging.system", provider);
             activity.SetTag("messaging.destination", entityPath);
 
-            if(additionalTags is not null)
+            if (additionalTags is not null)
                 foreach (var tag in additionalTags)
                     activity.SetTag(tag.Key, tag.Value);
         }

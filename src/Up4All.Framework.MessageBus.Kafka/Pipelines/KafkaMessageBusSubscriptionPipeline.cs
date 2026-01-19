@@ -1,14 +1,12 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 
 using System;
 
+using Up4All.Framework.MessageBus.Abstractions.Consumers;
 using Up4All.Framework.MessageBus.Abstractions.Handlers;
 using Up4All.Framework.MessageBus.Abstractions.Interfaces;
-using Up4All.Framework.MessageBus.Abstractions.Interfaces.Consumers;
 using Up4All.Framework.MessageBus.Abstractions.Interfaces.Pipelines;
 using Up4All.Framework.MessageBus.Abstractions.Pipelines;
-using Up4All.Framework.MessageBus.Kafka.Consumers;
 using Up4All.Framework.MessageBus.Kafka.Options;
 
 namespace Up4All.Framework.MessageBus.Kafka.Pipelines
@@ -49,14 +47,34 @@ namespace Up4All.Framework.MessageBus.Kafka.Pipelines
             where TMessageBusMessageHandler : class, IMessageBusMessageHandler
         {
             MainPipeline.Services.AddTransient<IMessageBusMessageHandler, TMessageBusMessageHandler>();
-            MainPipeline.Services.AddSingleton<IMessageBusAsyncConsumer>(sp => new KafkaStandaloneGenericSubscriptionAsyncClient<TMessageKey>(connectionString, topicName, subscriptionName));
+            MainPipeline.Services.AddSingleton<IMessageBusAsyncConsumer>(sp => new KafkaStandaloneWithGenericSubscriptionAsyncClient<TMessageKey>(connectionString, topicName, subscriptionName));
+            IsHandlerDefined = true;
+            return this;
+        }
+
+        public KafkaMessageBusSubscriptionPipeline ListenSubscriptionWithStructKey<TMessageKey, TMessageBusMessageHandler>()
+            where TMessageKey : struct
+            where TMessageBusMessageHandler : class, IMessageBusMessageHandler
+        {
+            MainPipeline.Services.AddTransient<IMessageBusMessageHandler, TMessageBusMessageHandler>();
+            MainPipeline.Services.AddSingleton<IMessageBusAsyncConsumer, KafkaWithStructKeySubscriptionAsyncClient<TMessageKey>>();
+            IsHandlerDefined = true;
+            return this;
+        }
+
+        public KafkaMessageBusSubscriptionPipeline ListenSubscriptionWithStructKey<TMessageKey, TMessageBusMessageHandler>(string connectionString, string topicName, string subscriptionName)
+            where TMessageKey : struct
+            where TMessageBusMessageHandler : class, IMessageBusMessageHandler
+        {
+            MainPipeline.Services.AddTransient<IMessageBusMessageHandler, TMessageBusMessageHandler>();
+            MainPipeline.Services.AddSingleton<IMessageBusAsyncConsumer>(sp => new KafkaStandaloneWithStructKeySubscriptionAsyncClient<TMessageKey>(connectionString, topicName, subscriptionName));
             IsHandlerDefined = true;
             return this;
         }
 
         public override IConsumerPipelineBuilder AddDefaultHostedService()
         {
-            AddHostedService<KafkaMQDefaultConsumer>();
+            AddHostedService<DefaultConsumer>();
             return this;
         }
     }

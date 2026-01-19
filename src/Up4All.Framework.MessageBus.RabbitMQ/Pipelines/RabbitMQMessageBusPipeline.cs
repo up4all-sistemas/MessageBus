@@ -25,7 +25,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Pipelines
         }
 
         public RabbitMQMessageBusStreamQueuePipeline Streams => _stream;
-        
+
         public RabbitMQMessageBusStreamQueuePipeline Queues => _queue;
 
         public RabbitMQMessageBusPublisherPipeline Producers => _producer;

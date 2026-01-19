@@ -69,8 +69,10 @@ namespace Up4All.Framework.MessageBus.Abstractions.Extensions
             value = default;
             if (message.UserProperties.TryGetValue(userPropertyKey, out var rawValue))
             {
+                if (rawValue is string stringvalue)
+                    value = stringvalue;
                 if (rawValue is byte[] bytedValue)
-                    value = Encoding.UTF8.GetString((byte[])rawValue);
+                    value = Encoding.UTF8.GetString(bytedValue);
                 else
                     return false;
 

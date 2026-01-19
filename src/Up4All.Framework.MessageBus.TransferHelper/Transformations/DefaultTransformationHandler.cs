@@ -36,16 +36,16 @@ namespace Up4All.Framework.MessageBus.TransferHelper.Transformations
             {
                 if (!message.UserProperties.ContainsKey(transformation.Key)) continue;
 
-                if (transformation?.Operation == Operation.Remove)
+                if (transformation.Operation == Operation.Remove)
                     message.RemoveUserProperty(transformation.Key);
 
-                if (transformation?.Operation == Operation.Add)
+                if (transformation.Operation == Operation.Add)
                     message.AddUserProperty(transformation!.Key, transformation.Value!);
 
-                if (transformation?.Operation == Operation.Update)
+                if (transformation.Operation == Operation.Update)
                     message.UserProperties[transformation.Key] = transformation.Value!;
 
-                if (transformation?.Operation == Operation.ChangeKey
+                if (transformation.Operation == Operation.ChangeKey
                     && message.TryGetUserPropertyValue(transformation.Key, out var value))
                 {
                     message.RemoveUserProperty(transformation.Key);

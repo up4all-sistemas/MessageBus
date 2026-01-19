@@ -9,20 +9,19 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Up4All.Framework.MessageBus.Abstractions.Enums;
 using Up4All.Framework.MessageBus.Abstractions.Extensions;
 using Up4All.Framework.MessageBus.Abstractions.Messages;
-using Up4All.Framework.MessageBus.ServiceBus.Consumers;
+using Up4All.Framework.MessageBus.ServiceBus.Consts;
 
 namespace Up4All.Framework.MessageBus.ServiceBus.Extensions
 {
     public static class ServiceBusClientExtensions
     {
-        public static readonly ActivitySource ActivitySource = OpenTelemetryExtensions.CreateActivitySource<ServiceBusDefaultConsumer>();
+        public static readonly ActivitySource ActivitySource = OpenTelemetryExtensions.CreateActivitySource<ServiceBusQueueAsyncClient>();
 
         public static (ServiceBusClient, ServiceBusSender) CreateClient(ILogger logger, string connectionString, string entityName, int attempts)
         {
@@ -70,7 +69,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Extensions
 
         public static ServiceBusMessage PrepareMesssage(MessageBusMessage message)
         {
-            message.AddTraceProperties("servicebus");
+            message.AddTraceProperties(ServiceBusConsts.Provider);
 
             var sbMessage = new ServiceBusMessage(message.Body);
             if (message.UserProperties.Any())
@@ -85,17 +84,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Extensions
 
         public static ServiceBusMessage PrepareMesssage<TModel>(TModel message)
         {
-            var sbMessage = new ServiceBusMessage
-            {
-                Body = BinaryData.FromString(JsonSerializer.Serialize(message.CreateMessagebusMessage(), new JsonSerializerOptions(JsonSerializerDefaults.Web))),
-                ContentType = "application/json"
-            };
-
-            sbMessage.ApplicationProperties.Add("mb-timestamp", DateTime.UtcNow.ToString("o"));
-            sbMessage.ApplicationProperties.Add("mb-messagebus", "servicebus");
-            sbMessage.ApplicationProperties.Add("mb-id", Guid.NewGuid().ToString());
-
-            return sbMessage;
+            return PrepareMesssage(message.CreateMessagebusMessage());
         }
 
         public static Task RegisterHandleMessageAsync(this ServiceBusProcessor client, ILogger logger, Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
@@ -114,7 +103,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Extensions
             using var activity = ActivitySource.ProcessOpenTelemetryActivity(activityName, ActivityKind.Producer);
 
             activity?.InjectPropagationContext(message.UserProperties);
-            activity?.AddTagsToActivity("servicebus", message.Body, sender.EntityPath);
+            activity?.AddTagsToActivity(ServiceBusConsts.Provider, message.Body, sender.EntityPath);
 
             return sender.SendMessageAsync(PrepareMesssage(message), cancellationToken);
         }
@@ -143,7 +132,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Extensions
             {
                 using var activity = arg.CreateMessageReceivedActivity();
                 activity?.InjectPropagationContext(received.UserProperties);
-                activity?.AddTagsToActivity("servicebus", received.Body, arg.EntityPath);
+                activity?.AddTagsToActivity(ServiceBusConsts.Provider, received.Body, arg.EntityPath);
                 await ProcessHandleResult(arg, await handler.Invoke(received, cancellationToken), autoComplete, cancellationToken);
             }
             catch (Exception ex)

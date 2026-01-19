@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -7,7 +6,6 @@ using System;
 
 using Up4All.Framework.MessageBus.Abstractions.Handlers;
 using Up4All.Framework.MessageBus.Abstractions.Interfaces;
-using Up4All.Framework.MessageBus.Abstractions.Interfaces.Consumers;
 using Up4All.Framework.MessageBus.Abstractions.Interfaces.Pipelines;
 using Up4All.Framework.MessageBus.Abstractions.Pipelines;
 using Up4All.Framework.MessageBus.RabbitMQ.Consts;

@@ -14,7 +14,7 @@ namespace Up4All.Framework.MessageBus.Abstractions.Handlers
 
     }
 
-    public interface IMessageBusMessageHandler<TMessage> : IMessageBusMessageHandler
+    public interface IMessageBusMessageHandler<in TMessage> : IMessageBusMessageHandler
         where TMessage : class
     {
         Task OnMessageReceivedAsync(TMessage message, CancellationToken cancellationToken);

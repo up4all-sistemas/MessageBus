@@ -1,7 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
 
-using OpenTelemetry.Context.Propagation;
-
 using Polly;
 
 using RabbitMQ.Client;
@@ -65,7 +63,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
 
             basicProps.Persistent = persistent;
             basicProps.DeliveryMode = persistent ? DeliveryModes.Persistent : DeliveryModes.Transient;
-            
+
             using var activity = ActivitySource.ProcessOpenTelemetryActivity(activityName, ActivityKind.Producer);
             var routingKey = queueName;
 
@@ -73,7 +71,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
                 routingKey = msg.GetRoutingKey();
 
             activity?.InjectPropagationContext(basicProps.Headers);
-            activity?.AddTagsToActivity("rabbitmq", msg.Body, topicName, new Dictionary<string,object> {                
+            activity?.AddTagsToActivity("rabbitmq", msg.Body, topicName, new Dictionary<string, object> {
                 { "messaging.rabbitmq.routing_key", routingKey }
             });
 
@@ -164,7 +162,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
         {
             var activityName = consumer.CreateMessageReceivedActivityName(exchangeName, routingKey);
             return ActivitySource.CreateActivity(properties.Headers, activityName, ActivityKind.Consumer);
-        }       
+        }
 
 
         #endregion

@@ -22,7 +22,7 @@ namespace Up4All.Framework.MessageBus.TransferHelper.Pipelines
 
         public TransferPipeline(IServiceCollection services, string configurationBindKey)
             : base(services, configurationBindKey)
-        {            
+        {
         }
 
         public TransferPipeline<TSourceOptions, TDestinationOptions> AddSource(

@@ -4,6 +4,6 @@ namespace Up4All.Framework.MessageBus.Kafka.Options
 {
     public class KafkaMessageBusOptions : MessageBusOptions
     {
-
+        public string? SchemaRegistryUrl { get; set; } = null;
     }
 }

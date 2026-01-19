@@ -141,7 +141,7 @@ namespace Up4All.Framework.MessageBus.Abstractions.Messages
             return default;
         }
 
-        public void AddTraceProperties(string provider) 
+        public void AddTraceProperties(string provider)
         {
             AddUserProperty(MessageBusProperties.Timestamp, DateTime.UtcNow.ToString("o"));
             AddUserProperty(MessageBusProperties.Provider, provider);
