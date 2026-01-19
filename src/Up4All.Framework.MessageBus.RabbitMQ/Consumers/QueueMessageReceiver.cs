@@ -31,7 +31,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Consumers
         {
             _logger.LogDebug("Registrating Deliver Consumer Async");
             await base.HandleBasicDeliverAsync(consumerTag, deliveryTag, redelivered, exchange, routingKey, properties, body, cancellationToken: cancellationToken);
-            
+
             try
             {
                 _logger.LogDebug("Receiving message from {QueueName}", _channel.CurrentQueue);
@@ -41,10 +41,12 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Consumers
                 using var activity = this.CreateMessageReceivedActivity(properties, exchange, routingKey);
                 activity?.InjectPropagationContext(message.UserProperties);
                 activity?.AddTagsToActivity("rabbitmq", body.ToArray(), exchange, new Dictionary<string, object> { { "messaging.rabbitmq.routing_key", "" } });
-                
+
                 var response = await _handler(message, cancellationToken);
                 await _channel.ProcessMessageAsync(deliveryTag, response, _autoComplete, cancellationToken);
-                await _idleHandler?.Invoke(cancellationToken);
+
+                if (_idleHandler is not null)
+                    await _idleHandler.Invoke(cancellationToken);
             }
             catch (Exception ex)
             {

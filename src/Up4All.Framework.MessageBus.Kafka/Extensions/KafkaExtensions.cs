@@ -5,14 +5,13 @@ using System.Text.Json;
 
 using Up4All.Framework.MessageBus.Abstractions.Extensions;
 using Up4All.Framework.MessageBus.Abstractions.Messages;
-using Up4All.Framework.MessageBus.Kafka.Consumers;
 using Up4All.Framework.MessageBus.Kafka.Interfaces;
 
 namespace Up4All.Framework.MessageBus.Kafka.Extensions
 {
     public static class KafkaExtensions
     {
-        public static ActivitySource ActivitySource => OpenTelemetryExtensions.CreateActivitySource<KafkaMQDefaultConsumer>();
+        public static ActivitySource ActivitySource => OpenTelemetryExtensions.CreateActivitySource<KafkaStandaloneTopicAsyncClient>();
 
         public static IProducer<TMessageKey, byte[]> CreateProducer<TMessageKey>(this IKafkaTopicClient client, string connectionString)
             where TMessageKey : class
@@ -28,11 +27,9 @@ namespace Up4All.Framework.MessageBus.Kafka.Extensions
             return new ProducerBuilder<TMessageKey, byte[]>(config).Build();
         }
 
-        public static IConsumer<TMessageKey, byte[]> CreateConsumer<TMessageKey>(this IKafkaSubscriptionClient client, string connectionString, string groupId)
-            where TMessageKey : class
+        public static ConsumerConfig CreateConfig(this IKafkaSubscriptionClient client, string connectionString, string subscriptionName)
         {
-            var config = new ConsumerConfig { BootstrapServers = connectionString, GroupId = groupId, AutoOffsetReset = AutoOffsetReset.Earliest };
-            return new ConsumerBuilder<TMessageKey, byte[]>(config).Build();
+            return new ConsumerConfig { BootstrapServers = connectionString, GroupId = subscriptionName, AutoOffsetReset = AutoOffsetReset.Earliest };
         }
 
         public static IConsumer<TMessageKey, byte[]> CreateConsumerForStructKey<TMessageKey>(this IKafkaSubscriptionClient client, string connectionString, string groupId)
@@ -68,6 +65,5 @@ namespace Up4All.Framework.MessageBus.Kafka.Extensions
             return result;
         }
 
-        
     }
 }

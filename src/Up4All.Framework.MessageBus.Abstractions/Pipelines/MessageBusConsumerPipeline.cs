@@ -10,7 +10,7 @@ using Up4All.Framework.MessageBus.Abstractions.Options;
 
 namespace Up4All.Framework.MessageBus.Abstractions.Pipelines
 {
-    public abstract class MessageBusFlowPipeline<TPipeline, TOptions>(TPipeline mainPipeline)
+    public abstract class MessageBusFlowPipeline<TPipeline>(TPipeline mainPipeline)
     {
         public TPipeline MainPipeline { get; set; } = mainPipeline;
 
@@ -21,7 +21,7 @@ namespace Up4All.Framework.MessageBus.Abstractions.Pipelines
     }
 
     public abstract class MessageBusPublisherPipeline<TPipeline, TOptions>(TPipeline mainPipeline)
-        : MessageBusFlowPipeline<TPipeline, TOptions>(mainPipeline), IPublishPipelineBuilder
+        : MessageBusFlowPipeline<TPipeline>(mainPipeline), IPublishPipelineBuilder
         where TOptions : MessageBusOptions
         where TPipeline : MessageBusPipeline<TOptions>
     {
@@ -35,7 +35,7 @@ namespace Up4All.Framework.MessageBus.Abstractions.Pipelines
     }
 
     public abstract class MessageBusConsumerPipeline<TPipeline, TOptions>(TPipeline mainPipeline)
-        : MessageBusFlowPipeline<TPipeline, TOptions>(mainPipeline), IConsumerPipelineBuilder
+        : MessageBusFlowPipeline<TPipeline>(mainPipeline), IConsumerPipelineBuilder
         where TOptions : MessageBusOptions
         where TPipeline : MessageBusPipeline<TOptions>
     {
@@ -73,7 +73,7 @@ namespace Up4All.Framework.MessageBus.Abstractions.Pipelines
                 throw new ArgumentException("Não foi associada uma implementação para o handler IMessageBusMessageHandler");
         }
 
-        
+
     }
 
 

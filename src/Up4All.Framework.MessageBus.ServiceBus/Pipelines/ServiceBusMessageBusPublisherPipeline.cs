@@ -12,7 +12,7 @@ using Up4All.Framework.MessageBus.Abstractions.Pipelines;
 namespace Up4All.Framework.MessageBus.ServiceBus.Pipelines
 {
     public class ServiceBusMessageBusPublisherPipeline(ServiceBusMessageBusPipeline pipeline)
-        : MessageBusPublisherPipeline<ServiceBusMessageBusPipeline, MessageBusOptions>(pipeline), IPublishPipelineBuilder
+        : MessageBusPublisherPipeline<ServiceBusMessageBusPipeline, MessageBusOptions>(pipeline)
     {
         public IPublishPipelineBuilder AddPublisher<TMessageBusMessageHandler>()
             where TMessageBusMessageHandler : class, IMessageBusMessageHandler

@@ -1,15 +1,13 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 
 using System;
 
+using Up4All.Framework.MessageBus.Abstractions.Consumers;
 using Up4All.Framework.MessageBus.Abstractions.Interfaces;
-using Up4All.Framework.MessageBus.Abstractions.Interfaces.Consumers;
 using Up4All.Framework.MessageBus.Abstractions.Interfaces.Pipelines;
 using Up4All.Framework.MessageBus.Abstractions.Options;
 using Up4All.Framework.MessageBus.Abstractions.Pipelines;
-using Up4All.Framework.MessageBus.ServiceBus.Consumers;
 
 namespace Up4All.Framework.MessageBus.ServiceBus.Pipelines
 {
@@ -17,7 +15,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Pipelines
         : MessageBusConsumerPipeline<ServiceBusMessageBusPipeline, MessageBusOptions>(pipeline)
     {
 
-        public IConsumerPipelineBuilder ListenSubscription()            
+        public IConsumerPipelineBuilder ListenSubscription()
         {
             MainPipeline.Services.AddSingleton<IMessageBusAsyncConsumer, ServiceBusSubscriptionAsyncClient>();
             IsHandlerDefined = true;
@@ -25,8 +23,8 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Pipelines
         }
 
         public IConsumerPipelineBuilder ListenSubscription(string connectionString, string topicName, string subscriptionName
-            , int connectionAttempts = 8)            
-        {            
+            , int connectionAttempts = 8)
+        {
             MainPipeline.Services.AddSingleton<IMessageBusAsyncConsumer>(sp =>
             {
                 var logger = sp.GetRequiredService<ILogger<ServiceBusStandaloneSubscriptionAsyncClient>>();
@@ -39,7 +37,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Pipelines
 
         public override IConsumerPipelineBuilder AddDefaultHostedService()
         {
-            AddHostedService<ServiceBusDefaultConsumer>();
+            AddHostedService<DefaultConsumer>();
             return this;
         }
     }

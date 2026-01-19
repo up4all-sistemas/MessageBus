@@ -15,8 +15,8 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Pipelines
         : MessageBusPublisherPipeline<RabbitMQMessageBusPipeline, RabbitMQMessageBusOptions>(pipeline)
     {
         public RabbitMQMessageBusPublisherPipeline AddPublisher(string type = ExchangeType.Direct, Action<IServiceProvider, RabbitMQMessageBusOptions, ExchangeDeclareOptions> exchangeDeclareBuilder = null)
-            
-        {            
+
+        {
             MainPipeline.Services.AddSingleton<IMessageBusPublisherAsync>(sp =>
             {
                 var opts = sp.GetRequiredService<IOptions<RabbitMQMessageBusOptions>>();
@@ -34,8 +34,8 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Pipelines
             , string type = ExchangeType.Direct
             , bool persistent = true
             , int connectionAttempts = 8
-            , Action<IServiceProvider, ExchangeDeclareOptions> exchangeDeclareBuilder = null)            
-        {            
+            , Action<IServiceProvider, ExchangeDeclareOptions> exchangeDeclareBuilder = null)
+        {
             MainPipeline.Services.AddSingleton<IMessageBusPublisherAsync>(sp => CreateInstance(sp, connectionString, queueName, type, persistent
                 , connectionAttempts, exchangeDeclareBuilder));
 
@@ -43,7 +43,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Pipelines
             return this;
         }
 
-        private RabbitMQStandaloneTopicAsyncClient CreateInstance(IServiceProvider sp, string connectionString, string queueName
+        private static RabbitMQStandaloneTopicAsyncClient CreateInstance(IServiceProvider sp, string connectionString, string queueName
             , string type = ExchangeType.Direct
             , bool persistent = true
             , int connectionAttempts = 8

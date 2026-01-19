@@ -2,7 +2,6 @@
 
 using OpenTelemetry.Trace;
 
-using Up4All.Framework.MessageBus.Kafka.Consts;
 using Up4All.Framework.MessageBus.Kafka.Pipelines;
 
 namespace Up4All.Framework.MessageBus.Kafka.Extensions

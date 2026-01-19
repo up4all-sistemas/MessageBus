@@ -69,7 +69,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus
 
         public async Task CloseAsync(CancellationToken cancellationToken = default)
         {
-            _logger.LogDebug("Closing connection to {EntityPath}", _processor.EntityPath);
+            _logger.LogDebug("Closing connection to {EntityPath}", EntityPath);
             if (_processor != null) await _processor.CloseAsync(cancellationToken);
             if (_queueClient != null) await _queueClient.CloseAsync(cancellationToken);
             if (_queueClient != null) await _queueClient.DisposeAsync().AsTask();

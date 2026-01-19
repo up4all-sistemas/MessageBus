@@ -8,9 +8,9 @@ using Up4All.Framework.MessageBus.Abstractions.Interfaces;
 using Up4All.Framework.MessageBus.Abstractions.Interfaces.Consumers;
 using Up4All.Framework.MessageBus.Abstractions.Messages;
 
-namespace Up4All.Framework.MessageBus.RabbitMQ.Consumers
+namespace Up4All.Framework.MessageBus.Abstractions.Consumers
 {
-    public class RabbitMQDefaultConsumer(IMessageBusAsyncConsumer consumer, IMessageBusMessageHandler handler)
+    public class DefaultConsumer(IMessageBusAsyncConsumer consumer, IMessageBusMessageHandler handler)
         : IMessageDefaultConsumer, IDisposable
     {
         private readonly IMessageBusAsyncConsumer _consumer = consumer;
@@ -19,6 +19,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Consumers
         public void Dispose()
         {
             Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
@@ -45,13 +46,13 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Consumers
             }
         }
 
-        protected void Dispose(bool disposing)
+        protected virtual void Dispose(bool disposing)
         {
             if (disposing)
                 _consumer.CloseAsync(CancellationToken.None).Wait();
         }
 
-        ~RabbitMQDefaultConsumer()
+        ~DefaultConsumer()
         {
             Dispose(false);
         }
