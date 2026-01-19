@@ -2,7 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 
 using Up4All.Framework.MessageBus.Abstractions.Options;
-using Up4All.Framework.MessageBus.RabbitMQ.Enums;
+using Up4All.Framework.MessageBus.RabbitMQ.Consts;
 
 namespace Up4All.Framework.MessageBus.RabbitMQ.Options
 {

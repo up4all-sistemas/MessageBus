@@ -9,7 +9,7 @@ namespace Up4All.Framework.MessageBus.Abstractions.Interfaces
 {
     public interface IMessageBusAsyncConsumer
     {
-        public string QueueName { get; }
+        public string EntityPath { get; }
 
         Task RegisterHandlerAsync(Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default);
 

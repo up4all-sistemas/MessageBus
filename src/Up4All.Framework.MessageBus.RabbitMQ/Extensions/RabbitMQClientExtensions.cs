@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
 
-using OpenTelemetry;
 using OpenTelemetry.Context.Propagation;
 
 using Polly;
@@ -12,23 +11,21 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Up4All.Framework.MessageBus.Abstractions.Enums;
 using Up4All.Framework.MessageBus.Abstractions.Extensions;
 using Up4All.Framework.MessageBus.Abstractions.Messages;
+using Up4All.Framework.MessageBus.RabbitMQ.Consts;
 using Up4All.Framework.MessageBus.RabbitMQ.Consumers;
-using Up4All.Framework.MessageBus.RabbitMQ.Enums;
 using Up4All.Framework.MessageBus.RabbitMQ.Options;
 
 namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
 {
     public static class RabbitMQClientExtensions
     {
-        private static readonly ActivitySource activitySource = new(Consts.OpenTelemetrySourceName);
-        private static readonly TextMapPropagator Propagator = Propagators.DefaultTextMapPropagator;
+        public static ActivitySource ActivitySource => OpenTelemetryExtensions.CreateActivitySource<RabbitMQStandaloneQueueAsyncClient>();
 
         public static async Task ConfigureAsyncHandler(this IRabbitMQClient client, string queueName
             , AsyncQueueMessageReceiver receiver, bool autoComplete, CancellationToken cancellationToken
@@ -57,9 +54,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
         {
             logger.LogDebug("Sending message to {Target}", topicName ?? queueName);
 
-            msg.AddUserProperty(Properties.Timestamp, DateTime.UtcNow.ToString("o"));
-            msg.AddUserProperty(Properties.Provider, "rabbitmq");
-            msg.AddUserProperty(Properties.MessageId, Guid.NewGuid().ToString());
+            msg.AddTraceProperties("rabbitmq");
 
             var activityName = $"message-send {topicName} {queueName}";
             var basicProps = new BasicProperties();
@@ -70,15 +65,17 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
 
             basicProps.Persistent = persistent;
             basicProps.DeliveryMode = persistent ? DeliveryModes.Persistent : DeliveryModes.Transient;
-
-            using var activity = ProcessOpenTelemetryActivity(activityName, ActivityKind.Producer);
+            
+            using var activity = ActivitySource.ProcessOpenTelemetryActivity(activityName, ActivityKind.Producer);
             var routingKey = queueName;
 
             if (msg.ContainsRoutingKey())
                 routingKey = msg.GetRoutingKey();
 
-            InjectPropagationContext(activity, basicProps);
-            AddTagsToActivity(activity, topicName, routingKey, msg.Body);
+            activity?.InjectPropagationContext(basicProps.Headers);
+            activity?.AddTagsToActivity("rabbitmq", msg.Body, topicName, new Dictionary<string,object> {                
+                { "messaging.rabbitmq.routing_key", routingKey }
+            });
 
             await channel.BasicPublishAsync(topicName, routingKey, mandatory, basicProps, msg.Body, cancellationToken);
         }
@@ -163,58 +160,12 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             return consumer.CreateActivityName("message-received", exchangeName, routingKey);
         }
 
-        public static Activity ProcessOpenTelemetryActivity(string activityName, ActivityKind kind, ActivityContext parent = default)
-        {
-            var activity = activitySource.StartActivity(activityName, kind, parent);
-            return activity;
-        }
-
-        public static Activity CreateActivity(this IReadOnlyBasicProperties properties, string activityName, ActivityKind kind)
-        {
-            var parentContext = GetParentPropagationContext(properties);
-            var activity = ProcessOpenTelemetryActivity(activityName, kind, parentContext.ActivityContext);
-            return activity;
-        }
-
         public static Activity CreateMessageReceivedActivity(this IAsyncBasicConsumer consumer, IReadOnlyBasicProperties properties, string exchangeName, string routingKey)
         {
             var activityName = consumer.CreateMessageReceivedActivityName(exchangeName, routingKey);
-            return properties.CreateActivity(activityName, ActivityKind.Consumer);
-        }
+            return ActivitySource.CreateActivity(properties.Headers, activityName, ActivityKind.Consumer);
+        }       
 
-        public static void InjectPropagationContext(Activity activity, IBasicProperties props)
-        {
-            if (activity == null) return;
-
-            Propagator.Inject(new PropagationContext(activity.Context, Baggage.Current), props, (x, key, value) =>
-            {
-                props.Headers ??= new Dictionary<string, object>();
-                props.Headers[key] = value;
-            });
-        }
-
-        public static PropagationContext GetParentPropagationContext(IReadOnlyBasicProperties props)
-        {
-            var parent = Propagator.Extract(default, props, (x, key) =>
-            {
-                if (x.Headers.TryGetValue(key, out var value))
-                    return [Encoding.UTF8.GetString((byte[])value)];
-                return [];
-            });
-            Baggage.Current = parent.Baggage;
-
-            return parent;
-        }
-
-        public static void AddTagsToActivity(Activity activity, string exchangeName, string routingKey, byte[] body)
-        {
-            if (activity == null) return;
-
-            activity.SetTag("message", Encoding.UTF8.GetString(body));
-            activity.SetTag("messaging.system", "rabbitmq");
-            activity.SetTag("messaging.destination", exchangeName);
-            activity.SetTag("messaging.rabbitmq.routing_key", routingKey);
-        }
 
         #endregion
     }

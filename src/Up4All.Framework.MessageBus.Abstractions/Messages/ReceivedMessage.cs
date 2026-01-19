@@ -2,10 +2,11 @@
 using System.Text.Json;
 
 using Up4All.Framework.MessageBus.Abstractions.Extensions;
+using Up4All.Framework.MessageBus.Abstractions.Interfaces;
 
 namespace Up4All.Framework.MessageBus.Abstractions.Messages
 {
-    public class ReceivedMessage : MessageBusMessage
+    public class ReceivedMessage : MessageBusMessage, IReceivedMessage
     {
         public string GetBody()
         {

@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
-
-using Up4All.Framework.MessageBus.Abstractions.Extensions;
 
 namespace Up4All.Framework.MessageBus.Abstractions
 {
@@ -19,10 +16,9 @@ namespace Up4All.Framework.MessageBus.Abstractions
 
         protected abstract void Dispose(bool disposing);
 
-        protected static void CreateOpenTelemetryActivitySource<TSource>(string activityName, ActivityKind kind) where TSource : class
+        ~MessageBusStandaloneClientBase()
         {
-            OpenTelemetryExtensions<TSource>.CreateActivitySource()
-                .StartActivity(activityName, kind);
+            Dispose(false);
         }
     }
 }

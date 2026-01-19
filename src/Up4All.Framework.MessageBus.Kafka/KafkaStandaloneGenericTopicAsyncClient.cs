@@ -2,6 +2,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -32,12 +34,13 @@ namespace Up4All.Framework.MessageBus.Kafka
 
         public async Task SendAsync(MessageBusMessage message, CancellationToken cancellationToken = default)
         {
+            this.AddActivityTrace(message);
             await _producer.ProduceAsync(TopicName, message.ToKafkaMessage<TMessageKey>(), cancellationToken);
         }
 
         public async Task SendAsync(IEnumerable<MessageBusMessage> messages, CancellationToken cancellationToken = default)
         {
-            foreach(var message in messages)
+            foreach (var message in messages)
                 await SendAsync(message, cancellationToken);
         }
 
@@ -71,6 +74,7 @@ namespace Up4All.Framework.MessageBus.Kafka
 
         public async Task SendAsync(MessageBusMessage message, CancellationToken cancellationToken = default)
         {
+            this.AddActivityTrace(message);
             await _producer.ProduceAsync(TopicName, message.ToKafkaMessageFromKeyStruct<TMessageKey>(), cancellationToken);
         }
 

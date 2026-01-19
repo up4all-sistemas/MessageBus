@@ -25,7 +25,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus
         protected readonly ILogger<ServiceBusStandaloneQueueAsyncClient> _logger;
         private ServiceBusProcessor _processor;
 
-        public ServiceBusStandaloneQueueAsyncClient(ILogger<ServiceBusStandaloneQueueAsyncClient> logger, string connectionString, string queuename, int connectionAttemps = 8) 
+        public ServiceBusStandaloneQueueAsyncClient(ILogger<ServiceBusStandaloneQueueAsyncClient> logger, string connectionString, string queuename, int connectionAttemps = 8)
             : base(connectionString, queuename)
         {
             _logger = logger;

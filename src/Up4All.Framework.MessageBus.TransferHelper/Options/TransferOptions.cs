@@ -6,8 +6,8 @@ using Up4All.Framework.MessageBus.Abstractions.Options;
 namespace Up4All.Framework.MessageBus.TransferHelper.Options
 {
     public class TransferOptions<TSourceOptions, TDestinationOptions>
-        where TSourceOptions : MessageBusOptions, new()
-        where TDestinationOptions : MessageBusOptions, new()
+        where TSourceOptions : MessageBusOptions
+        where TDestinationOptions : MessageBusOptions
     {
         public TSourceOptions Source { get; set; } = null!;
 

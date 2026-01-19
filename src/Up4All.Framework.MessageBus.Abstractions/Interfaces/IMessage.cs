@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Text.Json;
 
 namespace Up4All.Framework.MessageBus.Abstractions.Interfaces
@@ -18,7 +19,23 @@ namespace Up4All.Framework.MessageBus.Abstractions.Interfaces
         void AddUserProperty(KeyValuePair<string, object> prop, bool replace = false);
 
         void AddUserProperty(string key, object value, bool replace = false);
-
+                
         void AddUserProperties(IDictionary<string, object> props, bool replace = false);
+        
+        void RemoveUserProperty(string key);
+        
+        void SetMessageIdFromStruct<TMessageKey>(TMessageKey value) where TMessageKey : struct;
+        
+        void SetMessageId<TMessageKey>(TMessageKey value, JsonSerializerOptions opts = null) where TMessageKey : class;
+        
+        void SetMessageId(string value);
+        
+        void SetMessageId(int value);
+        
+        void SetMessageId(long value);
+        
+        void SetMessageId(Guid value);
+        
+        TMessageKey GetMessageId<TMessageKey>() where TMessageKey : class;
     }
 }

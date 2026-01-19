@@ -15,12 +15,12 @@ using Up4All.Framework.MessageBus.ServiceBus.Extensions;
 
 namespace Up4All.Framework.MessageBus.ServiceBus
 {
-    public class ServiceBusStandaloneSubscribeAsyncClient(ILogger<ServiceBusStandaloneSubscribeAsyncClient> logger, string connectionString, string topicName, string subscriptionName, int connectionAttempts = 8) : MessageBusStandaloneSubscriptonClient(connectionString, topicName, subscriptionName), IMessageBusStandaloneAsyncConsumer, IServiceBusClient
+    public class ServiceBusStandaloneSubscriptionAsyncClient(ILogger<ServiceBusStandaloneSubscriptionAsyncClient> logger, string connectionString, string topicName, string subscriptionName, int connectionAttempts = 8) : MessageBusStandaloneSubscriptonClient(connectionString, topicName, subscriptionName), IMessageBusStandaloneAsyncConsumer, IServiceBusClient
     {
         private readonly ServiceBusClient _client = ServiceBusClientExtensions.CreateClient(connectionString, connectionAttempts);
         private readonly string _topicName = topicName;
         private readonly string _subscriptionName = subscriptionName;
-        protected readonly ILogger<ServiceBusStandaloneSubscribeAsyncClient> _logger = logger;
+        protected readonly ILogger<ServiceBusStandaloneSubscriptionAsyncClient> _logger = logger;
         private ServiceBusProcessor _processor;
 
         public async Task RegisterHandlerAsync(Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)

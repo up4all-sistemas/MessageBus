@@ -22,6 +22,6 @@ namespace Up4All.Framework.MessageBus.Kafka
     public class KafkaTopicAsyncClient(IOptions<KafkaMessageBusOptions> messageOptions)
             : KafkaGenericTopicAsyncClient<string>(messageOptions)
         , IMessageBusPublisherAsync
-    {        
+    {
     }
 }

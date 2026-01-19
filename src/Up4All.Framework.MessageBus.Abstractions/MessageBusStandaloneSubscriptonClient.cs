@@ -4,6 +4,6 @@
     {
         protected string ConnectionString { get; private set; } = connectionString;
         protected string TopicName { get; private set; } = topicName;
-        public string QueueName { get; private set; } = subscriptionName;
+        public string EntityPath { get; private set; } = subscriptionName;
     }
 }

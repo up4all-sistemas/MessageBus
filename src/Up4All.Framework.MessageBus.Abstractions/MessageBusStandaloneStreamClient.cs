@@ -5,7 +5,7 @@
         protected string ConnectionString { get; private set; } = connectionString;
         protected int ConnectionAttempts { get; private set; } = connectionAttempts;
         protected object Offset { get; } = offset;
-        public string QueueName { get; private set; } = queueName;
+        public string EntityPath { get; private set; } = queueName;
         public string TopicName { get; } = string.Empty;
 
     }

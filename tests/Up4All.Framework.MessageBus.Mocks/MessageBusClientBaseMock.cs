@@ -32,7 +32,7 @@ namespace Up4All.Framework.MessageBus.Mocks
     {
         public string TopicName { get; } = string.Empty;
 
-        public string QueueName { get; } = string.Empty;
+        public string EntityPath { get; } = string.Empty;
 
         protected MessageBusAsyncClientBaseMock()
         {
