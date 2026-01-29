@@ -95,7 +95,13 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
                 .ExecuteAndCaptureAsync(async (c) =>
                 {
                     if (conn != null && conn.IsOpen) return;
-                    conn = await new ConnectionFactory() { Uri = new Uri(connectionString) }.CreateConnectionAsync(c);
+                    conn = await new ConnectionFactory()
+                    { 
+                        Uri = new Uri(connectionString),
+                        AutomaticRecoveryEnabled = true,
+                        NetworkRecoveryInterval = TimeSpan.FromSeconds(3)
+                    }.CreateConnectionAsync(c);
+
                 }, cancellationToken);
 
             if (result.Outcome != OutcomeType.Successful)
