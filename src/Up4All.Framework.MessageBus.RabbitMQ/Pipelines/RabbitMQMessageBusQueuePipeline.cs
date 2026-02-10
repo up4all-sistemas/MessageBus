@@ -20,7 +20,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Pipelines
     {
         public RabbitMQMessageBusQueuePipeline ListenQueue(Action<IServiceProvider, RabbitMQMessageBusOptions, QueueDeclareOptions> queueDeclareBuilder = null)            
         {
-            MainPipeline.Services.AddSingleton<IMessageBusAsyncConsumer>(sp =>
+            MainPipeline.Services.AddSingleton<IMessageBusQueueAsyncClient>(sp =>
             {
                 var opts = sp.GetRequiredService<IOptions<RabbitMQMessageBusOptions>>();
                 var logger = sp.GetRequiredService<ILogger<RabbitMQQueueAsyncClient>>();
@@ -37,7 +37,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Pipelines
             , int connectionAttempts = 8
             , Action<IServiceProvider, QueueDeclareOptions> queueDeclareBuilder = null)            
         {
-            MainPipeline.Services.AddSingleton<IMessageBusAsyncConsumer>(sp
+            MainPipeline.Services.AddSingleton<IMessageBusQueueAsyncClient>(sp
                 => CreateClient(sp, connectionString, queueName, persistent, connectionAttempts, queueDeclareBuilder));            
             return this;
         }
