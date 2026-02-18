@@ -14,7 +14,7 @@ namespace Up4All.Framework.MessageBus.Kafka.Extensions
         {
             var message = new Message<TMessageKey, byte[]>
             {
-                Key = data.GetMessageId<TMessageKey>(),
+                Key = data.GetMessageIdForClass<TMessageKey>(),
                 Value = data.Body
             };
 

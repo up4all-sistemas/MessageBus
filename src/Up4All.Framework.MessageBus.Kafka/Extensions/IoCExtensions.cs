@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 
+using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 
 using Up4All.Framework.MessageBus.Kafka.Pipelines;
@@ -15,7 +16,12 @@ namespace Up4All.Framework.MessageBus.Kafka.Extensions
 
         public static TracerProviderBuilder AddOpenTelemetryForMessageBus(this TracerProviderBuilder builder)
         {
-            builder.AddSource(KafkaExtensions.ActivitySource.Name);
+            var resBuilder = ResourceBuilder.CreateDefault()
+                .AddService(KafkaExtensions.ActivitySource.Name, serviceVersion: KafkaExtensions.ActivitySource.Version);
+
+            builder.AddSource(KafkaExtensions.ActivitySource.Name)
+                .SetResourceBuilder(resBuilder);
+            
             return builder;
         }
     }

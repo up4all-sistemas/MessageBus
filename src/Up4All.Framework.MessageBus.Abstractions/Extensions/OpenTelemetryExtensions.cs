@@ -7,6 +7,8 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
+using Up4All.Framework.MessageBus.Abstractions.Messages;
+
 namespace Up4All.Framework.MessageBus.Abstractions.Extensions
 {
     public static class OpenTelemetryExtensions
@@ -72,13 +74,21 @@ namespace Up4All.Framework.MessageBus.Abstractions.Extensions
             return parent;
         }
 
-        public static void AddTagsToActivity(this Activity activity, string provider, byte[] body, string entityPath, IDictionary<string, object> additionalTags = null)
+        public static void AddTagsToActivity(this Activity activity, string provider, MessageBusMessage message, string entityPath, object messageId, string operationType = "receive", IDictionary<string, object> additionalTags = null)
         {
             if (activity == null) return;
 
-            activity.SetTag("message", Encoding.UTF8.GetString(body));
+            var correlationid = message.GetCorrelationId();
+
+            activity.SetTag("body", Encoding.UTF8.GetString(message.Body));
             activity.SetTag("messaging.system", provider);
-            activity.SetTag("messaging.destination", entityPath);
+            activity.SetTag("messaging.destination.name", entityPath);
+            activity.SetTag("messaging.operation.type", operationType);
+            activity.SetTag("propagation_id", activity.Context.TraceId.ToString());
+            activity.SetTag("messaging.message.id", messageId);
+
+            if (correlationid.HasValue)
+                activity.SetTag("messaging.message.conversation_id", correlationid.Value);
 
             if (additionalTags is not null)
                 foreach (var tag in additionalTags)

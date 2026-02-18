@@ -8,28 +8,25 @@ namespace Up4All.Framework.MessageBus.Kafka.Extensions
 {
     public static class MessageBusStandaloneSubscriptonClientExtensions
     {
-        public static void AddActivityTrace<TSource>(this MessageBusStandaloneSubscriptonClient client, ReceivedMessage message)
+        public static Activity? AddActivityTrace<TSource>(this MessageBusStandaloneSubscriptonClient client, ReceivedMessage message, object mesageId)
             where TSource : class
         {
             var activity = message.CreateMessageReceivedActivity<TSource>(client.EntityPath);
             activity?.InjectPropagationContext(message.UserProperties);
-            activity?.AddTagsToActivity("kafka", message.Body, client.EntityPath);
+            activity?.AddTagsToActivity("kafka", message, client.EntityPath, mesageId);
+
+            return activity;
         }
 
-        private static string CreateActivityName(this ReceivedMessage message, string activityName, string entityPath)
+        private static string CreateActivityName(this string entityPath)
         {
-            return $"{activityName} {entityPath}";
-        }
-
-        private static string CreateMessageReceivedActivityName(this ReceivedMessage message, string entityPath)
-        {
-            return message.CreateActivityName("message-received", entityPath);
+            return $"{entityPath} receive";
         }
 
         public static Activity CreateMessageReceivedActivity<TSource>(this ReceivedMessage message, string entityPath)
             where TSource : class
         {
-            var activityName = message.CreateMessageReceivedActivityName(entityPath);
+            var activityName = entityPath.CreateActivityName();
             return message.UserProperties.CreateActivity<TSource>(activityName, ActivityKind.Consumer);
         }
     }
