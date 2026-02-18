@@ -38,13 +38,13 @@ namespace Up4All.Framework.MessageBus.TransferHelper
         {
             using var activity = message.CreateMessageReceivedActivity(entityPath);
             activity?.InjectPropagationContext(message.UserProperties);
-            activity?.AddTagsToActivity("messagebus-transfer", message.Body, entityPath);
+            activity?.AddTagsToActivity("messagebus-transfer", message, entityPath, message.GetMessageIdForClass<object>());
 
             _logger.LogDebug("Receiving message from {SourceQueueName} for transfer to {DestinationTopicName}", entityPath, _publisher.TopicName);
 
             if (!await _beforeTransferHandler.CanTransfer(message, cancellationToken))
             {
-                _logger.LogDebug("Skipping message {MessageId} transfer", message.GetMessageId<object>());
+                _logger.LogDebug("Skipping message {MessageId} transfer", message.GetMessageIdForClass<object>());
                 return;
             }
 

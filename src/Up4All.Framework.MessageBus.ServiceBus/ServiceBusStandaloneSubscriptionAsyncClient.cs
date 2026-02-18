@@ -26,7 +26,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus
         public async Task RegisterHandlerAsync(Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
         {
             _processor = _client.CreateTopicProcessor(_topicName, _subscriptionName, autoComplete);
-            await _processor.RegisterHandleMessageAsync(_logger, handler, errorHandler, onIdle, autoComplete);
+            await _processor.RegisterHandleMessageAsync(_logger, handler, errorHandler, onIdle, autoComplete, subscriptionName: _subscriptionName);
 
             _logger.LogDebug("Start listening {EntityPath}", _processor.EntityPath);
             await _processor.StartProcessingAsync();

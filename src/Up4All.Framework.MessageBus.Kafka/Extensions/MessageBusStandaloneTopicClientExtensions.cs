@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 
 using Up4All.Framework.MessageBus.Abstractions;
@@ -9,13 +10,18 @@ namespace Up4All.Framework.MessageBus.Kafka.Extensions
 {
     public static class MessageBusStandaloneTopicClientExtensions
     {
-        public static void AddActivityTrace(this MessageBusStandaloneTopicClient client, MessageBusMessage message)
+        public static void AddActivityTrace(this MessageBusStandaloneTopicClient client, MessageBusMessage message, object messageId)
         {
-            var activityName = $"message-send {client.TopicName}";
+            var activityName = $"{client.TopicName} send";
+
+            var additionalArgs = new Dictionary<string, object>();
+
+            if (messageId is not null)
+                additionalArgs.Add("messaging.kafka.message.key", messageId);
 
             using var activity = KafkaExtensions.ActivitySource.ProcessOpenTelemetryActivity(activityName, ActivityKind.Producer);
             activity?.InjectPropagationContext(message.UserProperties);
-            activity?.AddTagsToActivity("servicebus", message.Body, client.TopicName);
+            activity?.AddTagsToActivity("kafka", message, client.TopicName, messageId, operationType: "send", additionalTags: additionalArgs);
         }
     }
 }

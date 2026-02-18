@@ -51,11 +51,15 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
         public static async Task SendMessageAsync(this IChannel channel, ILogger logger, string topicName, string queueName, MessageBusMessage msg
             , bool persistent = true, CancellationToken cancellationToken = default)
         {
-            logger.LogDebug("Sending message to {Target}", topicName ?? queueName);
+            var entityPath = $"{topicName??queueName}";
+            if(!string.IsNullOrEmpty(queueName) && !string.IsNullOrEmpty(topicName))
+                entityPath = $"{topicName}:{queueName}";
+
+            logger.LogDebug("Sending message to {Target}", entityPath);
 
             msg.AddTraceProperties("rabbitmq");
 
-            var activityName = $"message-send {topicName} {queueName}";
+            var activityName = $"{topicName} send";
             var basicProps = new BasicProperties();
             basicProps.PopulateHeaders(msg);
 
@@ -64,7 +68,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
 
             var correlationId = msg.GetCorrelationId();
 
-            if(correlationId.HasValue)
+            if (correlationId.HasValue)
                 basicProps.CorrelationId = correlationId.Value.ToString();
 
             basicProps.Persistent = persistent;
@@ -76,10 +80,13 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             if (msg.ContainsRoutingKey())
                 routingKey = msg.GetRoutingKey();
 
+            var additionalArgs = new Dictionary<string, object>();
+
+            if (!string.IsNullOrEmpty(routingKey))
+                additionalArgs.Add("messaging.rabbitmq.destination.routing_key", routingKey);            
+
             activity?.InjectPropagationContext(basicProps.Headers);
-            activity?.AddTagsToActivity("rabbitmq", msg.Body, topicName, new Dictionary<string, object> {
-                { "messaging.rabbitmq.routing_key", routingKey }
-            });
+            activity?.AddTagsToActivity("rabbitmq", msg, entityPath, basicProps.MessageId, operationType: "send", additionalTags: additionalArgs);
 
             await channel.BasicPublishAsync(topicName, routingKey, false, basicProps, msg.Body, cancellationToken);
         }
@@ -96,7 +103,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
                 {
                     if (conn != null && conn.IsOpen) return;
                     conn = await new ConnectionFactory()
-                    { 
+                    {
                         Uri = new Uri(connectionString),
                         AutomaticRecoveryEnabled = true,
                         NetworkRecoveryInterval = TimeSpan.FromSeconds(3)
@@ -160,19 +167,19 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
 
         #region Opentelemetry Extensions
 
-        public static string CreateActivityName(this IAsyncBasicConsumer consumer, string activityName, string exchangeName, string routingKey)
+        public static string CreateActivityName(this IAsyncBasicConsumer consumer, string exchangeName)
         {
-            return $"{activityName} {exchangeName} {routingKey} {consumer.Channel.CurrentQueue}";
+            return $"{exchangeName}:{consumer.Channel.CurrentQueue} receive";
         }
 
-        public static string CreateMessageReceivedActivityName(this IAsyncBasicConsumer consumer, string exchangeName, string routingKey)
+        public static string CreateMessageReceivedActivityName(this IAsyncBasicConsumer consumer, string exchangeName)
         {
-            return consumer.CreateActivityName("message-received", exchangeName, routingKey);
+            return consumer.CreateActivityName(exchangeName);
         }
 
         public static Activity CreateMessageReceivedActivity(this IAsyncBasicConsumer consumer, IReadOnlyBasicProperties properties, string exchangeName, string routingKey)
         {
-            var activityName = consumer.CreateMessageReceivedActivityName(exchangeName, routingKey);
+            var activityName = consumer.CreateMessageReceivedActivityName(exchangeName);
             return ActivitySource.CreateActivity(properties.Headers, activityName, ActivityKind.Consumer);
         }
 

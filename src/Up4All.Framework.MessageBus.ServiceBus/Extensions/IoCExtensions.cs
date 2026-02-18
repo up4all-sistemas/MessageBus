@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 
+using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 
 using Up4All.Framework.MessageBus.ServiceBus.Pipelines;
@@ -15,7 +16,12 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Extensions
 
         public static TracerProviderBuilder AddOpenTelemetryForServiceBusMessageBus(this TracerProviderBuilder builder)
         {
-            builder.AddSource(ServiceBusClientExtensions.ActivitySource.Name);
+            var resBuilder = ResourceBuilder.CreateDefault()
+                .AddService(ServiceBusClientExtensions.ActivitySource.Name, serviceVersion: ServiceBusClientExtensions.ActivitySource.Version);
+
+            builder.AddSource(ServiceBusClientExtensions.ActivitySource.Name)
+                .SetResourceBuilder(resBuilder);
+
             return builder;
         }
     }

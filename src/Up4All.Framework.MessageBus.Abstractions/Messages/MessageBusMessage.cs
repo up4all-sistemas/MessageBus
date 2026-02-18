@@ -120,7 +120,7 @@ namespace Up4All.Framework.MessageBus.Abstractions.Messages
             AddUserProperty(MessageIdkey, value.ToString());
         }
 
-        public TMessageKey GetMessageId<TMessageKey>()
+        public TMessageKey GetMessageIdForClass<TMessageKey>()
             where TMessageKey : class
         {
             if (this.TryGetUserPropertyAs<TMessageKey>(MessageIdkey, out var result))

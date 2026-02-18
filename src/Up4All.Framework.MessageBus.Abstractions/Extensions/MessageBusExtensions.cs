@@ -158,6 +158,23 @@ namespace Up4All.Framework.MessageBus.Abstractions.Extensions
             return false;
         }
 
+        public static bool TryGetUserPropertyAsObject(this MessageBusMessage message, string userPropertyKey, out object value)
+        {
+            value = default;
+
+            if (message.UserProperties.TryGetValue(userPropertyKey, out var rawValue))
+            {
+                if (rawValue is byte[])
+                    return false;
+                else
+                    value = rawValue;
+
+                return true;
+            }
+
+            return false;
+        }
+
         public static bool TryGetUserPropertyAs<T>(this MessageBusMessage message, string userPropertyKey, out T value) where T : class
         {
             value = default;

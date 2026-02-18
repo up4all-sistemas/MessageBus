@@ -32,6 +32,8 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             properties.Headers = new Dictionary<string, object>();
             foreach (var prop in message.UserProperties)
                 properties.Headers.Add(prop);
+
+            properties.MessageId ??= message.GetMessageIdForClass<string>() ?? Guid.NewGuid().ToString("N");
         }
 
         internal static ReceivedMessage CreateReceivedMessage(this ReadOnlyMemory<byte> body, IReadOnlyBasicProperties properties)

@@ -5,6 +5,7 @@ using RabbitMQ.Client.Events;
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -36,14 +37,23 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Consumers
             {
                 _logger.LogDebug("Receiving message from {QueueName}", _channel.CurrentQueue);
                 var message = body.CreateReceivedMessage(properties);
-                message.SetMessageId(Guid.NewGuid());
+                message.SetMessageId(properties.MessageId);
+
+                var additionaArgs = new Dictionary<string, object> {
+                    { "messaging.rabbitmq.message.delivery_tag", deliveryTag }
+                };
+
+                if (!string.IsNullOrEmpty(routingKey))
+                    additionaArgs.Add("messaging.rabbitmq.destination.routing_key", routingKey);
+
 
                 using var activity = this.CreateMessageReceivedActivity(properties, exchange, routingKey);
                 activity?.InjectPropagationContext(message.UserProperties);
-                activity?.AddTagsToActivity("rabbitmq", body.ToArray(), exchange, new Dictionary<string, object> { { "messaging.rabbitmq.routing_key", "" } });
+                activity?.AddTagsToActivity("rabbitmq", message, $"{exchange}:{_channel.CurrentQueue}", properties.MessageId, additionalTags: additionaArgs);
 
                 var response = await _handler(message, cancellationToken);
                 await _channel.ProcessMessageAsync(deliveryTag, response, _autoComplete, cancellationToken);
+                activity?.SetStatus(ActivityStatusCode.Ok);
 
                 if (_idleHandler is not null)
                     await _idleHandler.Invoke(cancellationToken);

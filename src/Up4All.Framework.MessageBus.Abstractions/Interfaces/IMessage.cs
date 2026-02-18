@@ -36,6 +36,6 @@ namespace Up4All.Framework.MessageBus.Abstractions.Interfaces
 
         void SetMessageId(Guid value);
 
-        TMessageKey GetMessageId<TMessageKey>() where TMessageKey : class;
+        TMessageKey GetMessageIdForClass<TMessageKey>() where TMessageKey : class;
     }
 }

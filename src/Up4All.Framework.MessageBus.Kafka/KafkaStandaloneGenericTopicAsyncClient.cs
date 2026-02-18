@@ -32,7 +32,7 @@ namespace Up4All.Framework.MessageBus.Kafka
 
         public async Task SendAsync(MessageBusMessage message, CancellationToken cancellationToken = default)
         {
-            this.AddActivityTrace(message);
+            this.AddActivityTrace(message, message.GetMessageIdForClass<TMessageKey>());
             await _producer.ProduceAsync(TopicName, message.ToKafkaMessage<TMessageKey>(), cancellationToken);
         }
 
@@ -72,7 +72,7 @@ namespace Up4All.Framework.MessageBus.Kafka
 
         public async Task SendAsync(MessageBusMessage message, CancellationToken cancellationToken = default)
         {
-            this.AddActivityTrace(message);
+            this.AddActivityTrace(message, message.GetMessageIdForStruct<TMessageKey>());
             await _producer.ProduceAsync(TopicName, message.ToKafkaMessageFromKeyStruct<TMessageKey>(), cancellationToken);
         }
 

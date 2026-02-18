@@ -2,6 +2,7 @@
 using Confluent.Kafka.Admin;
 
 using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -38,12 +39,14 @@ namespace Up4All.Framework.MessageBus.Kafka
                     var consume = Consumer.Consume(cancellationToken);
                     var message = GetReceivedMessage(consume.Message);
 
-                    this.AddActivityTrace<KafkaStandaloneGenericSubscriptionAsyncClient<TMessageKey>>(message);
+                    var activity = this.AddActivityTrace<KafkaStandaloneGenericSubscriptionAsyncClient<TMessageKey>>(message, GetMessageId(message));
 
                     var result = await handler(message, cancellationToken);
 
                     if (result == MessageReceivedStatus.Completed)
                         Consumer.Commit();
+
+                    activity?.SetStatus(ActivityStatusCode.Ok);
 
                     if (onIdle is not null)
                         await onIdle(cancellationToken);
@@ -69,12 +72,14 @@ namespace Up4All.Framework.MessageBus.Kafka
                     var consume = Consumer.Consume(cancellationToken);
                     var message = GetReceivedMessage(consume.Message);
 
-                    this.AddActivityTrace<KafkaStandaloneGenericSubscriptionAsyncClient<TMessageKey>>(message);
+                    var activity = this.AddActivityTrace<KafkaStandaloneGenericSubscriptionAsyncClient<TMessageKey>>(message, GetMessageId(message));
 
                     var result = await handler(message.GetBody<TModel>(), cancellationToken);
 
                     if (result == MessageReceivedStatus.Completed)
                         Consumer.Commit();
+
+                    activity?.SetStatus(ActivityStatusCode.Ok);
 
                     if (onIdle is not null)
                         await onIdle(cancellationToken);
@@ -97,6 +102,8 @@ namespace Up4All.Framework.MessageBus.Kafka
 
         protected abstract ReceivedMessage GetReceivedMessage(Message<TMessageKey, byte[]> consumeMessage);
 
+        protected abstract object GetMessageId(MessageBusMessage message);
+
         protected override void Dispose(bool disposing)
         {
             if (disposing)
@@ -115,6 +122,11 @@ namespace Up4All.Framework.MessageBus.Kafka
             SetConsumer(new ConsumerBuilder<TMessageKey, byte[]>(this.CreateConfig(connectionString, subscriptionName)).Build());
         }
 
+        protected override object GetMessageId(MessageBusMessage message)
+        {
+            return message.GetMessageIdForClass<TMessageKey>();
+        }
+
         protected override ReceivedMessage GetReceivedMessage(Message<TMessageKey, byte[]> consumeMessage)
         {
             return consumeMessage.ToReceivedMessage();
@@ -130,6 +142,11 @@ namespace Up4All.Framework.MessageBus.Kafka
             : base(connectionString, topicName, subscriptionName)
         {
             SetConsumer(new ConsumerBuilder<TMessageKey, byte[]>(this.CreateConfig(connectionString, subscriptionName)).Build());
+        }
+
+        protected override object GetMessageId(MessageBusMessage message)
+        {
+            return message.GetMessageIdForStruct<TMessageKey>();
         }
 
         protected override ReceivedMessage GetReceivedMessage(Message<TMessageKey, byte[]> consumeMessage)
