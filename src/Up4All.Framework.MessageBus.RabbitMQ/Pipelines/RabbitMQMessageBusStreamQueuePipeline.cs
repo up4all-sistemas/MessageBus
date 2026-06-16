@@ -43,6 +43,18 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Pipelines
             return this;
         }
 
+        public RabbitMQMessageBusStreamQueuePipeline ListenStreamQueue(object serviceKey, string connectionString, string queueName
+            , object offset
+            , bool persistent = true
+            , int connectionAttempts = 8
+            , Action<IServiceProvider, StreamDeclareOptions> queueDeclareBuilder = null)
+        {
+            MainPipeline.Services.AddKeyedSingleton<IMessageBusAsyncConsumer>(serviceKey, (sp,key)
+                => CreateClient(sp, connectionString, queueName, offset, persistent, connectionAttempts, queueDeclareBuilder));
+
+            return this;
+        }
+
         public override IConsumerPipelineBuilder AddDefaultHostedService()
         {
             AddHostedService<RabbitMQDefaultStreamConsumer>();

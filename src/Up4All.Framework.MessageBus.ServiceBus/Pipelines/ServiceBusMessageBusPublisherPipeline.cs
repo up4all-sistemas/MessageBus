@@ -30,5 +30,18 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Pipelines
             IsPublisherDefined = true;
             return this;
         }
+
+        public IPublishPipelineBuilder AddPublisher(object serviceKey, string connectionString, string topicName
+            , int connectionAttempts = 8)
+        {
+            MainPipeline.Services.AddKeyedSingleton<IMessageBusPublisherAsync>(serviceKey, (sp,key) =>
+            {
+                var logger = sp.GetRequiredService<ILogger<ServiceBusStandaloneTopicAsyncClient>>();
+                return new ServiceBusStandaloneTopicAsyncClient(logger, connectionString, topicName, connectionAttempts);
+            });
+
+            IsPublisherDefined = true;
+            return this;
+        }
     }
 }

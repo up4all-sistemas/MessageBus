@@ -32,10 +32,23 @@ namespace Up4All.Framework.MessageBus.Kafka.Pipelines
             return this;
         }
 
+        public KafkaMessageBusSubscriptionPipeline ListenSubscription(object serviceKey, string connectionString, string topicName, string subscriptionName)
+        {
+            MainPipeline.Services.AddKeyedSingleton<IMessageBusAsyncConsumer>(serviceKey, (sp, key) => new KafkaStandaloneSubscriptionAsyncClient(connectionString, topicName, subscriptionName));
+            return this;
+        }
+
         public KafkaMessageBusSubscriptionPipeline ListenSubscription<TMessageKey>(string connectionString, string topicName, string subscriptionName)
             where TMessageKey : class
         {
             MainPipeline.Services.AddSingleton<IMessageBusAsyncConsumer>(sp => new KafkaStandaloneWithGenericSubscriptionAsyncClient<TMessageKey>(connectionString, topicName, subscriptionName));            
+            return this;
+        }
+
+        public KafkaMessageBusSubscriptionPipeline ListenSubscription<TMessageKey>(object serviceKey, string connectionString, string topicName, string subscriptionName)
+            where TMessageKey : class
+        {
+            MainPipeline.Services.AddKeyedSingleton<IMessageBusAsyncConsumer>(serviceKey, (sp,key) => new KafkaStandaloneWithGenericSubscriptionAsyncClient<TMessageKey>(connectionString, topicName, subscriptionName));
             return this;
         }
 
@@ -50,6 +63,13 @@ namespace Up4All.Framework.MessageBus.Kafka.Pipelines
             where TMessageKey : struct
         {
             MainPipeline.Services.AddSingleton<IMessageBusAsyncConsumer>(sp => new KafkaStandaloneWithStructKeySubscriptionAsyncClient<TMessageKey>(connectionString, topicName, subscriptionName));
+            return this;
+        }
+
+        public KafkaMessageBusSubscriptionPipeline ListenSubscriptionWithStructKey<TMessageKey>(object serviceKey, string connectionString, string topicName, string subscriptionName)
+            where TMessageKey : struct
+        {
+            MainPipeline.Services.AddKeyedSingleton<IMessageBusAsyncConsumer>(serviceKey, (sp,key) => new KafkaStandaloneWithStructKeySubscriptionAsyncClient<TMessageKey>(connectionString, topicName, subscriptionName));
             return this;
         }
 
