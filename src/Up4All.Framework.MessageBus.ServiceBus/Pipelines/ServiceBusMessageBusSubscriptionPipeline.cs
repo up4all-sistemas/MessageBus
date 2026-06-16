@@ -1,8 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-using System;
-
 using Up4All.Framework.MessageBus.Abstractions.Consumers;
 using Up4All.Framework.MessageBus.Abstractions.Interfaces;
 using Up4All.Framework.MessageBus.Abstractions.Interfaces.Pipelines;
@@ -25,6 +23,17 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Pipelines
             , int connectionAttempts = 8)
         {
             MainPipeline.Services.AddSingleton<IMessageBusAsyncConsumer>(sp =>
+            {
+                var logger = sp.GetRequiredService<ILogger<ServiceBusStandaloneSubscriptionAsyncClient>>();
+                return new ServiceBusStandaloneSubscriptionAsyncClient(logger, connectionString, topicName, subscriptionName, connectionAttempts);
+            });
+            return this;
+        }
+
+        public IConsumerPipelineBuilder ListenSubscription(object serviceKey, string connectionString, string topicName, string subscriptionName
+            , int connectionAttempts = 8)
+        {
+            MainPipeline.Services.AddKeyedSingleton<IMessageBusAsyncConsumer>(serviceKey, (sp,key) =>
             {
                 var logger = sp.GetRequiredService<ILogger<ServiceBusStandaloneSubscriptionAsyncClient>>();
                 return new ServiceBusStandaloneSubscriptionAsyncClient(logger, connectionString, topicName, subscriptionName, connectionAttempts);

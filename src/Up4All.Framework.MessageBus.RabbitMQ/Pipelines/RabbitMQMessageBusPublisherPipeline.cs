@@ -43,6 +43,19 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Pipelines
             return this;
         }
 
+        public RabbitMQMessageBusPublisherPipeline AddPublisher(object serviceKey, string connectionString, string queueName
+            , string type = ExchangeType.Direct
+            , bool persistent = true
+            , int connectionAttempts = 8
+            , Action<IServiceProvider, ExchangeDeclareOptions> exchangeDeclareBuilder = null)
+        {
+            MainPipeline.Services.AddKeyedSingleton<IMessageBusPublisherAsync>(serviceKey, (sp,key) => CreateInstance(sp, connectionString, queueName, type, persistent
+                , connectionAttempts, exchangeDeclareBuilder));
+
+            IsPublisherDefined = true;
+            return this;
+        }
+
         private static RabbitMQStandaloneTopicAsyncClient CreateInstance(IServiceProvider sp, string connectionString, string queueName
             , string type = ExchangeType.Direct
             , bool persistent = true

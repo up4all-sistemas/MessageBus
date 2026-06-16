@@ -13,46 +13,51 @@ namespace Up4All.Framework.MessageBus.Kafka.Pipelines
         : MessageBusPublisherPipeline<KafkaMessageBusPipeline, KafkaMessageBusOptions>(pipeline)
     {
 
-        public KafkaMessageBusPublisherPipeline AddPublisher<TMessageBusMessageHandler>()
-            where TMessageBusMessageHandler : class, IMessageBusMessageHandler
+        public KafkaMessageBusPublisherPipeline AddPublisher()
         {
-            MainPipeline.Services.AddTransient<IMessageBusMessageHandler, TMessageBusMessageHandler>();
             MainPipeline.Services.AddSingleton<IMessageBusPublisherAsync, KafkaTopicAsyncClient>();
-
             IsPublisherDefined = true;
             return this;
         }
 
-        public KafkaMessageBusPublisherPipeline AddPublisher<TMessageKey, TMessageBusMessageHandler>()
+        public KafkaMessageBusPublisherPipeline AddPublisher<TMessageKey>()
             where TMessageKey : class
-            where TMessageBusMessageHandler : class, IMessageBusMessageHandler
         {
-            MainPipeline.Services.AddTransient<IMessageBusMessageHandler, TMessageBusMessageHandler>();
             MainPipeline.Services.AddSingleton<IMessageBusPublisherAsync, KafkaGenericTopicAsyncClient<TMessageKey>>();
-
             IsPublisherDefined = true;
             return this;
         }
 
-        public KafkaMessageBusPublisherPipeline AddPublisher<TMessageBusMessageHandler>(string connectionString, string topicName
+        public KafkaMessageBusPublisherPipeline AddPublisher(string connectionString, string topicName
             , int connectionAttempts = 8)
-            where TMessageBusMessageHandler : class, IMessageBusMessageHandler
         {
-            MainPipeline.Services.AddTransient<IMessageBusMessageHandler, TMessageBusMessageHandler>();
             MainPipeline.Services.AddSingleton<IMessageBusPublisherAsync>(sp => new KafkaStandaloneTopicAsyncClient(connectionString, topicName, connectionAttempts));
-
             IsPublisherDefined = true;
             return this;
         }
 
-        public KafkaMessageBusPublisherPipeline AddPublisher<TMessageKey, TMessageBusMessageHandler>(string connectionString, string topicName
+        public KafkaMessageBusPublisherPipeline AddPublisher(object serviceKey, string connectionString, string topicName
+            , int connectionAttempts = 8)
+        {
+            MainPipeline.Services.AddKeyedSingleton<IMessageBusPublisherAsync>(serviceKey, (sp, key) => new KafkaStandaloneTopicAsyncClient(connectionString, topicName, connectionAttempts));
+            IsPublisherDefined = true;
+            return this;
+        }
+
+        public KafkaMessageBusPublisherPipeline AddPublisher<TMessageKey>(string connectionString, string topicName
             , int connectionAttempts = 8)
             where TMessageKey : class
-            where TMessageBusMessageHandler : class, IMessageBusMessageHandler
         {
-            MainPipeline.Services.AddTransient<IMessageBusMessageHandler, TMessageBusMessageHandler>();
             MainPipeline.Services.AddSingleton<IMessageBusPublisherAsync>(sp => new KafkaStandaloneGenericTopicAsyncClient<TMessageKey>(connectionString, topicName, connectionAttempts));
+            IsPublisherDefined = true;
+            return this;
+        }
 
+        public KafkaMessageBusPublisherPipeline AddPublisher<TMessageKey>(object serviceKey, string connectionString, string topicName
+            , int connectionAttempts = 8)
+            where TMessageKey : class
+        {
+            MainPipeline.Services.AddKeyedSingleton<IMessageBusPublisherAsync>(serviceKey, (sp, key) => new KafkaStandaloneGenericTopicAsyncClient<TMessageKey>(connectionString, topicName, connectionAttempts));
             IsPublisherDefined = true;
             return this;
         }
