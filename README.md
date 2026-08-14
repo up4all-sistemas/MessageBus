@@ -10,11 +10,11 @@ touch application/business code.
 
 | Package | What it wires up | Docs |
 |---|---|---|
-| [`Up4All.Framework.MessageBus.Abstractions`](src/Up4All.Framework.MessageBus.Abstractions) | Core abstractions: `MessageBusMessage`/`ReceivedMessage`, publisher/consumer interfaces, DI pipeline builder, OpenTelemetry helpers. Pulled in transitively by every provider. | — |
+| [`Up4All.Framework.MessageBus.Abstractions`](src/Up4All.Framework.MessageBus.Abstractions) | Core abstractions: `MessageBusMessage`/`ReceivedMessage`, publisher/consumer interfaces, DI pipeline builder, OpenTelemetry helpers. Pulled in transitively by every provider. | [README](src/Up4All.Framework.MessageBus.Abstractions/README.md) |
 | [`Up4All.Framework.MessageBus.RabbitMQ`](src/Up4All.Framework.MessageBus.RabbitMQ) | RabbitMQ — queues, exchanges/topics and streams, via [RabbitMQ.Client](https://www.nuget.org/packages/RabbitMQ.Client). | [README](src/Up4All.Framework.MessageBus.RabbitMQ/README.md) |
 | [`Up4All.Framework.MessageBus.ServiceBus`](src/Up4All.Framework.MessageBus.ServiceBus) | Azure Service Bus — queues and topics/subscriptions, via [Azure.Messaging.ServiceBus](https://www.nuget.org/packages/Azure.Messaging.ServiceBus). | [README](src/Up4All.Framework.MessageBus.ServiceBus/README.md) |
 | [`Up4All.Framework.MessageBus.Kafka`](src/Up4All.Framework.MessageBus.Kafka) | Apache Kafka — topics with consumer groups, typed message keys, via [Confluent.Kafka](https://www.nuget.org/packages/Confluent.Kafka). | [README](src/Up4All.Framework.MessageBus.Kafka/README.md) |
-| [`Up4All.Framework.MessageBus.TransferHelper`](src/Up4All.Framework.MessageBus.TransferHelper) | Forwards ("shovels") messages from one broker/entity to another — e.g. RabbitMQ → Service Bus — with an optional transformation step in between. | — |
+| [`Up4All.Framework.MessageBus.TransferHelper`](src/Up4All.Framework.MessageBus.TransferHelper) | Forwards ("shovels") messages from one broker/entity to another — e.g. RabbitMQ → Service Bus — with an optional transformation step in between. | [README](src/Up4All.Framework.MessageBus.TransferHelper/README.md) |
 
 ## Features
 
