@@ -14,7 +14,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Pipelines
     public class RabbitMQMessageBusPublisherPipeline(RabbitMQMessageBusPipeline pipeline)
         : MessageBusPublisherPipeline<RabbitMQMessageBusPipeline, RabbitMQMessageBusOptions>(pipeline)
     {
-        public RabbitMQMessageBusPublisherPipeline AddPublisher(string type = ExchangeType.Direct, Action<IServiceProvider, RabbitMQMessageBusOptions, ExchangeDeclareOptions> exchangeDeclareBuilder = null)
+        public RabbitMQMessageBusPublisherPipeline AddPublisher(string type = ExchangeType.Direct, Action<IServiceProvider, RabbitMQMessageBusOptions, ExchangeDeclareOptions>? exchangeDeclareBuilder = null)
 
         {
             MainPipeline.Services.AddSingleton<IMessageBusPublisherAsync>(sp =>
@@ -34,7 +34,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Pipelines
             , string type = ExchangeType.Direct
             , bool persistent = true
             , int connectionAttempts = 8
-            , Action<IServiceProvider, ExchangeDeclareOptions> exchangeDeclareBuilder = null)
+            , Action<IServiceProvider, ExchangeDeclareOptions>? exchangeDeclareBuilder = null)
         {
             MainPipeline.Services.AddSingleton<IMessageBusPublisherAsync>(sp => CreateInstance(sp, connectionString, queueName, type, persistent
                 , connectionAttempts, exchangeDeclareBuilder));
@@ -47,7 +47,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Pipelines
             , string type = ExchangeType.Direct
             , bool persistent = true
             , int connectionAttempts = 8
-            , Action<IServiceProvider, ExchangeDeclareOptions> exchangeDeclareBuilder = null)
+            , Action<IServiceProvider, ExchangeDeclareOptions>? exchangeDeclareBuilder = null)
         {
             MainPipeline.Services.AddKeyedSingleton<IMessageBusPublisherAsync>(serviceKey, (sp,key) => CreateInstance(sp, connectionString, queueName, type, persistent
                 , connectionAttempts, exchangeDeclareBuilder));
@@ -60,7 +60,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Pipelines
             , string type = ExchangeType.Direct
             , bool persistent = true
             , int connectionAttempts = 8
-            , Action<IServiceProvider, ExchangeDeclareOptions> exchangeDeclareBuilder = null)
+            , Action<IServiceProvider, ExchangeDeclareOptions>? exchangeDeclareBuilder = null)
         {
             var logger = sp.GetRequiredService<ILogger<RabbitMQStandaloneTopicAsyncClient>>();
 

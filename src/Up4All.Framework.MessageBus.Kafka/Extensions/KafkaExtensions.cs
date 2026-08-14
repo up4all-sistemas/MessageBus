@@ -1,6 +1,7 @@
 ﻿using Confluent.Kafka;
 
 using System.Diagnostics;
+using System.Diagnostics.Metrics;
 using System.Text.Json;
 
 using Up4All.Framework.MessageBus.Abstractions.Extensions;
@@ -11,7 +12,26 @@ namespace Up4All.Framework.MessageBus.Kafka.Extensions
 {
     public static class KafkaExtensions
     {
-        public static ActivitySource ActivitySource => OpenTelemetryExtensions.CreateActivitySource<KafkaStandaloneTopicAsyncClient>();
+        // ActivitySource is meant to be treated as a singleton per instrumentation library
+        // (see the .NET/OpenTelemetry guidance): a property here would build a brand-new
+        // instance - with its own assembly-name/version lookup - on every single publish or
+        // consume call. This is also the single ActivitySource for the whole project - there
+        // used to be a second, unused one (KafkaConsts.ActivitySource) that was never
+        // registered with any TracerProvider nor referenced when creating spans.
+        public static readonly ActivitySource ActivitySource = OpenTelemetryExtensions.CreateActivitySource<KafkaStandaloneTopicAsyncClient>();
+
+        // Same singleton-per-instrumentation-library reasoning as ActivitySource above,
+        // applied to the Meter and the instruments built on top of it.
+        public static readonly Meter Meter = OpenTelemetryMetricsExtensions.CreateMeter<KafkaStandaloneTopicAsyncClient>();
+
+        public static readonly Counter<long> SentMessagesCounter = Meter.CreateCounter<long>(
+            OpenTelemetryMetricsExtensions.SentMessagesInstrumentName, unit: "{message}", description: "Number of messages sent to Kafka.");
+
+        public static readonly Counter<long> ConsumedMessagesCounter = Meter.CreateCounter<long>(
+            OpenTelemetryMetricsExtensions.ConsumedMessagesInstrumentName, unit: "{message}", description: "Number of messages consumed from Kafka.");
+
+        public static readonly Histogram<double> OperationDurationHistogram = Meter.CreateHistogram<double>(
+            OpenTelemetryMetricsExtensions.OperationDurationInstrumentName, unit: "s", description: "Duration of Kafka publish/consume operations.");
 
         public static IProducer<TMessageKey, byte[]> CreateProducer<TMessageKey>(this IKafkaTopicClient client, string connectionString)
             where TMessageKey : class
@@ -43,11 +63,18 @@ namespace Up4All.Framework.MessageBus.Kafka.Extensions
             where TMessageKey : class
         {
             var result = new ReceivedMessage();
-            result.SetMessageId(message.Key);
+            result.SetMessageId(message.Key!);
             result.AddBody(message.Value);
 
-            foreach (var header in message.Headers)
-                result.AddUserProperty(header.Key, JsonSerializer.Deserialize<object>(header.GetValueBytes()));
+            if (message.Headers != null)
+            {
+                foreach (var header in message.Headers)
+                {
+                    var val = JsonSerializer.Deserialize<object>(header.GetValueBytes());
+                    if (val != null)
+                        result.AddUserProperty(header.Key, val);
+                }
+            }
 
             return result;
         }
@@ -59,8 +86,15 @@ namespace Up4All.Framework.MessageBus.Kafka.Extensions
             result.SetMessageIdFromStruct(message.Key);
             result.AddBody(message.Value);
 
-            foreach (var header in message.Headers)
-                result.AddUserProperty(header.Key, JsonSerializer.Deserialize<object>(header.GetValueBytes()));
+            if (message.Headers != null)
+            {
+                foreach (var header in message.Headers)
+                {
+                    var val = JsonSerializer.Deserialize<object>(header.GetValueBytes());
+                    if (val != null)
+                        result.AddUserProperty(header.Key, val);
+                }
+            }
 
             return result;
         }

@@ -17,7 +17,8 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Pipelines
     public class RabbitMQMessageBusStreamQueuePipeline(RabbitMQMessageBusPipeline pipeline)
         : MessageBusConsumerPipeline<RabbitMQMessageBusPipeline, RabbitMQMessageBusOptions>(pipeline)
     {
-        public RabbitMQMessageBusStreamQueuePipeline ListenStreamQueue(Action<IServiceProvider, RabbitMQMessageBusOptions, StreamDeclareOptions> queueDeclareBuilder = null)
+        public RabbitMQMessageBusStreamQueuePipeline ListenStreamQueue(Action<IServiceProvider, RabbitMQMessageBusOptions, StreamDeclareOptions>? queueDeclareBuilder = null
+            , object? offset = null)
         {
             MainPipeline.Services.AddSingleton<IMessageBusAsyncConsumer>(sp =>
             {
@@ -26,8 +27,8 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Pipelines
 
                 var declareOpts = RabbitMQConsts.ToStreamDeclare(opts.Value.ProvisioningOptions);
                 queueDeclareBuilder?.Invoke(sp, opts.Value, declareOpts);
-                return new RabbitMQStreamAsyncClient(logger, opts, declareOpts);
-            });            
+                return new RabbitMQStreamAsyncClient(logger, opts, offset ?? OffsetType.Next, declareOpts);
+            });
             return this;
         }
 
@@ -35,7 +36,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Pipelines
             , object offset
             , bool persistent = true
             , int connectionAttempts = 8
-            , Action<IServiceProvider, StreamDeclareOptions> queueDeclareBuilder = null)
+            , Action<IServiceProvider, StreamDeclareOptions>? queueDeclareBuilder = null)
         {            
             MainPipeline.Services.AddSingleton<IMessageBusAsyncConsumer>(sp
                 => CreateClient(sp, connectionString, queueName, offset, persistent, connectionAttempts, queueDeclareBuilder));
@@ -47,7 +48,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Pipelines
             , object offset
             , bool persistent = true
             , int connectionAttempts = 8
-            , Action<IServiceProvider, StreamDeclareOptions> queueDeclareBuilder = null)
+            , Action<IServiceProvider, StreamDeclareOptions>? queueDeclareBuilder = null)
         {
             MainPipeline.Services.AddKeyedSingleton<IMessageBusAsyncConsumer>(serviceKey, (sp,key)
                 => CreateClient(sp, connectionString, queueName, offset, persistent, connectionAttempts, queueDeclareBuilder));
@@ -65,7 +66,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Pipelines
             , object offset
             , bool persistent = true
             , int connectionAttempts = 8
-            , Action<IServiceProvider, StreamDeclareOptions> queueDeclareBuilder = null)
+            , Action<IServiceProvider, StreamDeclareOptions>? queueDeclareBuilder = null)
         {
             var logger = sp.GetRequiredService<ILogger<RabbitMQStandaloneStreamAsyncClient>>();
 

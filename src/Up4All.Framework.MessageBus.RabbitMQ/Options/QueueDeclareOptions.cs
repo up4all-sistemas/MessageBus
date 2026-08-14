@@ -14,7 +14,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Options
 
         public bool AutoDelete { get; set; }
 
-        public Dictionary<string, object> Args { get; set; }
+        public Dictionary<string, object?> Args { get; set; }
 
         public ICollection<QueueBindOptions> Bindings { get; set; }
 
@@ -35,9 +35,9 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Options
             Bindings.Add(binding);
         }
 
-        public static implicit operator QueueDeclareOptions(ProvisioningOptions opts)
+        public static implicit operator QueueDeclareOptions(ProvisioningOptions? opts)
         {
-            if (opts is null) return null;
+            if (opts is null) return null!;
 
             return new QueueDeclareOptions
             {
@@ -55,9 +55,9 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Options
     {
         public string ExchangeName { get; set; }
 
-        public string RoutingKey { get; set; }
+        public string? RoutingKey { get; set; }
 
-        public Dictionary<string, object> Args { get; set; }
+        public Dictionary<string, object?> Args { get; set; }
 
         internal QueueBindOptions(string exchangeName)
         {
@@ -65,7 +65,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Options
             Args = [];
         }
 
-        public QueueBindOptions(string exchangeName, string defaultArgKey, object defaultArgValue, string routingkey = null) : this(exchangeName)
+        public QueueBindOptions(string exchangeName, string defaultArgKey, object defaultArgValue, string? routingkey = null) : this(exchangeName)
         {
             RoutingKey = routingkey;
             Args.Add(defaultArgKey, defaultArgValue);

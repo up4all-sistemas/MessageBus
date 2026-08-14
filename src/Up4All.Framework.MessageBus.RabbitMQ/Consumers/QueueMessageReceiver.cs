@@ -1,5 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 
+using OpenTelemetry.Trace;
+
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
@@ -17,14 +19,14 @@ using Up4All.Framework.MessageBus.RabbitMQ.Extensions;
 namespace Up4All.Framework.MessageBus.RabbitMQ.Consumers
 {
     public class AsyncQueueMessageReceiver(IChannel channel, Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatus>> handler
-        , Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> idleHandler, bool autocomplete
+        , Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task>? idleHandler, bool autocomplete
         , ILogger logger)
         : AsyncEventingBasicConsumer(channel)
     {
         private readonly IChannel _channel = channel;
         private readonly Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatus>> _handler = handler;
         private readonly Func<Exception, CancellationToken, Task> _errorHandler = errorHandler;
-        private readonly Func<CancellationToken, Task> _idleHandler = idleHandler;
+        private readonly Func<CancellationToken, Task>? _idleHandler = idleHandler;
         private readonly bool _autoComplete = autocomplete;
         private readonly ILogger _logger = logger;
 
@@ -33,11 +35,16 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Consumers
             _logger.LogDebug("Registrating Deliver Consumer Async");
             await base.HandleBasicDeliverAsync(consumerTag, deliveryTag, redelivered, exchange, routingKey, properties, body, cancellationToken: cancellationToken);
 
+            Activity? activity = null;
+            var entityPath = $"{exchange}:{_channel.CurrentQueue}";
+            var stopwatch = Stopwatch.StartNew();
+            string? errorType = null;
             try
             {
                 _logger.LogDebug("Receiving message from {QueueName}", _channel.CurrentQueue);
                 var message = body.CreateReceivedMessage(properties);
-                message.SetMessageId(properties.MessageId);
+                if (properties.MessageId is not null)
+                    message.SetMessageId(properties.MessageId);
 
                 var additionaArgs = new Dictionary<string, object> {
                     { "messaging.rabbitmq.message.delivery_tag", deliveryTag }
@@ -46,33 +53,42 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Consumers
                 if (!string.IsNullOrEmpty(routingKey))
                     additionaArgs.Add("messaging.rabbitmq.destination.routing_key", routingKey);
 
-
-                using var activity = this.CreateMessageReceivedActivity(properties, exchange, routingKey);
+                activity = this.CreateMessageReceivedActivity(properties, exchange, routingKey);
                 activity?.InjectPropagationContext(message.UserProperties);
-                activity?.AddTagsToActivity("rabbitmq", message, $"{exchange}:{_channel.CurrentQueue}", properties.MessageId, additionalTags: additionaArgs);
+                activity?.AddTagsToActivity("rabbitmq", message, entityPath, properties.MessageId, additionalTags: additionaArgs);
 
                 var response = await _handler(message, cancellationToken);
                 await _channel.ProcessMessageAsync(deliveryTag, response, _autoComplete, cancellationToken);
                 activity?.SetStatus(ActivityStatusCode.Ok);
+                RabbitMQClientExtensions.ConsumedMessagesCounter.RecordMessageConsumed("rabbitmq", entityPath);
 
                 if (_idleHandler is not null)
                     await _idleHandler.Invoke(cancellationToken);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Receiver Error: {Message}", ex.Message);
+                errorType = ex.GetType().Name;
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+                activity?.AddException(ex);
+                _logger.LogError(ex, "Receiver Error");
                 await _channel.ProcessErrorMessageAsync(deliveryTag, _autoComplete, cancellationToken);
+                RabbitMQClientExtensions.ConsumedMessagesCounter.RecordMessageConsumed("rabbitmq", entityPath, errorType);
                 await _errorHandler(ex, CancellationToken.None);
+            }
+            finally
+            {
+                RabbitMQClientExtensions.OperationDurationHistogram.RecordOperationDuration(stopwatch.Elapsed.TotalSeconds, "rabbitmq", entityPath, "receive", errorType);
+                activity?.Dispose();
             }
         }
     }
 
     public class AsyncQueueMessageReceiverForModel<TModel>(IChannel channel, Func<TModel, CancellationToken, Task<MessageReceivedStatus>> handler
-        , Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> idleHandler, bool autocomplete
+        , Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task>? idleHandler, bool autocomplete
         , ILogger logger)
         : AsyncQueueMessageReceiver(channel, (msg, ct) =>
         {
-            var model = msg.GetBody<TModel>();
+            var model = msg.GetBody<TModel>()!;
             return handler(model, ct);
         }, errorHandler, idleHandler, autocomplete, logger)
     {

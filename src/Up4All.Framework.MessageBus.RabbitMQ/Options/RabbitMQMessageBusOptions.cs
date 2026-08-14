@@ -10,7 +10,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Options
     {
         public bool PersistentMessages { get; set; } = true;
 
-        public ProvisioningOptions ProvisioningOptions { get; set; } = null;
+        public ProvisioningOptions? ProvisioningOptions { get; set; }
 
         public bool ProvisioningProvided => ProvisioningOptions is not null;
     }
@@ -25,7 +25,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Options
 
         public bool Durable { get; set; } = true;
 
-        public Dictionary<string, object> Args { get; set; } = [];
+        public Dictionary<string, object?> Args { get; set; } = [];
 
         public IEnumerable<ProvisioningBindingOptions> Bindings { get; set; } = [];
     }
@@ -33,10 +33,10 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Options
     public class ProvisioningBindingOptions
     {
         [Required]
-        public string ExchangeName { get; set; }
+        public string ExchangeName { get; set; } = null!;
 
-        public string RoutingKey { get; set; }
+        public string? RoutingKey { get; set; }
 
-        public Dictionary<string, object> Args { get; set; } = [];
+        public Dictionary<string, object?> Args { get; set; } = [];
     }
 }

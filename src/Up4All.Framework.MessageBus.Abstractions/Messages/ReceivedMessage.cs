@@ -13,20 +13,20 @@ namespace Up4All.Framework.MessageBus.Abstractions.Messages
             return Encoding.UTF8.GetString(Body);
         }
 
-        public T GetBody<T>(JsonSerializerOptions opts = null)
+        public T? GetBody<T>(JsonSerializerOptions? opts = null)
         {
             opts ??= new JsonSerializerOptions(JsonSerializerDefaults.Web) { IncludeFields = true, DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault };
 
             return JsonSerializer.Deserialize<T>(GetBody(), opts);
         }
 
-        public object GetUserPropertyValue(string key)
+        public object? GetUserPropertyValue(string key)
         {
             if (!UserProperties.TryGetValue(key, out var val)) return null;
             return val;
         }
 
-        public string GetUserPropertyValueAsString(string key, string defaultValue = default)
+        public string? GetUserPropertyValueAsString(string key, string? defaultValue = default)
         {
             return this.GetUserPropertyAsString(key, defaultValue);
         }

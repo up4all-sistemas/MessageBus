@@ -6,7 +6,8 @@
     <Description>Implementation of Up4All MessageBus for Azure ServiceBus</Description>
     <PackageTags>Azure ServiceBus amqp bus client messagebus</PackageTags>
     <PackageLicenseFile>license.txt</PackageLicenseFile>
-    <PackageIcon>icon.png</PackageIcon>    
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/up4all-sistemas/Up4All.MessageBus</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageProjectUrl>https://github.com/up4all-sistemas/Up4All.MessageBus</PackageProjectUrl>
@@ -14,6 +15,7 @@
 
   <ItemGroup>
     <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.20.1" />
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="10.0.2" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.2" />
     <PackageReference Include="Polly" Version="8.6.5" />
   </ItemGroup>
@@ -33,6 +35,10 @@
 
   <ItemGroup>
     <None Include="icon.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="" />
   </ItemGroup>
 
   <ItemGroup>

@@ -14,6 +14,7 @@ namespace Up4All.Framework.MessageBus.Abstractions.Extensions
     {
         public static MessageBusMessage CreateMessagebusMessage<TModel>(this TModel model)
         {
+            if (model is null) throw new ArgumentNullException(nameof(model));
             var message = new MessageBusMessage();
             var modelType = model.GetType();
             var target = modelType.GetCustomAttribute<MessageBusPayloadAttribute>();
@@ -57,26 +58,33 @@ namespace Up4All.Framework.MessageBus.Abstractions.Extensions
             return message.UserProperties["routing-key"].ToString();
         }
 
-        public static string GetUserPropertyAsString(this MessageBusMessage message, string userPropertyKey, string defaultValue = default)
+        public static string? GetUserPropertyAsString(this MessageBusMessage message, string userPropertyKey, string? defaultValue = default)
         {
-            message.UserProperties.TryGetValue(userPropertyKey, out var rawValue);
-            if (rawValue == null) return defaultValue;
-            return Encoding.UTF8.GetString((byte[])rawValue);
+            if (message.UserProperties.TryGetValue(userPropertyKey, out var rawValue))
+            {
+                if (rawValue == null) return defaultValue;
+                if (rawValue is string stringValue) return stringValue;
+                if (rawValue is byte[] bytes) return Encoding.UTF8.GetString(bytes);
+                return rawValue.ToString();
+            }
+            return defaultValue;
         }
 
-        public static bool TryGetUserPropertyAsString(this MessageBusMessage message, string userPropertyKey, out string value)
+        public static bool TryGetUserPropertyAsString(this MessageBusMessage message, string userPropertyKey, out string? value)
         {
             value = default;
             if (message.UserProperties.TryGetValue(userPropertyKey, out var rawValue))
             {
                 if (rawValue is string stringvalue)
+                {
                     value = stringvalue;
+                    return true;
+                }
                 if (rawValue is byte[] bytedValue)
+                {
                     value = Encoding.UTF8.GetString(bytedValue);
-                else
-                    return false;
-
-                return true;
+                    return true;
+                }
             }
             return false;
         }
@@ -158,7 +166,7 @@ namespace Up4All.Framework.MessageBus.Abstractions.Extensions
             return false;
         }
 
-        public static bool TryGetUserPropertyAsObject(this MessageBusMessage message, string userPropertyKey, out object value)
+        public static bool TryGetUserPropertyAsObject(this MessageBusMessage message, string userPropertyKey, out object? value)
         {
             value = default;
 
@@ -175,10 +183,10 @@ namespace Up4All.Framework.MessageBus.Abstractions.Extensions
             return false;
         }
 
-        public static bool TryGetUserPropertyAs<T>(this MessageBusMessage message, string userPropertyKey, out T value) where T : class
+        public static bool TryGetUserPropertyAs<T>(this MessageBusMessage message, string userPropertyKey, out T? value) where T : class
         {
             value = default;
-            if (message.TryGetUserPropertyAsString(userPropertyKey, out var valueStr))
+            if (message.TryGetUserPropertyAsString(userPropertyKey, out var valueStr) && valueStr != null)
             {
                 try
                 {
@@ -195,7 +203,7 @@ namespace Up4All.Framework.MessageBus.Abstractions.Extensions
             return false;
         }
 
-        public static bool TryGetUserPropertyValue(this MessageBusMessage message, string userPropertyKey, out object value)
+        public static bool TryGetUserPropertyValue(this MessageBusMessage message, string userPropertyKey, out object? value)
         {
             value = default;
 

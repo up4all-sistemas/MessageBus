@@ -8,6 +8,7 @@ using RabbitMQ.Client.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,26 +24,43 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
 {
     public static class RabbitMQClientExtensions
     {
-        public static ActivitySource ActivitySource => OpenTelemetryExtensions.CreateActivitySource<RabbitMQStandaloneQueueAsyncClient>();
+        // ActivitySource is meant to be treated as a singleton per instrumentation library
+        // (see the .NET/OpenTelemetry guidance): a property here would build a brand-new
+        // instance - with its own assembly-name/version lookup - on every single publish or
+        // consume call.
+        public static readonly ActivitySource ActivitySource = OpenTelemetryExtensions.CreateActivitySource<RabbitMQStandaloneQueueAsyncClient>();
+
+        // Same singleton-per-instrumentation-library reasoning as ActivitySource above,
+        // applied to the Meter and the instruments built on top of it.
+        public static readonly Meter Meter = OpenTelemetryMetricsExtensions.CreateMeter<RabbitMQStandaloneQueueAsyncClient>();
+
+        public static readonly Counter<long> SentMessagesCounter = Meter.CreateCounter<long>(
+            OpenTelemetryMetricsExtensions.SentMessagesInstrumentName, unit: "{message}", description: "Number of messages sent to RabbitMQ.");
+
+        public static readonly Counter<long> ConsumedMessagesCounter = Meter.CreateCounter<long>(
+            OpenTelemetryMetricsExtensions.ConsumedMessagesInstrumentName, unit: "{message}", description: "Number of messages consumed from RabbitMQ.");
+
+        public static readonly Histogram<double> OperationDurationHistogram = Meter.CreateHistogram<double>(
+            OpenTelemetryMetricsExtensions.OperationDurationInstrumentName, unit: "s", description: "Duration of RabbitMQ publish/consume operations.");
 
         public static async Task ConfigureAsyncHandler(this IRabbitMQClient client, string queueName
             , AsyncQueueMessageReceiver receiver, bool autoComplete, CancellationToken cancellationToken
-            , object offset = null)
+            , object? offset = null)
         {
             await client.Channel.BasicQosAsync(0, 1, false, cancellationToken: cancellationToken);
 
-            var args = new Dictionary<string, object> { };
+            var args = new Dictionary<string, object?> { };
             if (offset != null) args.Add(Arguments.StreamOffsetKey, offset);
 
             await client.Channel.BasicConsumeAsync(queueName, autoComplete, $"up4-{Environment.MachineName.ToLower()}", args, receiver, cancellationToken);
         }
 
         public static async Task ConfigureAsyncHandler<TModel>(this IRabbitMQClient client, string queueName, AsyncQueueMessageReceiverForModel<TModel> receiver
-            , bool autoComplete, CancellationToken cancellationToken, object offset = null)
+            , bool autoComplete, CancellationToken cancellationToken, object? offset = null)
         {
             await client.Channel.BasicQosAsync(0, 1, false, cancellationToken: cancellationToken);
 
-            var args = new Dictionary<string, object> { };
+            var args = new Dictionary<string, object?> { };
             if (offset != null) args.Add(Arguments.StreamOffsetKey, offset);
 
             await client.Channel.BasicConsumeAsync(queueName, autoComplete, $"up4-{Environment.MachineName.ToLower()}", args, receiver, cancellationToken);
@@ -83,19 +101,43 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             var additionalArgs = new Dictionary<string, object>();
 
             if (!string.IsNullOrEmpty(routingKey))
-                additionalArgs.Add("messaging.rabbitmq.destination.routing_key", routingKey);            
+                additionalArgs.Add("messaging.rabbitmq.destination.routing_key", routingKey);
 
-            activity?.InjectPropagationContext(basicProps.Headers);
-            activity?.AddTagsToActivity("rabbitmq", msg, entityPath, basicProps.MessageId, operationType: "send", additionalTags: additionalArgs);
+            if (activity is not null)
+            {
+                var propagationContext = new Dictionary<string, object>();
+                activity.InjectPropagationContext(propagationContext);
 
-            await channel.BasicPublishAsync(topicName, routingKey, false, basicProps, msg.Body, cancellationToken);
+                basicProps.Headers ??= new Dictionary<string, object?>();
+                foreach (var header in propagationContext)
+                    basicProps.Headers[header.Key] = header.Value;
+            }
+
+            activity?.AddTagsToActivity("rabbitmq", msg, entityPath, basicProps.MessageId, operationType: "publish", additionalTags: additionalArgs);
+
+            var stopwatch = Stopwatch.StartNew();
+            string? errorType = null;
+            try
+            {
+                await channel.BasicPublishAsync(topicName!, routingKey, false, basicProps, msg.Body, cancellationToken);
+                SentMessagesCounter.RecordMessageSent("rabbitmq", entityPath);
+            }
+            catch (Exception ex)
+            {
+                errorType = ex.GetType().Name;
+                throw;
+            }
+            finally
+            {
+                OperationDurationHistogram.RecordOperationDuration(stopwatch.Elapsed.TotalSeconds, "rabbitmq", entityPath, "publish", errorType);
+            }
         }
 
         public static async Task<IConnection> GetConnectionAsync(this IRabbitMQClient client, string connectionString, int connectionAttempts, CancellationToken cancellationToken)
         {
             if (client.Connection != null) return client.Connection;
 
-            IConnection conn = null;
+            IConnection? conn = null;
             var result = await Policy
                 .Handle<BrokerUnreachableException>()
                 .WaitAndRetryAsync(connectionAttempts, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)))
@@ -111,8 +153,8 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
 
                 }, cancellationToken);
 
-            if (result.Outcome != OutcomeType.Successful)
-                throw result.FinalException;
+            if (result.Outcome != OutcomeType.Successful || conn is null)
+                throw result.FinalException ?? new InvalidOperationException("Não foi possível estabelecer conexão com o RabbitMQ.");
 
             client.Connection = conn;
             return conn;
@@ -124,7 +166,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             return await client.Connection.CreateChannelAsync(cancellationToken: cancellationToken);
         }
 
-        public static async Task ConfigureQueueDeclareAsync(this IChannel channel, string queueName, QueueDeclareOptions declareOpts, CancellationToken cancellationToken)
+        public static async Task ConfigureQueueDeclareAsync(this IChannel channel, string queueName, QueueDeclareOptions? declareOpts, CancellationToken cancellationToken)
         {
             if (declareOpts == null) return;
 
@@ -169,7 +211,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
 
         public static string CreateActivityName(this IAsyncBasicConsumer consumer, string exchangeName)
         {
-            return $"{exchangeName}:{consumer.Channel.CurrentQueue} receive";
+            return $"{exchangeName}:{consumer.Channel?.CurrentQueue} receive";
         }
 
         public static string CreateMessageReceivedActivityName(this IAsyncBasicConsumer consumer, string exchangeName)
@@ -177,10 +219,15 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             return consumer.CreateActivityName(exchangeName);
         }
 
-        public static Activity CreateMessageReceivedActivity(this IAsyncBasicConsumer consumer, IReadOnlyBasicProperties properties, string exchangeName, string routingKey)
+        public static Activity? CreateMessageReceivedActivity(this IAsyncBasicConsumer consumer, IReadOnlyBasicProperties properties, string exchangeName, string routingKey)
         {
             var activityName = consumer.CreateMessageReceivedActivityName(exchangeName);
-            return ActivitySource.CreateActivity(properties.Headers, activityName, ActivityKind.Consumer);
+            var headers = properties.Headers?
+                .Where(h => h.Value is not null)
+                .Select(h => new KeyValuePair<string, object>(h.Key, h.Value!))
+                ?? [];
+
+            return ActivitySource.CreateActivity(headers, activityName, ActivityKind.Consumer);
         }
 
 

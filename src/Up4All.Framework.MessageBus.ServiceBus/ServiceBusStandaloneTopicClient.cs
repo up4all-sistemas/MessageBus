@@ -18,15 +18,17 @@ namespace Up4All.Framework.MessageBus.ServiceBus
 {
     public class ServiceBusStandaloneTopicAsyncClient : MessageBusStandaloneTopicClient, IMessageBusStandalonePublisherAsync, IServiceBusClient
     {
+        private readonly ServiceBusClient _client;
         private readonly ServiceBusSender _topicClient;
         protected readonly ILogger<ServiceBusStandaloneTopicAsyncClient> _logger;
 
         public ServiceBusStandaloneTopicAsyncClient(ILogger<ServiceBusStandaloneTopicAsyncClient> logger, string connectionString, string topicName, int connectionAttempts = 8) : base(connectionString, topicName)
         {
             _logger = logger;
-            var (_, topicClient) = ServiceBusClientExtensions.CreateClient(_logger, connectionString, topicName, connectionAttempts);
-            _topicClient = topicClient;
+            (_client, _topicClient) = ServiceBusClientExtensions.CreateClient(_logger, connectionString, topicName, connectionAttempts);
         }
+
+        public ServiceBusClient Client => _client;
 
         public Task SendAsync(MessageBusMessage message, CancellationToken cancellationToken = default)
             => _topicClient.SendMessageBusMessageAsync(_logger, message, cancellationToken);
@@ -40,9 +42,17 @@ namespace Up4All.Framework.MessageBus.ServiceBus
         public Task SendManyAsync<TModel>(IEnumerable<TModel> models, CancellationToken cancellationToken = default)
             => SendAsync(models.Select(x => x.CreateMessagebusMessage()), cancellationToken);
 
+        public Task CloseAsync(CancellationToken cancellationToken = default)
+            => _topicClient.CloseAsync(cancellationToken);
+
         protected override void Dispose(bool disposing)
         {
-            _topicClient.CloseAsync().Wait();
+            CloseAsync().Wait();
+        }
+
+        protected override async ValueTask DisposeAsyncCore()
+        {
+            await CloseAsync();
         }
     }
 }

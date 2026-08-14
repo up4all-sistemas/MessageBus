@@ -3,11 +3,14 @@ using Azure.Messaging.ServiceBus;
 
 using Microsoft.Extensions.Logging;
 
+using OpenTelemetry.Trace;
+
 using Polly;
 
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,6 +25,19 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Extensions
     public static class ServiceBusClientExtensions
     {
         public static readonly ActivitySource ActivitySource = OpenTelemetryExtensions.CreateActivitySource<ServiceBusQueueAsyncClient>();
+
+        // Same singleton-per-instrumentation-library reasoning as ActivitySource above,
+        // applied to the Meter and the instruments built on top of it.
+        public static readonly Meter Meter = OpenTelemetryMetricsExtensions.CreateMeter<ServiceBusQueueAsyncClient>();
+
+        public static readonly Counter<long> SentMessagesCounter = Meter.CreateCounter<long>(
+            OpenTelemetryMetricsExtensions.SentMessagesInstrumentName, unit: "{message}", description: "Number of messages sent to Azure Service Bus.");
+
+        public static readonly Counter<long> ConsumedMessagesCounter = Meter.CreateCounter<long>(
+            OpenTelemetryMetricsExtensions.ConsumedMessagesInstrumentName, unit: "{message}", description: "Number of messages consumed from Azure Service Bus.");
+
+        public static readonly Histogram<double> OperationDurationHistogram = Meter.CreateHistogram<double>(
+            OpenTelemetryMetricsExtensions.OperationDurationInstrumentName, unit: "s", description: "Duration of Azure Service Bus publish/consume operations.");
 
         public static (ServiceBusClient, ServiceBusSender) CreateClient(ILogger logger, string connectionString, string entityName, int attempts)
         {
@@ -91,7 +107,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Extensions
             return PrepareMesssage(message.CreateMessagebusMessage());
         }
 
-        public static Task RegisterHandleMessageAsync(this ServiceBusProcessor client, ILogger logger, Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default, string subscriptionName = null)
+        public static Task RegisterHandleMessageAsync(this ServiceBusProcessor client, ILogger logger, Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task>? onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default, string? subscriptionName = null)
         {
             logger.LogDebug("Registrating Deliver Consumer to {EntityPath}", client.EntityPath);
             client.ProcessMessageAsync += async (arg) => await ProcessMessageAsync(logger, arg, handler, errorHandler, DefineIdleHandler(onIdle), autoComplete, subscriptionName, cancellationToken);
@@ -100,16 +116,31 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Extensions
             return Task.CompletedTask;
         }
 
-        public static Task SendMessageBusMessageAsync(this ServiceBusSender sender, ILogger logger, MessageBusMessage message, CancellationToken cancellationToken)
+        public static async Task SendMessageBusMessageAsync(this ServiceBusSender sender, ILogger logger, MessageBusMessage message, CancellationToken cancellationToken)
         {
             logger.LogDebug("Sending message to {EntityPath}", sender.EntityPath);
             var activityName = $"message-send {sender.EntityPath}";
             using var activity = ActivitySource.ProcessOpenTelemetryActivity(activityName, ActivityKind.Producer);
 
             activity?.InjectPropagationContext(message.UserProperties);
-            activity?.AddTagsToActivity(ServiceBusConsts.Provider, message, sender.EntityPath, message.GetMessageIdForClass<string>());
+            activity?.AddTagsToActivity(ServiceBusConsts.Provider, message, sender.EntityPath, message.GetMessageIdForClass<string>(), operationType: "publish");
 
-            return sender.SendMessageAsync(PrepareMesssage(message), cancellationToken);
+            var stopwatch = Stopwatch.StartNew();
+            string? errorType = null;
+            try
+            {
+                await sender.SendMessageAsync(PrepareMesssage(message), cancellationToken);
+                SentMessagesCounter.RecordMessageSent(ServiceBusConsts.Provider, sender.EntityPath);
+            }
+            catch (Exception ex)
+            {
+                errorType = ex.GetType().Name;
+                throw;
+            }
+            finally
+            {
+                OperationDurationHistogram.RecordOperationDuration(stopwatch.Elapsed.TotalSeconds, ServiceBusConsts.Provider, sender.EntityPath, "publish", errorType);
+            }
         }
 
         public static async Task SendMessageBusMessageAsync(this ServiceBusSender sender, ILogger logger, IEnumerable<MessageBusMessage> messages, CancellationToken cancellationToken)
@@ -123,7 +154,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Extensions
             , Func<Exception, CancellationToken, Task> onError
             , Func<CancellationToken, Task> onIdle
             , bool autoComplete
-            , string subscriptionName
+            , string? subscriptionName
             , CancellationToken cancellationToken)
         {
             if (cancellationToken.IsCancellationRequested)
@@ -133,9 +164,12 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Extensions
 
             var received = CreateMessage(arg);
 
+            Activity? activity = null;
+            var stopwatch = Stopwatch.StartNew();
+            string? errorType = null;
             try
             {
-                using var activity = arg.CreateMessageReceivedActivity();
+                activity = arg.CreateMessageReceivedActivity();
                 activity?.InjectPropagationContext(received.UserProperties);
 
                 var additionaArgs = new Dictionary<string, object> {
@@ -144,23 +178,33 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Extensions
                 };
 
                 if (!string.IsNullOrEmpty(subscriptionName))
-                    additionaArgs.Add("essaging.destination.subscription.name", subscriptionName);
+                    additionaArgs.Add("messaging.destination.subscription.name", subscriptionName);
 
                 activity?.AddTagsToActivity(ServiceBusConsts.Provider, received, arg.EntityPath, arg.Message.MessageId, additionalTags: additionaArgs);
                 await ProcessHandleResult(arg, await handler.Invoke(received, cancellationToken), autoComplete, cancellationToken);
                 activity?.SetStatus(ActivityStatusCode.Ok);
+                ConsumedMessagesCounter.RecordMessageConsumed(ServiceBusConsts.Provider, arg.EntityPath);
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "", ex.Message);
+                errorType = ex.GetType().Name;
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+                activity?.AddException(ex);
+                logger.LogError(ex, "Receiver Error");
                 await arg.AbandonMessageAsync(arg.Message, cancellationToken: cancellationToken);
+                ConsumedMessagesCounter.RecordMessageConsumed(ServiceBusConsts.Provider, arg.EntityPath, errorType);
                 await onError.Invoke(ex, cancellationToken);
+            }
+            finally
+            {
+                OperationDurationHistogram.RecordOperationDuration(stopwatch.Elapsed.TotalSeconds, ServiceBusConsts.Provider, arg.EntityPath, "receive", errorType);
+                activity?.Dispose();
             }
 
             await onIdle.Invoke(cancellationToken);
         }
 
-        private static Func<CancellationToken, Task> DefineIdleHandler(Func<CancellationToken, Task> onIdle = null)
+        private static Func<CancellationToken, Task> DefineIdleHandler(Func<CancellationToken, Task>? onIdle = null)
         {
             return onIdle ?? ProcessOnIdle;
         }
@@ -218,7 +262,7 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Extensions
             return arg.CreateActivityName($"{arg.EntityPath} receive");
         }
 
-        private static Activity CreateMessageReceivedActivity(this ProcessMessageEventArgs arg)
+        private static Activity? CreateMessageReceivedActivity(this ProcessMessageEventArgs arg)
         {
             var activityName = arg.CreateMessageReceivedActivityName();
             return ActivitySource.CreateActivity(arg.Message.ApplicationProperties, activityName, ActivityKind.Consumer);

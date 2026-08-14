@@ -39,7 +39,7 @@ namespace Up4All.Framework.MessageBus.TransferHelper.Extensions
             return arg.CreateActivityName("message-transfer", entitypath);
         }
 
-        public static Activity CreateMessageReceivedActivity(this ReceivedMessage arg, string entitypath)
+        public static Activity? CreateMessageReceivedActivity(this ReceivedMessage arg, string entitypath)
         {
             var activityName = arg.CreateMessageReceivedActivityName(entitypath);
             return ActivitySource.CreateActivity(arg.UserProperties, activityName, ActivityKind.Consumer);

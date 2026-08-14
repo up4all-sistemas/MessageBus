@@ -1,13 +1,17 @@
 ﻿using Confluent.Kafka;
 using Confluent.Kafka.Admin;
 
+using OpenTelemetry.Trace;
+
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Up4All.Framework.MessageBus.Abstractions;
 using Up4All.Framework.MessageBus.Abstractions.Enums;
+using Up4All.Framework.MessageBus.Abstractions.Extensions;
 using Up4All.Framework.MessageBus.Abstractions.Interfaces;
 using Up4All.Framework.MessageBus.Abstractions.Messages;
 using Up4All.Framework.MessageBus.Kafka.Extensions;
@@ -34,12 +38,16 @@ namespace Up4All.Framework.MessageBus.Kafka
             Consumer.Subscribe(TopicName);
             while (!cancellationToken.IsCancellationRequested)
             {
+                Activity? activity = null;
+                var stopwatch = Stopwatch.StartNew();
+                string? errorType = null;
                 try
                 {
                     var consume = Consumer.Consume(cancellationToken);
                     var message = GetReceivedMessage(consume.Message);
 
-                    var activity = this.AddActivityTrace<KafkaStandaloneGenericSubscriptionAsyncClient<TMessageKey>>(message, GetMessageId(message));
+                    activity = this.AddActivityTrace<KafkaStandaloneGenericSubscriptionAsyncClient<TMessageKey>>(message, GetMessageId(message)
+                        , BuildKafkaActivityTags(consume));
 
                     var result = await handler(message, cancellationToken);
 
@@ -47,6 +55,7 @@ namespace Up4All.Framework.MessageBus.Kafka
                         Consumer.Commit();
 
                     activity?.SetStatus(ActivityStatusCode.Ok);
+                    KafkaExtensions.ConsumedMessagesCounter.RecordMessageConsumed("kafka", EntityPath);
 
                     if (onIdle is not null)
                         await onIdle(cancellationToken);
@@ -57,7 +66,16 @@ namespace Up4All.Framework.MessageBus.Kafka
                 }
                 catch (Exception ex)
                 {
+                    errorType = ex.GetType().Name;
+                    activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+                    activity?.AddException(ex);
+                    KafkaExtensions.ConsumedMessagesCounter.RecordMessageConsumed("kafka", EntityPath, errorType);
                     await errorHandler(ex, cancellationToken);
+                }
+                finally
+                {
+                    KafkaExtensions.OperationDurationHistogram.RecordOperationDuration(stopwatch.Elapsed.TotalSeconds, "kafka", EntityPath, "receive", errorType);
+                    activity?.Dispose();
                 }
             }
         }
@@ -67,19 +85,24 @@ namespace Up4All.Framework.MessageBus.Kafka
             Consumer.Subscribe(TopicName);
             while (!cancellationToken.IsCancellationRequested)
             {
+                Activity? activity = null;
+                var stopwatch = Stopwatch.StartNew();
+                string? errorType = null;
                 try
                 {
                     var consume = Consumer.Consume(cancellationToken);
                     var message = GetReceivedMessage(consume.Message);
 
-                    var activity = this.AddActivityTrace<KafkaStandaloneGenericSubscriptionAsyncClient<TMessageKey>>(message, GetMessageId(message));
+                    activity = this.AddActivityTrace<KafkaStandaloneGenericSubscriptionAsyncClient<TMessageKey>>(message, GetMessageId(message)
+                        , BuildKafkaActivityTags(consume));
 
-                    var result = await handler(message.GetBody<TModel>(), cancellationToken);
+                    var result = await handler(message.GetBody<TModel>()!, cancellationToken);
 
                     if (result == MessageReceivedStatus.Completed)
                         Consumer.Commit();
 
                     activity?.SetStatus(ActivityStatusCode.Ok);
+                    KafkaExtensions.ConsumedMessagesCounter.RecordMessageConsumed("kafka", EntityPath);
 
                     if (onIdle is not null)
                         await onIdle(cancellationToken);
@@ -90,24 +113,59 @@ namespace Up4All.Framework.MessageBus.Kafka
                 }
                 catch (Exception ex)
                 {
+                    errorType = ex.GetType().Name;
+                    activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+                    activity?.AddException(ex);
+                    KafkaExtensions.ConsumedMessagesCounter.RecordMessageConsumed("kafka", EntityPath, errorType);
                     await errorHandler(ex, cancellationToken);
+                }
+                finally
+                {
+                    KafkaExtensions.OperationDurationHistogram.RecordOperationDuration(stopwatch.Elapsed.TotalSeconds, "kafka", EntityPath, "receive", errorType);
+                    activity?.Dispose();
                 }
             }
         }
 
-        protected void SetConsumer(IConsumer<TMessageKey, byte[]> consumer) 
+        protected void SetConsumer(IConsumer<TMessageKey, byte[]> consumer)
         {
             Consumer = consumer;
         }
 
+        // Kafka-specific attributes the OpenTelemetry messaging semantic conventions define
+        // for consume spans (mirroring the delivery_tag/routing_key tags RabbitMQ already
+        // adds, and the delivery_count/enqueued_time tags Service Bus already adds).
+        private Dictionary<string, object> BuildKafkaActivityTags(ConsumeResult<TMessageKey, byte[]> consume)
+        {
+            var tags = new Dictionary<string, object>
+            {
+                { "messaging.kafka.message.partition", consume.Partition.Value },
+                { "messaging.kafka.message.offset", consume.Offset.Value },
+                { "messaging.kafka.consumer.group", EntityPath }
+            };
+
+            if (consume.Message.Key is not null)
+                tags["messaging.kafka.message.key"] = consume.Message.Key;
+
+            return tags;
+        }
+
         protected abstract ReceivedMessage GetReceivedMessage(Message<TMessageKey, byte[]> consumeMessage);
 
-        protected abstract object GetMessageId(MessageBusMessage message);
+        protected abstract object? GetMessageId(MessageBusMessage message);
 
         protected override void Dispose(bool disposing)
         {
             if (disposing)
                 Consumer.Dispose();
+        }
+
+        protected override ValueTask DisposeAsyncCore()
+        {
+            // IConsumer<,> only implements IDisposable (Confluent.Kafka has no async
+            // close/dispose API). Offloading to the thread pool keeps DisposeAsync() from
+            // blocking whichever thread is driving the async disposal chain.
+            return new ValueTask(Task.Run(() => Dispose(true)));
         }
     }
 
@@ -122,7 +180,7 @@ namespace Up4All.Framework.MessageBus.Kafka
             SetConsumer(new ConsumerBuilder<TMessageKey, byte[]>(this.CreateConfig(connectionString, subscriptionName)).Build());
         }
 
-        protected override object GetMessageId(MessageBusMessage message)
+        protected override object? GetMessageId(MessageBusMessage message)
         {
             return message.GetMessageIdForClass<TMessageKey>();
         }
@@ -144,7 +202,7 @@ namespace Up4All.Framework.MessageBus.Kafka
             SetConsumer(new ConsumerBuilder<TMessageKey, byte[]>(this.CreateConfig(connectionString, subscriptionName)).Build());
         }
 
-        protected override object GetMessageId(MessageBusMessage message)
+        protected override object? GetMessageId(MessageBusMessage message)
         {
             return message.GetMessageIdForStruct<TMessageKey>();
         }

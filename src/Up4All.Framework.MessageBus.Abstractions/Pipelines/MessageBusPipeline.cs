@@ -16,7 +16,7 @@ namespace Up4All.Framework.MessageBus.Abstractions.Pipelines
 
         public IServiceCollection Services { get; private set; } = services;
 
-        public OptionsBuilder<TOptions> OptionsBuilder { get; private set; }
+        public OptionsBuilder<TOptions>? OptionsBuilder { get; private set; }
 
         protected MessageBusPipeline<TOptions> AddOptions()
 
