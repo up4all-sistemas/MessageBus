@@ -37,6 +37,13 @@ variables:
   dotnetSdkVersion: '8.0.x'
   isTagBuild: $[startsWith(variables['Build.SourceBranch'], 'refs/tags/v')]
 
+  # NuGet's own env var: setting it here both (a) gives Cache@2 a real path to key off - a
+  # pipeline variable named exactly NUGET_PACKAGES is auto-exposed as an env var to every step
+  # in every stage below, so $(NUGET_PACKAGES) actually resolves - and (b) makes `dotnet
+  # restore` itself save packages there, so the cached folder and the restored folder are
+  # guaranteed to be the same path.
+  NUGET_PACKAGES: $(Pipeline.Workspace)/.nuget/packages
+
   # Packable library projects (test/mocks projects are IsPackable=false and are skipped
   # automatically by `dotnet pack` on the solution).
   packableProjects: >-
