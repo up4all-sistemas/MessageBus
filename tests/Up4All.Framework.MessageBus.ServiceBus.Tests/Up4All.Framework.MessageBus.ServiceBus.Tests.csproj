@@ -29,8 +29,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\src\Up4All.Framework.MessageBus.Abstractions\Up4All.Framework.MessageBus.Abstractions.csproj" />
-    <ProjectReference Include="..\src\Up4All.Framework.MessageBus.ServiceBus\Up4All.Framework.MessageBus.ServiceBus.csproj" />
+    <ProjectReference Include="..\..\src\Up4All.Framework.MessageBus.Abstractions\Up4All.Framework.MessageBus.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\Up4All.Framework.MessageBus.ServiceBus\Up4All.Framework.MessageBus.ServiceBus.csproj" />
   </ItemGroup>
 
   <ItemGroup>
