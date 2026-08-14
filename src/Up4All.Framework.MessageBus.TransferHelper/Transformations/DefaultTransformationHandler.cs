@@ -46,7 +46,7 @@ namespace Up4All.Framework.MessageBus.TransferHelper.Transformations
                     message.UserProperties[transformation.Key] = transformation.Value!;
 
                 if (transformation.Operation == Operation.ChangeKey
-                    && message.TryGetUserPropertyValue(transformation.Key, out var value))
+                    && message.TryGetUserPropertyValue(transformation.Key, out var value) && value != null)
                 {
                     message.RemoveUserProperty(transformation.Key);
                     message.AddUserProperty(transformation!.Value!.ToString(), value);

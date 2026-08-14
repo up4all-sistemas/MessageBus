@@ -21,17 +21,26 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
                 && Guid.TryParse(properties.CorrelationId, out var correlationId))
                 message.SetCorrelationId(correlationId);
 
-            foreach (var prop in properties.Headers)
-                message.AddUserProperty(prop.Key, ConvertPropertyValue(prop.Value));
+            var headers = properties.Headers;
+            if (headers is null) return;
+
+            foreach (var prop in headers)
+            {
+                var value = ConvertPropertyValue(prop.Value);
+                if (value is not null)
+                    message.AddUserProperty(prop.Key, value);
+            }
         }
 
         internal static void PopulateHeaders(this IBasicProperties properties, MessageBusMessage message)
         {
             if (!message.UserProperties.Any()) return;
 
-            properties.Headers = new Dictionary<string, object>();
+            var headers = new Dictionary<string, object?>();
             foreach (var prop in message.UserProperties)
-                properties.Headers.Add(prop);
+                headers.Add(prop.Key, prop.Value);
+
+            properties.Headers = headers;
 
             properties.MessageId ??= message.GetMessageIdForClass<string>() ?? Guid.NewGuid().ToString("N");
         }
@@ -44,7 +53,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Extensions
             return message;
         }
 
-        internal static object ConvertPropertyValue(object rawValue)
+        internal static object? ConvertPropertyValue(object? rawValue)
         {
             if (rawValue is byte[] bytedValue)
                 return Encoding.UTF8.GetString(bytedValue);

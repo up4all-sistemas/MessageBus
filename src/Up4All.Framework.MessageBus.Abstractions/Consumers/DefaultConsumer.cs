@@ -11,7 +11,7 @@ using Up4All.Framework.MessageBus.Abstractions.Messages;
 namespace Up4All.Framework.MessageBus.Abstractions.Consumers
 {
     public class DefaultConsumer(IMessageBusAsyncConsumer consumer, IMessageBusMessageHandler handler)
-        : IMessageDefaultConsumer, IDisposable
+        : IMessageDefaultConsumer, IDisposable, IAsyncDisposable
     {
         private readonly IMessageBusAsyncConsumer _consumer = consumer;
         private readonly IMessageBusMessageHandler _handler = handler;
@@ -19,6 +19,16 @@ namespace Up4All.Framework.MessageBus.Abstractions.Consumers
         public void Dispose()
         {
             Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            // The generic host already calls StopAsync() (which closes the consumer)
+            // during a graceful shutdown; CloseAsync() below is a no-op in that case and
+            // only actually closes the connection when DisposeAsync() is called directly
+            // without StopAsync() having run first.
+            await _consumer.CloseAsync(CancellationToken.None);
             GC.SuppressFinalize(this);
         }
 

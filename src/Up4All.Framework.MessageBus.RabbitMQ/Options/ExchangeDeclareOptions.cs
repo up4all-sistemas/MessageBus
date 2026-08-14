@@ -8,16 +8,17 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Options
 
         public bool AutoDelete { get; set; }
 
-        public Dictionary<string, object> Args { get; set; }
+        public Dictionary<string, object?> Args { get; set; }
 
         internal ExchangeDeclareOptions()
         {
             Durable = true;
+            Args = [];
         }
 
-        public static implicit operator ExchangeDeclareOptions(ProvisioningOptions opts)
+        public static implicit operator ExchangeDeclareOptions(ProvisioningOptions? opts)
         {
-            if (opts is null) return null;
+            if (opts is null) return null!;
 
             return new ExchangeDeclareOptions()
             {

@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -33,7 +34,23 @@ namespace Up4All.Framework.MessageBus.Kafka
         public async Task SendAsync(MessageBusMessage message, CancellationToken cancellationToken = default)
         {
             this.AddActivityTrace(message, message.GetMessageIdForClass<TMessageKey>());
-            await _producer.ProduceAsync(TopicName, message.ToKafkaMessage<TMessageKey>(), cancellationToken);
+
+            var stopwatch = Stopwatch.StartNew();
+            string? errorType = null;
+            try
+            {
+                await _producer.ProduceAsync(TopicName, message.ToKafkaMessage<TMessageKey>(), cancellationToken);
+                KafkaExtensions.SentMessagesCounter.RecordMessageSent("kafka", TopicName);
+            }
+            catch (Exception ex)
+            {
+                errorType = ex.GetType().Name;
+                throw;
+            }
+            finally
+            {
+                KafkaExtensions.OperationDurationHistogram.RecordOperationDuration(stopwatch.Elapsed.TotalSeconds, "kafka", TopicName, "publish", errorType);
+            }
         }
 
         public async Task SendAsync(IEnumerable<MessageBusMessage> messages, CancellationToken cancellationToken = default)
@@ -51,6 +68,15 @@ namespace Up4All.Framework.MessageBus.Kafka
         protected override void Dispose(bool disposing)
         {
             _producer.Dispose();
+        }
+
+        protected override ValueTask DisposeAsyncCore()
+        {
+            // IProducer<,> only implements IDisposable (Confluent.Kafka has no async
+            // close/dispose API), and Dispose() flushes pending deliveries, which can block
+            // for a while. Offloading it to the thread pool keeps DisposeAsync() from
+            // blocking whichever thread is driving the async disposal chain.
+            return new ValueTask(Task.Run(() => _producer.Dispose()));
         }
     }
 
@@ -73,7 +99,23 @@ namespace Up4All.Framework.MessageBus.Kafka
         public async Task SendAsync(MessageBusMessage message, CancellationToken cancellationToken = default)
         {
             this.AddActivityTrace(message, message.GetMessageIdForStruct<TMessageKey>());
-            await _producer.ProduceAsync(TopicName, message.ToKafkaMessageFromKeyStruct<TMessageKey>(), cancellationToken);
+
+            var stopwatch = Stopwatch.StartNew();
+            string? errorType = null;
+            try
+            {
+                await _producer.ProduceAsync(TopicName, message.ToKafkaMessageFromKeyStruct<TMessageKey>(), cancellationToken);
+                KafkaExtensions.SentMessagesCounter.RecordMessageSent("kafka", TopicName);
+            }
+            catch (Exception ex)
+            {
+                errorType = ex.GetType().Name;
+                throw;
+            }
+            finally
+            {
+                KafkaExtensions.OperationDurationHistogram.RecordOperationDuration(stopwatch.Elapsed.TotalSeconds, "kafka", TopicName, "publish", errorType);
+            }
         }
 
         public async Task SendAsync(IEnumerable<MessageBusMessage> messages, CancellationToken cancellationToken = default)
@@ -91,6 +133,15 @@ namespace Up4All.Framework.MessageBus.Kafka
         protected override void Dispose(bool disposing)
         {
             _producer.Dispose();
+        }
+
+        protected override ValueTask DisposeAsyncCore()
+        {
+            // IProducer<,> only implements IDisposable (Confluent.Kafka has no async
+            // close/dispose API), and Dispose() flushes pending deliveries, which can block
+            // for a while. Offloading it to the thread pool keeps DisposeAsync() from
+            // blocking whichever thread is driving the async disposal chain.
+            return new ValueTask(Task.Run(() => _producer.Dispose()));
         }
     }
 

@@ -1,0 +1,181 @@
+# Azure Pipelines - Up4All.MessageBus
+#
+# Full cycle: restore -> build -> test -> pack -> publish to NuGet.org.
+#
+# - CI runs (pushes/PRs to master and release/*) build and test only.
+# - Pushing an annotated/lightweight tag matching v* (e.g. v3.1.0) additionally packs the
+#   library projects and publishes them to NuGet.org.
+#
+# Required setup in Azure DevOps (not stored in this file):
+#   - A secret pipeline variable (or Variable Group) named `NuGetApiKey`, holding a NuGet.org
+#     API key scoped to this package owner. Mark it "secret" so it never appears in logs.
+#   - Grant this pipeline access to that variable group if one is used.
+#
+# Versioning: the package version is taken directly from the pushed tag (v3.1.0 -> 3.1.0).
+# No tag -> no publish; the Pack stage still runs (with a 0.0.0-ci placeholder version) so
+# packaging problems are caught on every CI run, not only on release day.
+
+trigger:
+  branches:
+    include:
+      - master
+      - release/*
+  tags:
+    include:
+      - v*
+
+pr:
+  branches:
+    include:
+      - master
+      - release/*
+
+variables:
+  buildConfiguration: 'Release'
+  solution: 'Up4All.MessageBus.sln'
+  vmImageName: 'ubuntu-latest'
+  dotnetSdkVersion: '8.0.x'
+  isTagBuild: $[startsWith(variables['Build.SourceBranch'], 'refs/tags/v')]
+
+  # Packable library projects (test/mocks projects are IsPackable=false and are skipped
+  # automatically by `dotnet pack` on the solution).
+  packableProjects: >-
+    src/Up4All.Framework.MessageBus.Abstractions/Up4All.Framework.MessageBus.Abstractions.csproj
+    src/Up4All.Framework.MessageBus.RabbitMQ/Up4All.Framework.MessageBus.RabbitMQ.csproj
+    src/Up4All.Framework.MessageBus.ServiceBus/Up4All.Framework.MessageBus.ServiceBus.csproj
+    src/Up4All.Framework.MessageBus.Kafka/Up4All.Framework.MessageBus.Kafka.csproj
+    src/Up4All.Framework.MessageBus.TransferHelper/Up4All.Framework.MessageBus.TransferHelper.csproj
+
+stages:
+  # ---------------------------------------------------------------------------------------
+  - stage: Build
+    displayName: 'Build & Test'
+    jobs:
+      - job: BuildAndTest
+        displayName: 'Build, test and collect coverage'
+        pool:
+          vmImage: $(vmImageName)
+        steps:
+          - task: UseDotNet@2
+            displayName: 'Install .NET SDK $(dotnetSdkVersion)'
+            inputs:
+              packageType: 'sdk'
+              version: $(dotnetSdkVersion)
+
+          - task: Cache@2
+            displayName: 'Cache NuGet packages'
+            inputs:
+              key: 'nuget | "$(Agent.OS)" | **/*.csproj,!**/bin/**,!**/obj/**'
+              restoreKeys: |
+                nuget | "$(Agent.OS)"
+              path: $(NUGET_PACKAGES)
+            continueOnError: true
+
+          - script: dotnet restore $(solution)
+            displayName: 'dotnet restore'
+
+          - script: dotnet build $(solution) --configuration $(buildConfiguration) --no-restore
+            displayName: 'dotnet build'
+
+          - script: >-
+              dotnet test $(solution)
+              --configuration $(buildConfiguration)
+              --no-build
+              --logger trx
+              --results-directory $(Agent.TempDirectory)/testresults
+              --collect:"XPlat Code Coverage"
+            displayName: 'dotnet test'
+
+          - task: PublishTestResults@2
+            displayName: 'Publish test results'
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFormat: 'VSTest'
+              testResultsFiles: '$(Agent.TempDirectory)/testresults/**/*.trx'
+              mergeTestResults: true
+              failTaskOnFailedTests: true
+
+          - task: PublishCodeCoverageResults@2
+            displayName: 'Publish code coverage'
+            condition: succeededOrFailed()
+            inputs:
+              summaryFileLocation: '$(Agent.TempDirectory)/testresults/**/coverage.cobertura.xml'
+
+  # ---------------------------------------------------------------------------------------
+  - stage: Pack
+    displayName: 'Pack NuGet packages'
+    dependsOn: Build
+    condition: succeeded()
+    jobs:
+      - job: Pack
+        pool:
+          vmImage: $(vmImageName)
+        steps:
+          - task: UseDotNet@2
+            displayName: 'Install .NET SDK $(dotnetSdkVersion)'
+            inputs:
+              packageType: 'sdk'
+              version: $(dotnetSdkVersion)
+
+          - script: dotnet restore $(solution)
+            displayName: 'dotnet restore'
+
+          - script: |
+              set -e
+              if [ "$(isTagBuild)" = "True" ]; then
+                TAG_NAME="$(Build.SourceBranchName)"
+                PACKAGE_VERSION="${TAG_NAME#v}"
+              else
+                PACKAGE_VERSION="0.0.0-ci.$(Build.BuildId)"
+              fi
+              echo "Resolved package version: $PACKAGE_VERSION"
+              echo "##vso[task.setvariable variable=packageVersion]$PACKAGE_VERSION"
+            displayName: 'Resolve package version'
+
+          - script: |
+              set -e
+              for project in $(packableProjects); do
+                dotnet pack "$project" \
+                  --configuration $(buildConfiguration) \
+                  --no-restore \
+                  --output "$(Build.ArtifactStagingDirectory)/nupkg" \
+                  -p:PackageVersion=$(packageVersion) \
+                  -p:ContinuousIntegrationBuild=true
+              done
+            displayName: 'dotnet pack (version $(packageVersion))'
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish nupkg artifact'
+            inputs:
+              targetPath: '$(Build.ArtifactStagingDirectory)/nupkg'
+              artifact: 'nupkg'
+
+  # ---------------------------------------------------------------------------------------
+  # Only runs when the build was triggered by a v* tag - CI builds and PRs stop at Pack.
+  - stage: PublishNuGet
+    displayName: 'Publish to NuGet.org'
+    dependsOn: Pack
+    condition: and(succeeded(), eq(variables.isTagBuild, 'True'))
+    jobs:
+      - deployment: PublishNuGet
+        displayName: 'Push packages to NuGet.org'
+        pool:
+          vmImage: $(vmImageName)
+        environment: 'nuget-org'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: UseDotNet@2
+                  displayName: 'Install .NET SDK $(dotnetSdkVersion)'
+                  inputs:
+                    packageType: 'sdk'
+                    version: $(dotnetSdkVersion)
+
+                - script: |
+                    set -e
+                    dotnet nuget push "$(Pipeline.Workspace)/nupkg/*.nupkg" \
+                      --source https://api.nuget.org/v3/index.json \
+                      --api-key $(NuGetApiKey) \
+                      --skip-duplicate
+                  displayName: 'dotnet nuget push'

@@ -6,14 +6,14 @@ using Up4All.Framework.MessageBus.Kafka.Options;
 namespace Up4All.Framework.MessageBus.Kafka
 {
     public class KafkaGenericSubscriptionAsyncClient<TMessageKey>(IOptions<KafkaMessageBusOptions> messageOptions)
-        : KafkaStandaloneWithGenericSubscriptionAsyncClient<TMessageKey>(messageOptions.Value.ConnectionString, messageOptions.Value.TopicName, messageOptions.Value.SubscriptionName)
+        : KafkaStandaloneWithGenericSubscriptionAsyncClient<TMessageKey>(messageOptions.Value.ConnectionString!, messageOptions.Value.TopicName!, messageOptions.Value.SubscriptionName!)
         , IMessageBusAsyncConsumer
         where TMessageKey : class
     {
     }
 
     public class KafkaWithStructKeySubscriptionAsyncClient<TMessageKey>(IOptions<KafkaMessageBusOptions> messageOptions)
-        : KafkaStandaloneWithStructKeySubscriptionAsyncClient<TMessageKey>(messageOptions.Value.ConnectionString, messageOptions.Value.TopicName, messageOptions.Value.SubscriptionName)
+        : KafkaStandaloneWithStructKeySubscriptionAsyncClient<TMessageKey>(messageOptions.Value.ConnectionString!, messageOptions.Value.TopicName!, messageOptions.Value.SubscriptionName!)
         , IMessageBusAsyncConsumer
         where TMessageKey : struct
     {

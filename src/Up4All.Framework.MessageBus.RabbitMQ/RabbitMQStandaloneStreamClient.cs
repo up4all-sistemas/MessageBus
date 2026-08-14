@@ -22,17 +22,17 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
     public class RabbitMQStandaloneStreamAsyncClient(ILogger<RabbitMQStandaloneStreamAsyncClient> logger, string connectionString, string streamname, object offset
             , bool persistent
             , int connectionAttempts = 8
-            , StreamDeclareOptions declareOpts = null)
+            , StreamDeclareOptions? declareOpts = null)
         : MessageBusStandaloneStreamClient(connectionString, streamname, offset, connectionAttempts)
         , IRabbitMQClient, IMessageBusStandaloneStreamAsyncClient
     {
         private readonly string _streamname = streamname;
         private readonly bool _persistent = persistent;
-        private readonly StreamDeclareOptions _declareopts = declareOpts;
+        private readonly StreamDeclareOptions? _declareopts = declareOpts;
         protected readonly ILogger<RabbitMQStandaloneStreamAsyncClient> _logger = logger;
 
-        public IConnection Connection { get; set; }
-        public IChannel Channel { get; private set; }
+        public IConnection Connection { get; set; } = null!;
+        public IChannel Channel { get; private set; } = null!;
 
         private async Task InitializeAsync(CancellationToken cancellationToken)
         {
@@ -44,13 +44,13 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
             await Channel.ConfigureQueueDeclareAsync(_streamname, _declareopts, cancellationToken);
         }
 
-        public async Task RegisterHandlerAsync(Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
+        public async Task RegisterHandlerAsync(Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task>? onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
         {
             await InitializeAsync(cancellationToken);
             var receiver = new AsyncQueueMessageReceiver(Channel, handler, errorHandler, onIdle, autoComplete, _logger);
             await this.ConfigureAsyncHandler(_streamname, receiver, false, cancellationToken, Offset);
         }
-        public async Task RegisterHandlerAsync<TModel>(Func<TModel, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
+        public async Task RegisterHandlerAsync<TModel>(Func<TModel, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task>? onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
         {
             await InitializeAsync(cancellationToken);
             var receiver = new AsyncQueueMessageReceiverForModel<TModel>(Channel, handler, errorHandler, onIdle, autoComplete, _logger);
@@ -89,6 +89,11 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
         protected override void Dispose(bool disposing)
         {
             CloseAsync().Wait();
+        }
+
+        protected override async ValueTask DisposeAsyncCore()
+        {
+            await CloseAsync();
         }
     }
 }

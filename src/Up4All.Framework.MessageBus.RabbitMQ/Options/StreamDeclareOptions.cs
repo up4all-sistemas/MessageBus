@@ -15,9 +15,9 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Options
                 Args.Add("x-stream-type", "stream");
         }
 
-        public static implicit operator StreamDeclareOptions(ProvisioningOptions opts)
+        public static implicit operator StreamDeclareOptions(ProvisioningOptions? opts)
         {
-            if (opts is null) return null;
+            if (opts is null) return null!;
 
             return new StreamDeclareOptions
             {

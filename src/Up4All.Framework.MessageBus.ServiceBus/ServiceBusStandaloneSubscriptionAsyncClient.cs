@@ -21,9 +21,11 @@ namespace Up4All.Framework.MessageBus.ServiceBus
         private readonly string _topicName = topicName;
         private readonly string _subscriptionName = subscriptionName;
         protected readonly ILogger<ServiceBusStandaloneSubscriptionAsyncClient> _logger = logger;
-        private ServiceBusProcessor _processor;
+        private ServiceBusProcessor? _processor;
 
-        public async Task RegisterHandlerAsync(Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
+        public ServiceBusClient Client => _client;
+
+        public async Task RegisterHandlerAsync(Func<ReceivedMessage, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task>? onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
         {
             _processor = _client.CreateTopicProcessor(_topicName, _subscriptionName, autoComplete);
             await _processor.RegisterHandleMessageAsync(_logger, handler, errorHandler, onIdle, autoComplete, subscriptionName: _subscriptionName);
@@ -32,8 +34,8 @@ namespace Up4All.Framework.MessageBus.ServiceBus
             await _processor.StartProcessingAsync();
         }
 
-        public Task RegisterHandlerAsync<TModel>(Func<TModel, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task> onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
-            => RegisterHandlerAsync((msg, ct) => handler(msg.GetBody<TModel>(), ct), errorHandler, onIdle, autoComplete, cancellationToken);
+        public Task RegisterHandlerAsync<TModel>(Func<TModel, CancellationToken, Task<MessageReceivedStatus>> handler, Func<Exception, CancellationToken, Task> errorHandler, Func<CancellationToken, Task>? onIdle = null, bool autoComplete = false, CancellationToken cancellationToken = default)
+            => RegisterHandlerAsync((msg, ct) => handler(msg.GetBody<TModel>()!, ct), errorHandler, onIdle, autoComplete, cancellationToken);
 
         public async Task CloseAsync(CancellationToken cancellationToken = default)
         {
@@ -45,6 +47,11 @@ namespace Up4All.Framework.MessageBus.ServiceBus
         protected override void Dispose(bool disposing)
         {
             CloseAsync(CancellationToken.None).Wait();
+        }
+
+        protected override async ValueTask DisposeAsyncCore()
+        {
+            await CloseAsync(CancellationToken.None);
         }
     }
 }

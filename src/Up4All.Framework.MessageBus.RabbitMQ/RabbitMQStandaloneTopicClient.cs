@@ -19,18 +19,18 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
     public class RabbitMQStandaloneTopicAsyncClient(ILogger<RabbitMQStandaloneTopicAsyncClient> logger, string connectionString, string topicName
             , bool persistent
             , int connectionAttemps = 8, string type = ExchangeType.Topic
-            , ExchangeDeclareOptions declareOpts = null)
+            , ExchangeDeclareOptions? declareOpts = null)
         : MessageBusStandaloneTopicClient(connectionString, topicName, connectionAttemps), IRabbitMQClient, IMessageBusStandalonePublisherAsync
     {
         private readonly string _topicName = topicName;
         private readonly string _type = type;
         private readonly bool _persistent = persistent;
-        private readonly ExchangeDeclareOptions _declareOpts = declareOpts;
+        private readonly ExchangeDeclareOptions? _declareOpts = declareOpts;
         protected readonly ILogger<RabbitMQStandaloneTopicAsyncClient> _logger = logger;
 
-        public IConnection Connection { get; set; }
+        public IConnection Connection { get; set; } = null!;
 
-        public IChannel Channel { get; private set; }
+        public IChannel Channel { get; private set; } = null!;
 
         private async Task InitializeAsync(CancellationToken cancellationToken)
         {
@@ -68,10 +68,23 @@ namespace Up4All.Framework.MessageBus.RabbitMQ
             await SendAsync(models.Select(x => x.CreateMessagebusMessage()), cancellationToken);
         }
 
+        public async Task CloseAsync(CancellationToken cancellationToken = default)
+        {
+            if (Channel is not null)
+                await Channel.CloseAsync(cancellationToken);
+
+            if (Connection is not null)
+                await Connection.CloseAsync(cancellationToken);
+        }
+
         protected override void Dispose(bool disposing)
         {
-            Channel?.CloseAsync().Wait();
-            Connection?.CloseAsync().Wait();
+            CloseAsync().Wait();
+        }
+
+        protected override async ValueTask DisposeAsyncCore()
+        {
+            await CloseAsync();
         }
     }
 }

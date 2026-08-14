@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.Generic;
+using System.Diagnostics;
 
 using Up4All.Framework.MessageBus.Abstractions;
 using Up4All.Framework.MessageBus.Abstractions.Extensions;
@@ -8,12 +9,13 @@ namespace Up4All.Framework.MessageBus.Kafka.Extensions
 {
     public static class MessageBusStandaloneSubscriptonClientExtensions
     {
-        public static Activity? AddActivityTrace<TSource>(this MessageBusStandaloneSubscriptonClient client, ReceivedMessage message, object mesageId)
+        public static Activity? AddActivityTrace<TSource>(this MessageBusStandaloneSubscriptonClient client, ReceivedMessage message, object? mesageId
+            , IDictionary<string, object>? additionalTags = null)
             where TSource : class
         {
             var activity = message.CreateMessageReceivedActivity<TSource>(client.EntityPath);
             activity?.InjectPropagationContext(message.UserProperties);
-            activity?.AddTagsToActivity("kafka", message, client.EntityPath, mesageId);
+            activity?.AddTagsToActivity("kafka", message, client.EntityPath, mesageId, additionalTags: additionalTags);
 
             return activity;
         }
@@ -23,7 +25,7 @@ namespace Up4All.Framework.MessageBus.Kafka.Extensions
             return $"{entityPath} receive";
         }
 
-        public static Activity CreateMessageReceivedActivity<TSource>(this ReceivedMessage message, string entityPath)
+        public static Activity? CreateMessageReceivedActivity<TSource>(this ReceivedMessage message, string entityPath)
             where TSource : class
         {
             var activityName = entityPath.CreateActivityName();

@@ -14,7 +14,7 @@ namespace Up4All.Framework.MessageBus.Abstractions.Interfaces
 
         void AddBody(string body);
 
-        void AddBody<T>(T obj, JsonSerializerOptions opts = null) where T : class;
+        void AddBody<T>(T obj, JsonSerializerOptions? opts = null) where T : class;
 
         void AddUserProperty(KeyValuePair<string, object> prop, bool replace = false);
 
@@ -26,7 +26,7 @@ namespace Up4All.Framework.MessageBus.Abstractions.Interfaces
 
         void SetMessageIdFromStruct<TMessageKey>(TMessageKey value) where TMessageKey : struct;
 
-        void SetMessageId<TMessageKey>(TMessageKey value, JsonSerializerOptions opts = null) where TMessageKey : class;
+        void SetMessageId<TMessageKey>(TMessageKey value, JsonSerializerOptions? opts = null) where TMessageKey : class;
 
         void SetMessageId(string value);
 
@@ -36,6 +36,6 @@ namespace Up4All.Framework.MessageBus.Abstractions.Interfaces
 
         void SetMessageId(Guid value);
 
-        TMessageKey GetMessageIdForClass<TMessageKey>() where TMessageKey : class;
+        TMessageKey? GetMessageIdForClass<TMessageKey>() where TMessageKey : class;
     }
 }

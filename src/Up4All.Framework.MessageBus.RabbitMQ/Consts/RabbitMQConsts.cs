@@ -12,17 +12,17 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Consts
 
         public static ExchangeDeclareOptions DefaultExchangeDeclareOptions => new();
 
-        public static QueueDeclareOptions ToQueueDeclare(this ProvisioningOptions opts)
+        public static QueueDeclareOptions ToQueueDeclare(this ProvisioningOptions? opts)
         {
             return opts;
         }
 
-        public static StreamDeclareOptions ToStreamDeclare(this ProvisioningOptions opts)
+        public static StreamDeclareOptions ToStreamDeclare(this ProvisioningOptions? opts)
         {
             return opts;
         }
 
-        public static ExchangeDeclareOptions ToExchangeDeclare(this ProvisioningOptions opts)
+        public static ExchangeDeclareOptions ToExchangeDeclare(this ProvisioningOptions? opts)
         {
             return opts;
         }

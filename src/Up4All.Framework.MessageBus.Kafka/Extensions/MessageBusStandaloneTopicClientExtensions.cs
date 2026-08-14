@@ -10,7 +10,7 @@ namespace Up4All.Framework.MessageBus.Kafka.Extensions
 {
     public static class MessageBusStandaloneTopicClientExtensions
     {
-        public static void AddActivityTrace(this MessageBusStandaloneTopicClient client, MessageBusMessage message, object messageId)
+        public static void AddActivityTrace(this MessageBusStandaloneTopicClient client, MessageBusMessage message, object? messageId)
         {
             var activityName = $"{client.TopicName} send";
 
@@ -21,7 +21,7 @@ namespace Up4All.Framework.MessageBus.Kafka.Extensions
 
             using var activity = KafkaExtensions.ActivitySource.ProcessOpenTelemetryActivity(activityName, ActivityKind.Producer);
             activity?.InjectPropagationContext(message.UserProperties);
-            activity?.AddTagsToActivity("kafka", message, client.TopicName, messageId, operationType: "send", additionalTags: additionalArgs);
+            activity?.AddTagsToActivity("kafka", message, client.TopicName, messageId, operationType: "publish", additionalTags: additionalArgs);
         }
     }
 }

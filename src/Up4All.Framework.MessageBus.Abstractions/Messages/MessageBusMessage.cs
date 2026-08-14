@@ -22,6 +22,7 @@ namespace Up4All.Framework.MessageBus.Abstractions.Messages
         public MessageBusMessage()
         {
             IsJson = false;
+            Body = Array.Empty<byte>();
             UserProperties = new Dictionary<string, object>();
         }
 
@@ -47,7 +48,7 @@ namespace Up4All.Framework.MessageBus.Abstractions.Messages
             AddBody(data.ToArray());
         }
 
-        public void AddBody<T>(T obj, JsonSerializerOptions opts = null) where T : class
+        public void AddBody<T>(T obj, JsonSerializerOptions? opts = null) where T : class
         {
             opts ??= new JsonSerializerOptions(JsonSerializerDefaults.Web) { DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault };
 
@@ -93,7 +94,7 @@ namespace Up4All.Framework.MessageBus.Abstractions.Messages
             AddUserProperty(MessageIdkey, value);
         }
 
-        public void SetMessageId<TMessageKey>(TMessageKey value, JsonSerializerOptions opts = null)
+        public void SetMessageId<TMessageKey>(TMessageKey value, JsonSerializerOptions? opts = null)
             where TMessageKey : class
         {
             opts ??= new JsonSerializerOptions(JsonSerializerDefaults.Web) { DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault };
@@ -120,13 +121,13 @@ namespace Up4All.Framework.MessageBus.Abstractions.Messages
             AddUserProperty(MessageIdkey, value.ToString());
         }
 
-        public TMessageKey GetMessageIdForClass<TMessageKey>()
+        public TMessageKey? GetMessageIdForClass<TMessageKey>()
             where TMessageKey : class
         {
             if (this.TryGetUserPropertyAs<TMessageKey>(MessageIdkey, out var result))
                 return result;
 
-            if (this.TryGetUserPropertyValue(MessageIdkey, out var rawValue))
+            if (this.TryGetUserPropertyValue(MessageIdkey, out var rawValue) && rawValue != null)
                 return (TMessageKey)Convert.ChangeType(rawValue, typeof(TMessageKey));
 
             return default;
