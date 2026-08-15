@@ -215,6 +215,135 @@ namespace Up4All.Framework.MessageBus.Tests.Messages
         }
 
         [Test]
+        public void TryGetMessageIdAsString_WhenSet_ReturnsTrueAndValue()
+        {
+            var message = new MessageBusMessage();
+            message.SetMessageId("abc-123");
+
+            var found = message.TryGetMessageIdAsString(out var value);
+
+            Assert.That(found, Is.True);
+            Assert.That(value, Is.EqualTo("abc-123"));
+        }
+
+        [Test]
+        public void TryGetMessageIdAsString_WhenNotSet_ReturnsFalse()
+        {
+            var message = new MessageBusMessage();
+
+            var found = message.TryGetMessageIdAsString(out _);
+
+            Assert.That(found, Is.False);
+        }
+
+        [Test]
+        public void TryGetMessageIdAsInt32_WhenSet_ReturnsTrueAndValue()
+        {
+            var message = new MessageBusMessage();
+            message.SetMessageId(42);
+
+            var found = message.TryGetMessageIdAsInt32(out var value);
+
+            Assert.That(found, Is.True);
+            Assert.That(value, Is.EqualTo(42));
+        }
+
+        [Test]
+        public void TryGetMessageIdAsInt32_WhenNotSet_ReturnsFalse()
+        {
+            var message = new MessageBusMessage();
+
+            var found = message.TryGetMessageIdAsInt32(out var value);
+
+            Assert.That(found, Is.False);
+            Assert.That(value, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void TryGetMessageIdAsInt64_WhenSet_ReturnsTrueAndValue()
+        {
+            var message = new MessageBusMessage();
+            message.SetMessageId(99L);
+
+            var found = message.TryGetMessageIdAsInt64(out var value);
+
+            Assert.That(found, Is.True);
+            Assert.That(value, Is.EqualTo(99L));
+        }
+
+        [Test]
+        public void TryGetMessageIdAsInt64_WhenNotSet_ReturnsFalse()
+        {
+            var message = new MessageBusMessage();
+
+            var found = message.TryGetMessageIdAsInt64(out var value);
+
+            Assert.That(found, Is.False);
+            Assert.That(value, Is.EqualTo(0L));
+        }
+
+        [Test]
+        public void TryGetMessageIdAsGuid_WhenSet_ReturnsTrueAndValue()
+        {
+            var message = new MessageBusMessage();
+            var guid = Guid.NewGuid();
+            message.SetMessageId(guid);
+
+            var found = message.TryGetMessageIdAsGuid(out var value);
+
+            Assert.That(found, Is.True);
+            Assert.That(value, Is.EqualTo(guid));
+        }
+
+        [Test]
+        public void TryGetMessageIdAsGuid_WhenNotSet_ReturnsFalse()
+        {
+            var message = new MessageBusMessage();
+
+            var found = message.TryGetMessageIdAsGuid(out var value);
+
+            Assert.That(found, Is.False);
+            Assert.That(value, Is.EqualTo(Guid.Empty));
+        }
+
+        [Test]
+        public void TryGetMessageIdAsGuid_WhenStoredValueIsNotAValidGuid_ReturnsFalse()
+        {
+            var message = new MessageBusMessage();
+            message.SetMessageId("not-a-guid");
+
+            var found = message.TryGetMessageIdAsGuid(out var value);
+
+            Assert.That(found, Is.False);
+            Assert.That(value, Is.EqualTo(Guid.Empty));
+        }
+
+        [Test]
+        public void TryGetMessageIdAs_Class_WhenSet_ReturnsTrueAndValue()
+        {
+            var message = new MessageBusMessage();
+            message.SetMessageId(new IdPayload { Id = 5, Name = "five" });
+
+            var found = message.TryGetMessageIdAs<IdPayload>(out var value);
+
+            Assert.That(found, Is.True);
+            Assert.That(value, Is.Not.Null);
+            Assert.That(value!.Id, Is.EqualTo(5));
+            Assert.That(value.Name, Is.EqualTo("five"));
+        }
+
+        [Test]
+        public void TryGetMessageIdAs_Class_WhenNotSet_ReturnsFalse()
+        {
+            var message = new MessageBusMessage();
+
+            var found = message.TryGetMessageIdAs<IdPayload>(out var value);
+
+            Assert.That(found, Is.False);
+            Assert.That(value, Is.Null);
+        }
+
+        [Test]
         public void SetMessageId_Int_StoresValue()
         {
             var message = new MessageBusMessage();
