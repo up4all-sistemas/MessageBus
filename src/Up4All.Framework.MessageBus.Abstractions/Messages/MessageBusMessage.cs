@@ -101,6 +101,35 @@ namespace Up4All.Framework.MessageBus.Abstractions.Messages
             AddUserProperty(MessageIdkey, Encoding.UTF8.GetBytes(JsonSerializer.Serialize(value, opts)));
         }
 
+        public bool TryGetMessageIdAsString(out string value)
+        {
+            return this.TryGetUserPropertyAsString(MessageIdkey, out value!);
+        }
+
+        public bool TryGetMessageIdAsInt32(out int value)
+        {
+            return this.TryGetUserPropertyAsInt32(MessageIdkey, out value);
+        }
+
+        public bool TryGetMessageIdAsInt64(out long value)
+        {
+            return this.TryGetUserPropertyAsInt64(MessageIdkey, out value);
+        }
+
+        public bool TryGetMessageIdAsGuid(out Guid value)
+        {
+            value = default;
+
+            if(!this.TryGetUserPropertyAsString(MessageIdkey, out var valueStr)) return false;
+            return Guid.TryParse(valueStr, out value);
+        }
+
+        public bool TryGetMessageIdAs<T>(out T value)
+            where T : class
+        {
+            return this.TryGetUserPropertyAs<T>(MessageIdkey, out value!);
+        }
+
         public void SetMessageId(string value)
         {
             AddUserProperty(MessageIdkey, value);
