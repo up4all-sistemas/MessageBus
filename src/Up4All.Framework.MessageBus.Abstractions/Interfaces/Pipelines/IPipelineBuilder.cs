@@ -22,6 +22,12 @@ namespace Up4All.Framework.MessageBus.Abstractions.Interfaces.Pipelines
         IConsumerPipelineBuilder AddHandler<TMessageBusMessageHandler>(Func<IServiceProvider, TMessageBusMessageHandler> builder)
             where TMessageBusMessageHandler : class, IMessageBusMessageHandler;
 
+        IConsumerPipelineBuilder AddKeyedHandler<TMessageBusMessageHandler>(object serviceKey)
+            where TMessageBusMessageHandler : class, IMessageBusMessageHandler;
+
+        IConsumerPipelineBuilder AddKeyedHandler<TMessageBusMessageHandler>(object servicekey, Func<IServiceProvider, object?, TMessageBusMessageHandler> builder)
+            where TMessageBusMessageHandler : class, IMessageBusMessageHandler;
+
         IConsumerPipelineBuilder AddDefaultHostedService();
 
         IConsumerPipelineBuilder AddHostedService<THostedService>()
