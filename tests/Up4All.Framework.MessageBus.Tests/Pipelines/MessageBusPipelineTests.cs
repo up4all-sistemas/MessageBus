@@ -171,6 +171,44 @@ namespace Up4All.Framework.MessageBus.Tests.Pipelines
         }
 
         [Test]
+        public void AddKeyedHandler_RegistersKeyedHandler()
+        {
+            var services = new ServiceCollection();
+            const string serviceKey = "my-key";
+            var pipeline = new FakePipeline(services, "MyBus");
+            var consumerPipeline = new FakeConsumerPipeline(pipeline);
+
+            var result = consumerPipeline.AddKeyedHandler<FakeMessageHandler>(serviceKey);
+
+            Assert.That(result, Is.SameAs(consumerPipeline));
+
+            var provider = services.BuildServiceProvider();
+            var handler = provider.GetKeyedService<IMessageBusMessageHandler>(serviceKey);
+
+            Assert.That(handler, Is.InstanceOf<FakeMessageHandler>());
+            Assert.That(provider.GetService<IMessageBusMessageHandler>(), Is.Null);
+        }
+
+        [Test]
+        public void AddKeyedHandler_WithFactory_RegistersKeyedHandlerBuiltByFactory()
+        {
+            var services = new ServiceCollection();
+            const string serviceKey = "my-key";
+            var pipeline = new FakePipeline(services, "MyBus");
+            var consumerPipeline = new FakeConsumerPipeline(pipeline);
+            var instance = new FakeMessageHandler();
+
+            var result = consumerPipeline.AddKeyedHandler<FakeMessageHandler>(serviceKey, (_, _) => instance);
+
+            Assert.That(result, Is.SameAs(consumerPipeline));
+
+            var provider = services.BuildServiceProvider();
+            var handler = provider.GetKeyedService<IMessageBusMessageHandler>(serviceKey);
+
+            Assert.That(handler, Is.SameAs(instance));
+        }
+
+        [Test]
         public void AddDefaultHostedService_RegistersHostedService()
         {
             var services = new ServiceCollection();

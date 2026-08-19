@@ -57,6 +57,20 @@ namespace Up4All.Framework.MessageBus.Abstractions.Pipelines
             return this;
         }
 
+        public IConsumerPipelineBuilder AddKeyedHandler<TMessageBusMessageHandler>(object serviceKey)
+            where TMessageBusMessageHandler : class, IMessageBusMessageHandler
+        {
+            MainPipeline.Services.AddKeyedTransient<IMessageBusMessageHandler, TMessageBusMessageHandler>(serviceKey);
+            return this;
+        }
+
+        public IConsumerPipelineBuilder AddKeyedHandler<TMessageBusMessageHandler>(object servicekey, Func<IServiceProvider, object?, TMessageBusMessageHandler> builder)
+            where TMessageBusMessageHandler : class, IMessageBusMessageHandler
+        {
+            MainPipeline.Services.AddKeyedTransient<IMessageBusMessageHandler>(servicekey, builder);
+            return this;
+        }
+
         public IConsumerPipelineBuilder AddHostedService<THostedService>()
             where THostedService : class, IMessageDefaultConsumer
         {
