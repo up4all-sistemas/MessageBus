@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.DependencyInjection;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -63,6 +64,71 @@ namespace Up4All.Framework.MessageBus.Abstractions.Consumers
         }
 
         ~DefaultConsumer()
+        {
+            Dispose(false);
+        }
+    }
+
+    public class DefaultKeyedConsumer : IMessageDefaultConsumer, IDisposable, IAsyncDisposable
+    {
+        private readonly object _serviceKey;
+        private readonly IMessageBusAsyncConsumer _consumer;
+        private readonly IMessageBusMessageHandler _handler;
+
+        public DefaultKeyedConsumer(object serviceKey, IServiceProvider serviceProvider)
+        {
+            _serviceKey = serviceKey;
+            _consumer = serviceProvider.GetRequiredKeyedService<IMessageBusAsyncConsumer>(_serviceKey);
+            _handler = serviceProvider.GetRequiredKeyedService<IMessageBusMessageHandler>(_serviceKey);
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            // The generic host already calls StopAsync() (which closes the consumer)
+            // during a graceful shutdown; CloseAsync() below is a no-op in that case and
+            // only actually closes the connection when DisposeAsync() is called directly
+            // without StopAsync() having run first.
+            await _consumer.CloseAsync(CancellationToken.None);
+            GC.SuppressFinalize(this);
+        }
+
+        public Task StartAsync(CancellationToken cancellationToken)
+        {
+            return _consumer.RegisterHandlerAsync(OnMessageAsync, _handler.OnErrorAsync, autoComplete: false, cancellationToken: cancellationToken);
+        }
+
+        public Task StopAsync(CancellationToken cancellationToken)
+        {
+            return _consumer.CloseAsync(cancellationToken);
+        }
+
+        private async Task<MessageReceivedStatus> OnMessageAsync(ReceivedMessage message, CancellationToken cancellationToken)
+        {
+            try
+            {
+                await _handler.OnMessageReceivedAsync(_consumer.EntityPath, message, cancellationToken);
+                return MessageReceivedStatus.Completed;
+            }
+            catch (Exception ex)
+            {
+                await _handler.OnErrorAsync(ex, cancellationToken);
+                return MessageReceivedStatus.Abandoned;
+            }
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+                _consumer.CloseAsync(CancellationToken.None).Wait();
+        }
+
+        ~DefaultKeyedConsumer()
         {
             Dispose(false);
         }
