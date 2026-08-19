@@ -2,7 +2,7 @@
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
 using System;
-
+using Up4All.Framework.MessageBus.Abstractions.Consumers;
 using Up4All.Framework.MessageBus.Abstractions.Handlers;
 using Up4All.Framework.MessageBus.Abstractions.Interfaces.Consumers;
 using Up4All.Framework.MessageBus.Abstractions.Interfaces.Pipelines;
@@ -65,7 +65,23 @@ namespace Up4All.Framework.MessageBus.Abstractions.Pipelines
             return this;
         }
 
+        public IConsumerPipelineBuilder AddKeyedHostedService<THostedService>(object serviceKey)
+            where THostedService : DefaultKeyedConsumer
+        {
+            MainPipeline.Services.AddHostedService(sp => 
+            { 
+                return (THostedService)Activator.CreateInstance(typeof(THostedService), serviceKey, sp);
+            });
+            return this;
+        }
+
         public abstract IConsumerPipelineBuilder AddDefaultHostedService();
+
+        public IConsumerPipelineBuilder AddDefaultKeyedHostedService(object serviceKey)
+        {
+            AddKeyedHostedService<DefaultKeyedConsumer>(serviceKey);
+            return this;
+        }
 
         public void Validate()
         {

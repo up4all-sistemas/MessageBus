@@ -1,11 +1,15 @@
 using System;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
+using Up4All.Framework.MessageBus.Abstractions.Consumers;
 using Up4All.Framework.MessageBus.Abstractions.Handlers;
+using Up4All.Framework.MessageBus.Abstractions.Interfaces;
 using Up4All.Framework.MessageBus.Abstractions.Interfaces.Consumers;
 using Up4All.Framework.MessageBus.Abstractions.Options;
 
@@ -193,6 +197,78 @@ namespace Up4All.Framework.MessageBus.Tests.Pipelines
 
             var registeredCount = services.Count(sd => sd.ServiceType == typeof(IMessageDefaultConsumer));
             Assert.That(registeredCount, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void AddKeyedHostedService_RegistersHostedServiceBuiltWithServiceKeyAndProvider()
+        {
+            var services = new ServiceCollection();
+            const string serviceKey = "my-key";
+            var consumer = new FakeAsyncConsumer();
+            var handler = new FakeMessageHandler();
+            services.AddKeyedSingleton<IMessageBusAsyncConsumer>(serviceKey, consumer);
+            services.AddKeyedSingleton<IMessageBusMessageHandler>(serviceKey, handler);
+            var pipeline = new FakePipeline(services, "MyBus");
+            var consumerPipeline = new FakeConsumerPipeline(pipeline);
+
+            var result = consumerPipeline.AddKeyedHostedService<DefaultKeyedConsumer>(serviceKey);
+
+            Assert.That(result, Is.SameAs(consumerPipeline));
+
+            var provider = services.BuildServiceProvider();
+            var hostedServices = provider.GetServices<Microsoft.Extensions.Hosting.IHostedService>();
+            var keyedConsumer = hostedServices.OfType<DefaultKeyedConsumer>().SingleOrDefault();
+
+            Assert.That(keyedConsumer, Is.Not.Null);
+        }
+
+        [Test]
+        public async Task AddKeyedHostedService_HostedServiceResolvesDependenciesForGivenKey()
+        {
+            var services = new ServiceCollection();
+            const string serviceKey = "my-key";
+            var consumer = new FakeAsyncConsumer();
+            var handler = new FakeMessageHandler();
+            services.AddKeyedSingleton<IMessageBusAsyncConsumer>(serviceKey, consumer);
+            services.AddKeyedSingleton<IMessageBusMessageHandler>(serviceKey, handler);
+            var otherConsumer = new FakeAsyncConsumer();
+            services.AddKeyedSingleton<IMessageBusAsyncConsumer>("other-key", otherConsumer);
+            services.AddKeyedSingleton<IMessageBusMessageHandler>("other-key", new FakeMessageHandler());
+            var pipeline = new FakePipeline(services, "MyBus");
+            var consumerPipeline = new FakeConsumerPipeline(pipeline);
+
+            consumerPipeline.AddKeyedHostedService<DefaultKeyedConsumer>(serviceKey);
+
+            var provider = services.BuildServiceProvider();
+            var keyedConsumer = provider.GetServices<Microsoft.Extensions.Hosting.IHostedService>()
+                .OfType<DefaultKeyedConsumer>()
+                .Single();
+
+            await keyedConsumer.StartAsync(CancellationToken.None);
+
+            Assert.That(consumer.CapturedHandler, Is.Not.Null);
+            Assert.That(otherConsumer.CapturedHandler, Is.Null);
+        }
+
+        [Test]
+        public void AddDefaultKeyedHostedService_RegistersDefaultKeyedConsumer()
+        {
+            var services = new ServiceCollection();
+            const string serviceKey = "my-key";
+            services.AddKeyedSingleton<IMessageBusAsyncConsumer>(serviceKey, new FakeAsyncConsumer());
+            services.AddKeyedSingleton<IMessageBusMessageHandler>(serviceKey, new FakeMessageHandler());
+            var pipeline = new FakePipeline(services, "MyBus");
+            var consumerPipeline = new FakeConsumerPipeline(pipeline);
+
+            var result = consumerPipeline.AddDefaultKeyedHostedService(serviceKey);
+
+            Assert.That(result, Is.SameAs(consumerPipeline));
+
+            var provider = services.BuildServiceProvider();
+            var hostedServices = provider.GetServices<Microsoft.Extensions.Hosting.IHostedService>();
+            var keyedConsumer = hostedServices.OfType<DefaultKeyedConsumer>().SingleOrDefault();
+
+            Assert.That(keyedConsumer, Is.Not.Null);
         }
     }
 }
