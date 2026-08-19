@@ -2,9 +2,15 @@
 #
 # Full cycle: restore -> build -> test -> pack -> publish to NuGet.org.
 #
-# - CI runs (pushes/PRs to master and release/*) build and test only.
-# - Pushing an annotated/lightweight tag matching v* (e.g. v3.1.0) additionally packs the
-#   library projects and publishes them to NuGet.org.
+# - CI (build + test + pack) only runs for a pull request whose target is master - not on
+#   every push to a feature/release branch, and not on PRs into release/* (those get reviewed
+#   without spending a pipeline run each; the full check happens once, when release/* is ready
+#   to go into master). No `trigger.branches` on purpose: merging a PR is a push to master, but
+#   that content was already validated by the PR build, so re-running on the merge commit would
+#   just be the same run twice.
+# - Pushing an annotated/lightweight tag matching v* (e.g. v3.1.0) is the only other thing that
+#   starts a run, and is what additionally packs the library projects and publishes them to
+#   NuGet.org - independent of which branch the tag happens to be on.
 #
 # Required setup in Azure DevOps (not stored in this file):
 #   - A secret pipeline variable (or Variable Group) named `NuGetApiKey`, holding a NuGet.org
@@ -16,10 +22,6 @@
 # packaging problems are caught on every CI run, not only on release day.
 
 trigger:
-  branches:
-    include:
-      - master
-      - release/*
   tags:
     include:
       - v*
@@ -28,7 +30,6 @@ pr:
   branches:
     include:
       - master
-      - release/*
 
 variables:
   buildConfiguration: 'Release'
