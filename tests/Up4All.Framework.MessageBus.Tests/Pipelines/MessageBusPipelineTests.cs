@@ -129,29 +129,77 @@ namespace Up4All.Framework.MessageBus.Tests.Pipelines
     public class MessageBusConsumerPipelineTests
     {
         [Test]
+        public void Validate_WithNoHandlerPipelinesRegistered_DoesNotThrow()
+        {
+            var services = new ServiceCollection();
+            var pipeline = new FakePipeline(services, "MyBus");
+            var consumerPipeline = new FakeConsumerPipeline(pipeline);
+
+            Assert.DoesNotThrow(() => consumerPipeline.Validate());
+        }
+
+        [Test]
+        public void Validate_InvokesValidateOnEachRegisteredHandlerPipeline()
+        {
+            var services = new ServiceCollection();
+            var pipeline = new FakePipeline(services, "MyBus");
+            var consumerPipeline = new FakeConsumerPipeline(pipeline);
+            var handler1 = new FakeInnerHandlerPipelineBuilder();
+            var handler2 = new FakeInnerHandlerPipelineBuilder();
+            consumerPipeline.CallAddHandlerPipeline(handler1);
+            consumerPipeline.CallAddHandlerPipeline(handler2);
+
+            consumerPipeline.Validate();
+
+            Assert.That(handler1.ValidateCalled, Is.True);
+            Assert.That(handler2.ValidateCalled, Is.True);
+        }
+
+        [Test]
+        public void AddHandlerPipeline_RegistersAndReturnsTheGivenHandlerPipeline()
+        {
+            var services = new ServiceCollection();
+            var pipeline = new FakePipeline(services, "MyBus");
+            var consumerPipeline = new FakeConsumerPipeline(pipeline);
+            var handlerPipeline = new FakeInnerHandlerPipelineBuilder();
+
+            var result = consumerPipeline.CallAddHandlerPipeline(handlerPipeline);
+
+            Assert.That(result, Is.SameAs(handlerPipeline));
+            Assert.That(consumerPipeline.ExposedHandlers, Does.Contain(handlerPipeline));
+        }
+    }
+
+    [TestFixture]
+    public class MessageBusHandlerPipelineTests
+    {
+        [Test]
         public void Validate_WhenHandlerNotDefined_Throws()
         {
             var services = new ServiceCollection();
             var pipeline = new FakePipeline(services, "MyBus");
-            var consumerPipeline = new FakeConsumerPipeline(pipeline);
+            var handlerPipeline = new FakeHandlerPipeline(pipeline);
 
-            Assert.Throws<ArgumentException>(() => consumerPipeline.Validate());
+            Assert.Throws<ArgumentException>(() => handlerPipeline.Validate());
         }
 
         [Test]
-        public void AddHandler_RegistersHandlerAndMarksDefined()
+        public void AddHandler_RegistersHandlerAndHostedServiceAndMarksDefined()
         {
             var services = new ServiceCollection();
+            services.AddSingleton<IMessageBusAsyncConsumer>(new FakeAsyncConsumer());
             var pipeline = new FakePipeline(services, "MyBus");
-            var consumerPipeline = new FakeConsumerPipeline(pipeline);
+            var handlerPipeline = new FakeHandlerPipeline(pipeline);
 
-            consumerPipeline.AddHandler<FakeMessageHandler>();
+            handlerPipeline.AddHandler<FakeMessageHandler>();
 
             var provider = services.BuildServiceProvider();
             var handler = provider.GetService<IMessageBusMessageHandler>();
+            var hostedServices = provider.GetServices<Microsoft.Extensions.Hosting.IHostedService>();
 
             Assert.That(handler, Is.InstanceOf<FakeMessageHandler>());
-            Assert.DoesNotThrow(() => consumerPipeline.Validate());
+            Assert.That(hostedServices.OfType<DefaultConsumer<FakeMessageHandler>>().Any(), Is.True);
+            Assert.DoesNotThrow(() => handlerPipeline.Validate());
         }
 
         [Test]
@@ -159,10 +207,10 @@ namespace Up4All.Framework.MessageBus.Tests.Pipelines
         {
             var services = new ServiceCollection();
             var pipeline = new FakePipeline(services, "MyBus");
-            var consumerPipeline = new FakeConsumerPipeline(pipeline);
+            var handlerPipeline = new FakeHandlerPipeline(pipeline);
             var instance = new FakeMessageHandler();
 
-            consumerPipeline.AddHandler(_ => instance);
+            handlerPipeline.AddHandler(_ => instance);
 
             var provider = services.BuildServiceProvider();
             var handler = provider.GetService<IMessageBusMessageHandler>();
@@ -171,22 +219,25 @@ namespace Up4All.Framework.MessageBus.Tests.Pipelines
         }
 
         [Test]
-        public void AddKeyedHandler_RegistersKeyedHandler()
+        public void AddKeyedHandler_RegistersKeyedHandlerAndKeyedHostedService()
         {
             var services = new ServiceCollection();
             const string serviceKey = "my-key";
+            services.AddKeyedSingleton<IMessageBusAsyncConsumer>(serviceKey, new FakeAsyncConsumer());
             var pipeline = new FakePipeline(services, "MyBus");
-            var consumerPipeline = new FakeConsumerPipeline(pipeline);
+            var handlerPipeline = new FakeHandlerPipeline(pipeline);
 
-            var result = consumerPipeline.AddKeyedHandler<FakeMessageHandler>(serviceKey);
+            var result = handlerPipeline.AddKeyedHandler<FakeMessageHandler>(serviceKey);
 
-            Assert.That(result, Is.SameAs(consumerPipeline));
+            Assert.That(result, Is.SameAs(handlerPipeline));
 
             var provider = services.BuildServiceProvider();
             var handler = provider.GetKeyedService<IMessageBusMessageHandler>(serviceKey);
+            var hostedServices = provider.GetServices<Microsoft.Extensions.Hosting.IHostedService>();
 
             Assert.That(handler, Is.InstanceOf<FakeMessageHandler>());
             Assert.That(provider.GetService<IMessageBusMessageHandler>(), Is.Null);
+            Assert.That(hostedServices.OfType<DefaultKeyedConsumer<FakeMessageHandler>>().Any(), Is.True);
         }
 
         [Test]
@@ -195,46 +246,17 @@ namespace Up4All.Framework.MessageBus.Tests.Pipelines
             var services = new ServiceCollection();
             const string serviceKey = "my-key";
             var pipeline = new FakePipeline(services, "MyBus");
-            var consumerPipeline = new FakeConsumerPipeline(pipeline);
+            var handlerPipeline = new FakeHandlerPipeline(pipeline);
             var instance = new FakeMessageHandler();
 
-            var result = consumerPipeline.AddKeyedHandler<FakeMessageHandler>(serviceKey, (_, _) => instance);
+            var result = handlerPipeline.AddKeyedHandler<FakeMessageHandler>(serviceKey, (_, _) => instance);
 
-            Assert.That(result, Is.SameAs(consumerPipeline));
+            Assert.That(result, Is.SameAs(handlerPipeline));
 
             var provider = services.BuildServiceProvider();
             var handler = provider.GetKeyedService<IMessageBusMessageHandler>(serviceKey);
 
             Assert.That(handler, Is.SameAs(instance));
-        }
-
-        [Test]
-        public void AddDefaultHostedService_RegistersHostedService()
-        {
-            var services = new ServiceCollection();
-            var pipeline = new FakePipeline(services, "MyBus");
-            var consumerPipeline = new FakeConsumerPipeline(pipeline);
-
-            consumerPipeline.AddDefaultHostedService();
-
-            var provider = services.BuildServiceProvider();
-            var hostedServices = provider.GetServices<Microsoft.Extensions.Hosting.IHostedService>();
-
-            Assert.That(hostedServices.OfType<FakeHostedConsumer>().Any(), Is.True);
-        }
-
-        [Test]
-        public void AddHostedService_RemovesPreviouslyRegisteredDefaultConsumer()
-        {
-            var services = new ServiceCollection();
-            services.AddSingleton<IMessageDefaultConsumer, FakeHostedConsumer>();
-            var pipeline = new FakePipeline(services, "MyBus");
-            var consumerPipeline = new FakeConsumerPipeline(pipeline);
-
-            consumerPipeline.AddHostedService<FakeHostedConsumer>();
-
-            var registeredCount = services.Count(sd => sd.ServiceType == typeof(IMessageDefaultConsumer));
-            Assert.That(registeredCount, Is.EqualTo(0));
         }
 
         [Test]
@@ -247,15 +269,15 @@ namespace Up4All.Framework.MessageBus.Tests.Pipelines
             services.AddKeyedSingleton<IMessageBusAsyncConsumer>(serviceKey, consumer);
             services.AddKeyedSingleton<IMessageBusMessageHandler>(serviceKey, handler);
             var pipeline = new FakePipeline(services, "MyBus");
-            var consumerPipeline = new FakeConsumerPipeline(pipeline);
+            var handlerPipeline = new FakeHandlerPipeline(pipeline);
 
-            var result = consumerPipeline.AddKeyedHostedService<DefaultKeyedConsumer>(serviceKey);
+            var result = handlerPipeline.CallAddKeyedHostedService<FakeMessageHandler>(serviceKey);
 
-            Assert.That(result, Is.SameAs(consumerPipeline));
+            Assert.That(result, Is.SameAs(handlerPipeline));
 
             var provider = services.BuildServiceProvider();
             var hostedServices = provider.GetServices<Microsoft.Extensions.Hosting.IHostedService>();
-            var keyedConsumer = hostedServices.OfType<DefaultKeyedConsumer>().SingleOrDefault();
+            var keyedConsumer = hostedServices.OfType<DefaultKeyedConsumer<FakeMessageHandler>>().SingleOrDefault();
 
             Assert.That(keyedConsumer, Is.Not.Null);
         }
@@ -273,40 +295,19 @@ namespace Up4All.Framework.MessageBus.Tests.Pipelines
             services.AddKeyedSingleton<IMessageBusAsyncConsumer>("other-key", otherConsumer);
             services.AddKeyedSingleton<IMessageBusMessageHandler>("other-key", new FakeMessageHandler());
             var pipeline = new FakePipeline(services, "MyBus");
-            var consumerPipeline = new FakeConsumerPipeline(pipeline);
+            var handlerPipeline = new FakeHandlerPipeline(pipeline);
 
-            consumerPipeline.AddKeyedHostedService<DefaultKeyedConsumer>(serviceKey);
+            handlerPipeline.CallAddKeyedHostedService<FakeMessageHandler>(serviceKey);
 
             var provider = services.BuildServiceProvider();
             var keyedConsumer = provider.GetServices<Microsoft.Extensions.Hosting.IHostedService>()
-                .OfType<DefaultKeyedConsumer>()
+                .OfType<DefaultKeyedConsumer<FakeMessageHandler>>()
                 .Single();
 
             await keyedConsumer.StartAsync(CancellationToken.None);
 
             Assert.That(consumer.CapturedHandler, Is.Not.Null);
             Assert.That(otherConsumer.CapturedHandler, Is.Null);
-        }
-
-        [Test]
-        public void AddDefaultKeyedHostedService_RegistersDefaultKeyedConsumer()
-        {
-            var services = new ServiceCollection();
-            const string serviceKey = "my-key";
-            services.AddKeyedSingleton<IMessageBusAsyncConsumer>(serviceKey, new FakeAsyncConsumer());
-            services.AddKeyedSingleton<IMessageBusMessageHandler>(serviceKey, new FakeMessageHandler());
-            var pipeline = new FakePipeline(services, "MyBus");
-            var consumerPipeline = new FakeConsumerPipeline(pipeline);
-
-            var result = consumerPipeline.AddDefaultKeyedHostedService(serviceKey);
-
-            Assert.That(result, Is.SameAs(consumerPipeline));
-
-            var provider = services.BuildServiceProvider();
-            var hostedServices = provider.GetServices<Microsoft.Extensions.Hosting.IHostedService>();
-            var keyedConsumer = hostedServices.OfType<DefaultKeyedConsumer>().SingleOrDefault();
-
-            Assert.That(keyedConsumer, Is.Not.Null);
         }
     }
 }

@@ -184,10 +184,27 @@ namespace Up4All.Framework.MessageBus.Tests.Support
         public void Validate() => ValidateCalled = true;
     }
 
-    public class FakeHostedConsumer : IMessageDefaultConsumer
+    public class FakeInnerHandlerPipelineBuilder : IHandlerPipelineBuilder
     {
-        public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
-        public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+        public bool ValidateCalled { get; private set; }
+
+        public void Validate() => ValidateCalled = true;
+
+        public IHandlerPipelineBuilder AddHandler<TMessageBusMessageHandler>()
+            where TMessageBusMessageHandler : class, IMessageBusMessageHandler
+            => this;
+
+        public IHandlerPipelineBuilder AddHandler<TMessageBusMessageHandler>(Func<IServiceProvider, TMessageBusMessageHandler> builder)
+            where TMessageBusMessageHandler : class, IMessageBusMessageHandler
+            => this;
+
+        public IHandlerPipelineBuilder AddKeyedHandler<TMessageBusMessageHandler>(object serviceKey)
+            where TMessageBusMessageHandler : class, IMessageBusMessageHandler
+            => this;
+
+        public IHandlerPipelineBuilder AddKeyedHandler<TMessageBusMessageHandler>(object servicekey, Func<IServiceProvider, object?, TMessageBusMessageHandler> builder)
+            where TMessageBusMessageHandler : class, IMessageBusMessageHandler
+            => this;
     }
 
     public class FakePublisherPipeline(FakePipeline main)
@@ -197,12 +214,19 @@ namespace Up4All.Framework.MessageBus.Tests.Support
     }
 
     public class FakeConsumerPipeline(FakePipeline main)
-        : MessageBusConsumerPipeline<FakePipeline, MessageBusOptions>(main)
+        : MessageBusConsumerPipeline<FakePipeline>(main)
     {
-        public override IConsumerPipelineBuilder AddDefaultHostedService()
-        {
-            AddHostedService<FakeHostedConsumer>();
-            return this;
-        }
+        public IHandlerPipelineBuilder CallAddHandlerPipeline(IHandlerPipelineBuilder handlerPipeline)
+            => AddHandlerPipeline(handlerPipeline);
+
+        public IReadOnlyList<IHandlerPipelineBuilder> ExposedHandlers => Handlers;
+    }
+
+    public class FakeHandlerPipeline(FakePipeline main)
+        : MessageBusHandlerPipeline<FakePipeline, MessageBusOptions>(main)
+    {
+        public IHandlerPipelineBuilder CallAddKeyedHostedService<THandler>(object serviceKey)
+            where THandler : notnull, IMessageBusMessageHandler
+            => AddKeyedHostedService<THandler>(serviceKey);
     }
 }

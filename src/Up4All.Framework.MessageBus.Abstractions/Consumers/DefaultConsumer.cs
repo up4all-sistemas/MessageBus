@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,8 +12,9 @@ using Up4All.Framework.MessageBus.Abstractions.Messages;
 
 namespace Up4All.Framework.MessageBus.Abstractions.Consumers
 {
-    public class DefaultConsumer(IMessageBusAsyncConsumer consumer, IMessageBusMessageHandler handler)
-        : IMessageDefaultConsumer, IDisposable, IAsyncDisposable
+    public class DefaultConsumer<THandler>(IMessageBusAsyncConsumer consumer, IMessageBusMessageHandler handler)
+        : IHostedService, IDisposable, IAsyncDisposable
+        where THandler : notnull, IMessageBusMessageHandler
     {
         private readonly IMessageBusAsyncConsumer _consumer = consumer;
         private readonly IMessageBusMessageHandler _handler = handler;
@@ -69,7 +71,9 @@ namespace Up4All.Framework.MessageBus.Abstractions.Consumers
         }
     }
 
-    public class DefaultKeyedConsumer : IMessageDefaultConsumer, IDisposable, IAsyncDisposable
+    public class DefaultKeyedConsumer<THandler>
+        : IHostedService, IDisposable, IAsyncDisposable
+        where THandler : notnull, IMessageBusMessageHandler
     {
         private readonly object _serviceKey;
         private readonly IMessageBusAsyncConsumer _consumer;

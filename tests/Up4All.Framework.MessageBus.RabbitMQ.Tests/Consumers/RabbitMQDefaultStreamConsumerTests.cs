@@ -29,7 +29,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Tests.Consumers
 
             var handlerMock = new Mock<IMessageBusMessageHandler>();
 
-            var sut = new RabbitMQDefaultStreamConsumer(clientMock.Object, handlerMock.Object);
+            var sut = new RabbitMQDefaultStreamConsumer<IMessageBusMessageHandler>(clientMock.Object, handlerMock.Object);
 
             await sut.StartAsync(CancellationToken.None);
 
@@ -48,7 +48,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Tests.Consumers
             clientMock.Setup(c => c.CloseAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
             var handlerMock = new Mock<IMessageBusMessageHandler>();
 
-            var sut = new RabbitMQDefaultStreamConsumer(clientMock.Object, handlerMock.Object);
+            var sut = new RabbitMQDefaultStreamConsumer<IMessageBusMessageHandler>(clientMock.Object, handlerMock.Object);
 
             await sut.StopAsync(CancellationToken.None);
 

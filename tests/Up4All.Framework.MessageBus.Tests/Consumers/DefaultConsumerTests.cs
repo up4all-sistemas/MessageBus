@@ -17,7 +17,7 @@ namespace Up4All.Framework.MessageBus.Tests.Consumers
         {
             var consumer = new FakeAsyncConsumer();
             var handler = new FakeMessageHandler();
-            var sut = new DefaultConsumer(consumer, handler);
+            var sut = new DefaultConsumer<FakeMessageHandler>(consumer, handler);
             var token = new CancellationTokenSource().Token;
 
             await sut.StartAsync(token);
@@ -32,7 +32,7 @@ namespace Up4All.Framework.MessageBus.Tests.Consumers
         {
             var consumer = new FakeAsyncConsumer { EntityPath = "my-entity" };
             var handler = new FakeMessageHandler();
-            var sut = new DefaultConsumer(consumer, handler);
+            var sut = new DefaultConsumer<FakeMessageHandler>(consumer, handler);
             await sut.StartAsync(CancellationToken.None);
 
             var message = new ReceivedMessage();
@@ -51,7 +51,7 @@ namespace Up4All.Framework.MessageBus.Tests.Consumers
         {
             var consumer = new FakeAsyncConsumer();
             var handler = new FakeMessageHandler { ThrowOnReceive = true };
-            var sut = new DefaultConsumer(consumer, handler);
+            var sut = new DefaultConsumer<FakeMessageHandler>(consumer, handler);
             await sut.StartAsync(CancellationToken.None);
 
             var message = new ReceivedMessage();
@@ -67,7 +67,7 @@ namespace Up4All.Framework.MessageBus.Tests.Consumers
         {
             var consumer = new FakeAsyncConsumer();
             var handler = new FakeMessageHandler();
-            var sut = new DefaultConsumer(consumer, handler);
+            var sut = new DefaultConsumer<FakeMessageHandler>(consumer, handler);
             var token = new CancellationTokenSource().Token;
 
             await sut.StopAsync(token);
@@ -81,7 +81,7 @@ namespace Up4All.Framework.MessageBus.Tests.Consumers
         {
             var consumer = new FakeAsyncConsumer();
             var handler = new FakeMessageHandler();
-            var sut = new DefaultConsumer(consumer, handler);
+            var sut = new DefaultConsumer<FakeMessageHandler>(consumer, handler);
 
             sut.Dispose();
 
@@ -94,7 +94,7 @@ namespace Up4All.Framework.MessageBus.Tests.Consumers
         {
             var consumer = new FakeAsyncConsumer();
             var handler = new FakeMessageHandler();
-            var sut = new DefaultConsumer(consumer, handler);
+            var sut = new DefaultConsumer<FakeMessageHandler>(consumer, handler);
 
             await sut.DisposeAsync();
 

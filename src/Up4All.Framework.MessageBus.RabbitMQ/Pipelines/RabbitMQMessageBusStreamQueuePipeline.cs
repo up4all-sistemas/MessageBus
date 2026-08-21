@@ -3,21 +3,18 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using System;
-
-using Up4All.Framework.MessageBus.Abstractions.Handlers;
 using Up4All.Framework.MessageBus.Abstractions.Interfaces;
 using Up4All.Framework.MessageBus.Abstractions.Interfaces.Pipelines;
 using Up4All.Framework.MessageBus.Abstractions.Pipelines;
 using Up4All.Framework.MessageBus.RabbitMQ.Consts;
-using Up4All.Framework.MessageBus.RabbitMQ.Consumers;
 using Up4All.Framework.MessageBus.RabbitMQ.Options;
 
 namespace Up4All.Framework.MessageBus.RabbitMQ.Pipelines
 {
     public class RabbitMQMessageBusStreamQueuePipeline(RabbitMQMessageBusPipeline pipeline)
-        : MessageBusConsumerPipeline<RabbitMQMessageBusPipeline, RabbitMQMessageBusOptions>(pipeline)
+        : MessageBusConsumerPipeline<RabbitMQMessageBusPipeline>(pipeline)
     {
-        public RabbitMQMessageBusStreamQueuePipeline ListenStreamQueue(Action<IServiceProvider, RabbitMQMessageBusOptions, StreamDeclareOptions>? queueDeclareBuilder = null
+        public IHandlerPipelineBuilder ListenStreamQueue(Action<IServiceProvider, RabbitMQMessageBusOptions, StreamDeclareOptions>? queueDeclareBuilder = null
             , object? offset = null)
         {
             MainPipeline.Services.AddSingleton<IMessageBusAsyncConsumer>(sp =>
@@ -29,10 +26,10 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Pipelines
                 queueDeclareBuilder?.Invoke(sp, opts.Value, declareOpts);
                 return new RabbitMQStreamAsyncClient(logger, opts, offset ?? OffsetType.Next, declareOpts);
             });
-            return this;
+            return AddHandlerPipeline(RabbitMQMessageBusConsumerPipeline.Create(MainPipeline));
         }
 
-        public RabbitMQMessageBusStreamQueuePipeline ListenStreamQueue(string connectionString, string queueName
+        public IHandlerPipelineBuilder ListenStreamQueue(string connectionString, string queueName
             , object offset
             , bool persistent = true
             , int connectionAttempts = 8
@@ -40,11 +37,10 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Pipelines
         {            
             MainPipeline.Services.AddSingleton<IMessageBusAsyncConsumer>(sp
                 => CreateClient(sp, connectionString, queueName, offset, persistent, connectionAttempts, queueDeclareBuilder));
-            
-            return this;
+            return AddHandlerPipeline(RabbitMQMessageBusConsumerPipeline.Create(MainPipeline));
         }
 
-        public RabbitMQMessageBusStreamQueuePipeline ListenStreamQueue(object serviceKey, string connectionString, string queueName
+        public IHandlerPipelineBuilder ListenStreamQueue(object serviceKey, string connectionString, string queueName
             , object offset
             , bool persistent = true
             , int connectionAttempts = 8
@@ -52,14 +48,7 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Pipelines
         {
             MainPipeline.Services.AddKeyedSingleton<IMessageBusAsyncConsumer>(serviceKey, (sp,key)
                 => CreateClient(sp, connectionString, queueName, offset, persistent, connectionAttempts, queueDeclareBuilder));
-
-            return this;
-        }
-
-        public override IConsumerPipelineBuilder AddDefaultHostedService()
-        {
-            AddHostedService<RabbitMQDefaultStreamConsumer>();
-            return this;
+            return AddHandlerPipeline(RabbitMQMessageBusConsumerPipeline.Create(MainPipeline));
         }
 
         private static RabbitMQStandaloneStreamAsyncClient CreateClient(IServiceProvider sp, string connectionString, string queueName

@@ -1,7 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-
-using Up4All.Framework.MessageBus.Abstractions.Consumers;
 using Up4All.Framework.MessageBus.Abstractions.Interfaces;
 using Up4All.Framework.MessageBus.Abstractions.Interfaces.Pipelines;
 using Up4All.Framework.MessageBus.Abstractions.Options;
@@ -9,16 +7,23 @@ using Up4All.Framework.MessageBus.Abstractions.Pipelines;
 
 namespace Up4All.Framework.MessageBus.ServiceBus.Pipelines
 {
-    public class ServiceBusMessageBusQueuePipeline(ServiceBusMessageBusPipeline pipeline)
-        : MessageBusConsumerPipeline<ServiceBusMessageBusPipeline, MessageBusOptions>(pipeline)
+    public class ServiceBusMessageBusHandlerPipelineBuilder(ServiceBusMessageBusPipeline pipeline)
+        : MessageBusHandlerPipeline<ServiceBusMessageBusPipeline, MessageBusOptions>(pipeline)        
     {
-        public ServiceBusMessageBusQueuePipeline ListenQueue()
+        public static IHandlerPipelineBuilder Create(ServiceBusMessageBusPipeline pipeline)
+            => new ServiceBusMessageBusHandlerPipelineBuilder(pipeline);
+    }
+
+    public class ServiceBusMessageBusQueuePipeline(ServiceBusMessageBusPipeline pipeline)
+        : MessageBusConsumerPipeline<ServiceBusMessageBusPipeline>(pipeline)
+    {
+        public IHandlerPipelineBuilder ListenQueue()
         {
             MainPipeline.Services.AddSingleton<IMessageBusAsyncConsumer, ServiceBusQueueAsyncClient>();
-            return this;
+            return AddHandlerPipeline(ServiceBusMessageBusHandlerPipelineBuilder.Create(MainPipeline));
         }
 
-        public ServiceBusMessageBusQueuePipeline ListenQueue(string connectionString, string queueName
+        public IHandlerPipelineBuilder ListenQueue(string connectionString, string queueName
             , int connectionAttempts = 8)
         {
             MainPipeline.Services.AddSingleton<IMessageBusAsyncConsumer>(sp =>
@@ -26,10 +31,10 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Pipelines
                 var logger = sp.GetRequiredService<ILogger<ServiceBusStandaloneQueueAsyncClient>>();
                 return new ServiceBusStandaloneQueueAsyncClient(logger, connectionString, queueName, connectionAttempts);
             });
-            return this;
+            return AddHandlerPipeline(ServiceBusMessageBusHandlerPipelineBuilder.Create(MainPipeline));
         }
 
-        public ServiceBusMessageBusQueuePipeline ListenQueue(object serviceKey, string connectionString, string queueName
+        public IHandlerPipelineBuilder ListenQueue(object serviceKey, string connectionString, string queueName
             , int connectionAttempts = 8)
         {
             MainPipeline.Services.AddKeyedSingleton<IMessageBusAsyncConsumer>(serviceKey, (sp,key) =>
@@ -37,14 +42,9 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Pipelines
                 var logger = sp.GetRequiredService<ILogger<ServiceBusStandaloneQueueAsyncClient>>();
                 return new ServiceBusStandaloneQueueAsyncClient(logger, connectionString, queueName, connectionAttempts);
             });
-            return this;
+            return AddHandlerPipeline(ServiceBusMessageBusHandlerPipelineBuilder.Create(MainPipeline));
         }
 
-        public override IConsumerPipelineBuilder AddDefaultHostedService()
-        {
-            AddHostedService<DefaultConsumer>();
-            return this;
-        }
 
     }
 }

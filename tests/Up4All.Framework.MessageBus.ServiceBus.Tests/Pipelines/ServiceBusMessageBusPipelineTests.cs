@@ -139,13 +139,11 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Tests.Pipelines
         }
 
         [Test]
-        public void AddDefaultHostedService_OnQueuePipeline_RegistersHostedService()
+        public void AddHandler_OnQueuePipeline_RegistersHostedService()
         {
             var pipeline = CreatePipeline(out var services);
-            pipeline.Queues.ListenQueue();
-            pipeline.Queues.AddHandler(_ => new NoopHandler());
 
-            pipeline.Queues.AddDefaultHostedService();
+            pipeline.Queues.ListenQueue().AddHandler(_ => new NoopHandler());
 
             var provider = services.BuildServiceProvider();
             var hostedServices = provider.GetServices<Microsoft.Extensions.Hosting.IHostedService>();
@@ -193,13 +191,11 @@ namespace Up4All.Framework.MessageBus.ServiceBus.Tests.Pipelines
         }
 
         [Test]
-        public void AddDefaultHostedService_OnSubscriptionPipeline_RegistersHostedService()
+        public void AddHandler_OnSubscriptionPipeline_RegistersHostedService()
         {
             var pipeline = CreatePipeline(out var services);
-            pipeline.Subscriptions.ListenSubscription();
-            pipeline.Subscriptions.AddHandler(_ => new NoopHandler());
 
-            pipeline.Subscriptions.AddDefaultHostedService();
+            pipeline.Subscriptions.ListenSubscription().AddHandler(_ => new NoopHandler());
 
             var provider = services.BuildServiceProvider();
             var hostedServices = provider.GetServices<Microsoft.Extensions.Hosting.IHostedService>();

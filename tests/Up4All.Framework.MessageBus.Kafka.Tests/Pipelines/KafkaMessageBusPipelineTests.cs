@@ -170,13 +170,11 @@ namespace Up4All.Framework.MessageBus.Kafka.Tests.Pipelines
         }
 
         [Test]
-        public void AddDefaultHostedService_RegistersHostedService()
+        public void AddHandler_RegistersHostedService()
         {
             var pipeline = CreatePipeline(out var services);
-            pipeline.Subscriptions.ListenSubscription();
-            pipeline.Subscriptions.AddHandler(_ => new NoopHandler());
 
-            pipeline.Subscriptions.AddDefaultHostedService();
+            pipeline.Subscriptions.ListenSubscription().AddHandler(_ => new NoopHandler());
 
             var provider = services.BuildServiceProvider();
             var hostedServices = provider.GetServices<Microsoft.Extensions.Hosting.IHostedService>();
