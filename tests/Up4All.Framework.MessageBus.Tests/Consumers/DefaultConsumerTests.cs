@@ -1,8 +1,13 @@
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
+
 using System.Threading;
 using System.Threading.Tasks;
 
 using Up4All.Framework.MessageBus.Abstractions.Consumers;
 using Up4All.Framework.MessageBus.Abstractions.Enums;
+using Up4All.Framework.MessageBus.Abstractions.Interfaces;
+using Up4All.Framework.MessageBus.Abstractions.Handlers;
 using Up4All.Framework.MessageBus.Abstractions.Messages;
 
 using Up4All.Framework.MessageBus.Tests.Support;
@@ -17,7 +22,7 @@ namespace Up4All.Framework.MessageBus.Tests.Consumers
         {
             var consumer = new FakeAsyncConsumer();
             var handler = new FakeMessageHandler();
-            var sut = new DefaultConsumer(consumer, handler);
+            var sut = new DefaultConsumer<FakeMessageHandler>(consumer, handler, NullLogger<DefaultConsumer<FakeMessageHandler>>.Instance);
             var token = new CancellationTokenSource().Token;
 
             await sut.StartAsync(token);
@@ -32,7 +37,7 @@ namespace Up4All.Framework.MessageBus.Tests.Consumers
         {
             var consumer = new FakeAsyncConsumer { EntityPath = "my-entity" };
             var handler = new FakeMessageHandler();
-            var sut = new DefaultConsumer(consumer, handler);
+            var sut = new DefaultConsumer<FakeMessageHandler>(consumer, handler, NullLogger<DefaultConsumer<FakeMessageHandler>>.Instance);
             await sut.StartAsync(CancellationToken.None);
 
             var message = new ReceivedMessage();
@@ -51,7 +56,7 @@ namespace Up4All.Framework.MessageBus.Tests.Consumers
         {
             var consumer = new FakeAsyncConsumer();
             var handler = new FakeMessageHandler { ThrowOnReceive = true };
-            var sut = new DefaultConsumer(consumer, handler);
+            var sut = new DefaultConsumer<FakeMessageHandler>(consumer, handler, NullLogger<DefaultConsumer<FakeMessageHandler>>.Instance);
             await sut.StartAsync(CancellationToken.None);
 
             var message = new ReceivedMessage();
@@ -67,7 +72,7 @@ namespace Up4All.Framework.MessageBus.Tests.Consumers
         {
             var consumer = new FakeAsyncConsumer();
             var handler = new FakeMessageHandler();
-            var sut = new DefaultConsumer(consumer, handler);
+            var sut = new DefaultConsumer<FakeMessageHandler>(consumer, handler, NullLogger<DefaultConsumer<FakeMessageHandler>>.Instance);
             var token = new CancellationTokenSource().Token;
 
             await sut.StopAsync(token);
@@ -81,7 +86,7 @@ namespace Up4All.Framework.MessageBus.Tests.Consumers
         {
             var consumer = new FakeAsyncConsumer();
             var handler = new FakeMessageHandler();
-            var sut = new DefaultConsumer(consumer, handler);
+            var sut = new DefaultConsumer<FakeMessageHandler>(consumer, handler, NullLogger<DefaultConsumer<FakeMessageHandler>>.Instance);
 
             sut.Dispose();
 
@@ -94,12 +99,36 @@ namespace Up4All.Framework.MessageBus.Tests.Consumers
         {
             var consumer = new FakeAsyncConsumer();
             var handler = new FakeMessageHandler();
-            var sut = new DefaultConsumer(consumer, handler);
+            var sut = new DefaultConsumer<FakeMessageHandler>(consumer, handler, NullLogger<DefaultConsumer<FakeMessageHandler>>.Instance);
 
             await sut.DisposeAsync();
 
             Assert.That(consumer.CloseCalled, Is.True);
             Assert.That(consumer.CloseCancellationToken, Is.EqualTo(CancellationToken.None));
+        }
+
+        [Test]
+        public async Task KeyedConstructor_ResolvesConsumerAndHandlerForGivenServiceKey()
+        {
+            const string serviceKey = "my-key";
+            var consumer = new FakeAsyncConsumer();
+            var handler = new FakeMessageHandler();
+            var otherConsumer = new FakeAsyncConsumer();
+
+            var services = new ServiceCollection();
+            services.AddKeyedSingleton<IMessageBusAsyncConsumer>(serviceKey, consumer);
+            services.AddKeyedSingleton<IMessageBusMessageHandler>(serviceKey, handler);
+            services.AddKeyedSingleton<IMessageBusAsyncConsumer>("other-key", otherConsumer);
+            services.AddKeyedSingleton<IMessageBusMessageHandler>("other-key", new FakeMessageHandler());
+            services.AddSingleton<Microsoft.Extensions.Logging.ILogger<DefaultConsumer<FakeMessageHandler>>>(
+                NullLogger<DefaultConsumer<FakeMessageHandler>>.Instance);
+            var provider = services.BuildServiceProvider();
+
+            var sut = new DefaultConsumer<FakeMessageHandler>(serviceKey, provider);
+            await sut.StartAsync(CancellationToken.None);
+
+            Assert.That(consumer.CapturedHandler, Is.Not.Null);
+            Assert.That(otherConsumer.CapturedHandler, Is.Null);
         }
     }
 }

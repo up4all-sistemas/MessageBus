@@ -8,7 +8,6 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Up4All.Framework.MessageBus.Abstractions.Interfaces;
-using Up4All.Framework.MessageBus.RabbitMQ.Consumers;
 using Up4All.Framework.MessageBus.RabbitMQ.Extensions;
 using Up4All.Framework.MessageBus.RabbitMQ.Options;
 using Up4All.Framework.MessageBus.RabbitMQ.Pipelines;
@@ -76,8 +75,8 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Tests.Pipelines
             var pipeline = CreatePipeline(out _);
 
             pipeline.Producers.AddPublisher();
-            pipeline.Queues.AddHandler(_ => new NoopHandler());
-            pipeline.Streams.AddHandler(_ => new NoopHandler());
+            pipeline.Queues.ListenQueue().AddHandler(_ => new NoopHandler());
+            pipeline.Streams.ListenStreamQueue().AddHandler(_ => new NoopHandler());
 
             Assert.DoesNotThrow(() => pipeline.Validate());
         }
@@ -210,33 +209,17 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Tests.Pipelines
         }
 
         [Test]
-        public void AddDefaultHostedService_RegistersHostedService()
+        public void AddHandler_RegistersHostedService()
         {
             var (services, main) = CreateMain();
-            main.Queues.ListenQueue();
-            main.Queues.AddHandler(_ => new NoopHandler());
 
-            main.Queues.AddDefaultHostedService();
+            main.Queues.ListenQueue().AddHandler(_ => new NoopHandler());
 
             var provider = services.BuildServiceProvider();
             provider.GetRequiredService<IMessageBusAsyncConsumer>().SuppressFinalizer();
             var hostedServices = provider.GetServices<Microsoft.Extensions.Hosting.IHostedService>();
 
             Assert.That(hostedServices.Any(), Is.True);
-        }
-
-        [Test]
-        public void AddDefaultStreamHostedService_RegistersRabbitMQDefaultStreamConsumerAsHostedService()
-        {
-            // RabbitMQDefaultStreamConsumer depends on IMessageBusStreamAsyncClient, which
-            // ListenStreamQueue does not register (it only registers IMessageBusAsyncConsumer),
-            // so this only asserts the descriptor was added rather than resolving the instance.
-            var (services, main) = CreateMain();
-
-            main.Queues.AddDefaultStreamHostedService();
-
-            Assert.That(services.Any(sd => sd.ServiceType == typeof(Microsoft.Extensions.Hosting.IHostedService)
-                && sd.ImplementationType == typeof(RabbitMQDefaultStreamConsumer)), Is.True);
         }
     }
 
@@ -333,17 +316,17 @@ namespace Up4All.Framework.MessageBus.RabbitMQ.Tests.Pipelines
         }
 
         [Test]
-        public void AddDefaultHostedService_RegistersRabbitMQDefaultStreamConsumerAsHostedService()
+        public void AddHandler_RegistersHostedService()
         {
-            // RabbitMQDefaultStreamConsumer depends on IMessageBusStreamAsyncClient, which
-            // ListenStreamQueue does not register (it only registers IMessageBusAsyncConsumer),
-            // so this only asserts the descriptor was added rather than resolving the instance.
             var (services, main) = CreateMain();
 
-            main.Streams.AddDefaultHostedService();
+            main.Streams.ListenStreamQueue().AddHandler(_ => new NoopHandler());
 
-            Assert.That(services.Any(sd => sd.ServiceType == typeof(Microsoft.Extensions.Hosting.IHostedService)
-                && sd.ImplementationType == typeof(RabbitMQDefaultStreamConsumer)), Is.True);
+            var provider = services.BuildServiceProvider();
+            provider.GetRequiredService<IMessageBusAsyncConsumer>().SuppressFinalizer();
+            var hostedServices = provider.GetServices<Microsoft.Extensions.Hosting.IHostedService>();
+
+            Assert.That(hostedServices.Any(), Is.True);
         }
     }
 

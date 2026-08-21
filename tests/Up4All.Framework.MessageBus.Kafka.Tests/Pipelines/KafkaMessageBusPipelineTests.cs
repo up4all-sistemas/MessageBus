@@ -1,4 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 using System.Linq;
 using System.Threading;
@@ -17,6 +19,7 @@ namespace Up4All.Framework.MessageBus.Kafka.Tests.Pipelines
         private static KafkaMessageBusPipeline CreatePipeline(out ServiceCollection services)
         {
             services = new ServiceCollection();
+            services.AddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
 
             var pipeline = new KafkaMessageBusPipeline(services, "MessageBusOptions");
 
@@ -170,13 +173,11 @@ namespace Up4All.Framework.MessageBus.Kafka.Tests.Pipelines
         }
 
         [Test]
-        public void AddDefaultHostedService_RegistersHostedService()
+        public void AddHandler_RegistersHostedService()
         {
             var pipeline = CreatePipeline(out var services);
-            pipeline.Subscriptions.ListenSubscription();
-            pipeline.Subscriptions.AddHandler(_ => new NoopHandler());
 
-            pipeline.Subscriptions.AddDefaultHostedService();
+            pipeline.Subscriptions.ListenSubscription().AddHandler(_ => new NoopHandler());
 
             var provider = services.BuildServiceProvider();
             var hostedServices = provider.GetServices<Microsoft.Extensions.Hosting.IHostedService>();

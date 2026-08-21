@@ -1,8 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 
 using System;
-
-using Up4All.Framework.MessageBus.Abstractions.Interfaces.Consumers;
 using Up4All.Framework.MessageBus.Abstractions.Interfaces.Pipelines;
 using Up4All.Framework.MessageBus.Abstractions.Options;
 using Up4All.Framework.MessageBus.Abstractions.Pipelines;
@@ -18,7 +16,7 @@ namespace Up4All.Framework.MessageBus.TransferHelper.Pipelines
         where TDestinationOptions : MessageBusOptions, new()
     {
         private IPublishPipelineBuilder? _publisherPipeline = null;
-        private IConsumerPipelineBuilder? _consumerPipelineBuilder = null;
+        private IHandlerPipelineBuilder? _handlerPipelineBuilder = null;
 
         public TransferPipeline(IServiceCollection services, string configurationBindKey)
             : base(services, configurationBindKey)
@@ -26,11 +24,10 @@ namespace Up4All.Framework.MessageBus.TransferHelper.Pipelines
         }
 
         public TransferPipeline<TSourceOptions, TDestinationOptions> AddSource(
-              Func<IConsumerPipelineBuilder> builderSource)
+              Func<IHandlerPipelineBuilder> builderSource)
         {
-            _consumerPipelineBuilder = builderSource();
-            _consumerPipelineBuilder.AddHandler<ConsumerHandler<TSourceOptions, TDestinationOptions>>()
-                          .AddDefaultHostedService();
+            _handlerPipelineBuilder = builderSource();
+            _handlerPipelineBuilder.AddHandler<ConsumerHandler<TSourceOptions, TDestinationOptions>>();
 
             AddBeforeTransferHandler<DefaultBeforeTransferHandler>();
             AddTransferTransformationHandler<DefaultTransformationHandler>();
@@ -57,24 +54,11 @@ namespace Up4All.Framework.MessageBus.TransferHelper.Pipelines
             Services.AddTransient<IBeforeTransferHandler, TBeforeTransferHandler>();
             return this;
         }
-
-        public TransferPipeline<TSourceOptions, TDestinationOptions> AddHostedService()
-        {
-            _consumerPipelineBuilder!.AddDefaultHostedService();
-            return this;
-        }
-
-        public TransferPipeline<TSourceOptions, TDestinationOptions> AddHostedService<THostedService>()
-            where THostedService : class, IMessageDefaultConsumer
-        {
-            _consumerPipelineBuilder!.AddHostedService<THostedService>();
-            return this;
-        }
-
+        
         public override void Validate()
         {
             _publisherPipeline?.Validate();
-            _consumerPipelineBuilder?.Validate();
+            _handlerPipelineBuilder?.Validate();
         }
 
     }
