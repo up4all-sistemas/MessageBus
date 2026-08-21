@@ -1,4 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 using System.Linq;
 using System.Threading;
@@ -17,6 +19,7 @@ namespace Up4All.Framework.MessageBus.Kafka.Tests.Pipelines
         private static KafkaMessageBusPipeline CreatePipeline(out ServiceCollection services)
         {
             services = new ServiceCollection();
+            services.AddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
 
             var pipeline = new KafkaMessageBusPipeline(services, "MessageBusOptions");
 

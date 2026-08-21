@@ -99,7 +99,7 @@ namespace Up4All.Framework.MessageBus.Abstractions.Pipelines
         protected IHandlerPipelineBuilder AddKeyedHostedService<THandler>(object serviceKey)
             where THandler : notnull, IMessageBusMessageHandler
         {
-            _mainPipeline.Services.AddHostedService((sp) => new DefaultKeyedConsumer<THandler>(serviceKey, sp));
+            _mainPipeline.Services.AddHostedService((sp) => new DefaultConsumer<THandler>(serviceKey, sp));
             return this;
         }
 
@@ -107,7 +107,7 @@ namespace Up4All.Framework.MessageBus.Abstractions.Pipelines
             where THandler : notnull, IMessageBusMessageHandler<TMessage>
             where TMessage : class
         {
-            _mainPipeline.Services.AddHostedService((sp) => new DefaultKeyedConsumer<THandler>(serviceKey, sp));
+            _mainPipeline.Services.AddHostedService((sp) => new DefaultConsumer<THandler>(serviceKey, sp));
             return this;
         }
 

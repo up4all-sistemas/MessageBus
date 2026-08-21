@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
 using Up4All.Framework.MessageBus.Abstractions.Consumers;
@@ -188,6 +190,7 @@ namespace Up4All.Framework.MessageBus.Tests.Pipelines
         {
             var services = new ServiceCollection();
             services.AddSingleton<IMessageBusAsyncConsumer>(new FakeAsyncConsumer());
+            services.AddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
             var pipeline = new FakePipeline(services, "MyBus");
             var handlerPipeline = new FakeHandlerPipeline(pipeline);
 
@@ -224,6 +227,7 @@ namespace Up4All.Framework.MessageBus.Tests.Pipelines
             var services = new ServiceCollection();
             const string serviceKey = "my-key";
             services.AddKeyedSingleton<IMessageBusAsyncConsumer>(serviceKey, new FakeAsyncConsumer());
+            services.AddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
             var pipeline = new FakePipeline(services, "MyBus");
             var handlerPipeline = new FakeHandlerPipeline(pipeline);
 
@@ -237,7 +241,7 @@ namespace Up4All.Framework.MessageBus.Tests.Pipelines
 
             Assert.That(handler, Is.InstanceOf<FakeMessageHandler>());
             Assert.That(provider.GetService<IMessageBusMessageHandler>(), Is.Null);
-            Assert.That(hostedServices.OfType<DefaultKeyedConsumer<FakeMessageHandler>>().Any(), Is.True);
+            Assert.That(hostedServices.OfType<DefaultConsumer<FakeMessageHandler>>().Any(), Is.True);
         }
 
         [Test]
@@ -268,6 +272,7 @@ namespace Up4All.Framework.MessageBus.Tests.Pipelines
             var handler = new FakeMessageHandler();
             services.AddKeyedSingleton<IMessageBusAsyncConsumer>(serviceKey, consumer);
             services.AddKeyedSingleton<IMessageBusMessageHandler>(serviceKey, handler);
+            services.AddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
             var pipeline = new FakePipeline(services, "MyBus");
             var handlerPipeline = new FakeHandlerPipeline(pipeline);
 
@@ -277,7 +282,7 @@ namespace Up4All.Framework.MessageBus.Tests.Pipelines
 
             var provider = services.BuildServiceProvider();
             var hostedServices = provider.GetServices<Microsoft.Extensions.Hosting.IHostedService>();
-            var keyedConsumer = hostedServices.OfType<DefaultKeyedConsumer<FakeMessageHandler>>().SingleOrDefault();
+            var keyedConsumer = hostedServices.OfType<DefaultConsumer<FakeMessageHandler>>().SingleOrDefault();
 
             Assert.That(keyedConsumer, Is.Not.Null);
         }
@@ -294,6 +299,7 @@ namespace Up4All.Framework.MessageBus.Tests.Pipelines
             var otherConsumer = new FakeAsyncConsumer();
             services.AddKeyedSingleton<IMessageBusAsyncConsumer>("other-key", otherConsumer);
             services.AddKeyedSingleton<IMessageBusMessageHandler>("other-key", new FakeMessageHandler());
+            services.AddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
             var pipeline = new FakePipeline(services, "MyBus");
             var handlerPipeline = new FakeHandlerPipeline(pipeline);
 
@@ -301,7 +307,7 @@ namespace Up4All.Framework.MessageBus.Tests.Pipelines
 
             var provider = services.BuildServiceProvider();
             var keyedConsumer = provider.GetServices<Microsoft.Extensions.Hosting.IHostedService>()
-                .OfType<DefaultKeyedConsumer<FakeMessageHandler>>()
+                .OfType<DefaultConsumer<FakeMessageHandler>>()
                 .Single();
 
             await keyedConsumer.StartAsync(CancellationToken.None);
