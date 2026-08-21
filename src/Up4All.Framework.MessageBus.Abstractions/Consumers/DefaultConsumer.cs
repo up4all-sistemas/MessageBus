@@ -53,13 +53,13 @@ namespace Up4All.Framework.MessageBus.Abstractions.Consumers
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            _logger.LogInformation("Starting consumer for {HandlerName} handler", nameof(THandler));
+            _logger.LogInformation("Starting consumer for {HandlerName} handler", typeof(THandler).Name);
             return _consumer.RegisterHandlerAsync(OnMessageAsync, _handler.OnErrorAsync, autoComplete: false, cancellationToken: cancellationToken);
         }
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
-            _logger.LogInformation("stopping consumer for {HandlerName} handler", nameof(THandler));
+            _logger.LogInformation("stopping consumer for {HandlerName} handler", typeof(THandler).Name);
             return _consumer.CloseAsync(cancellationToken);
         }
 
@@ -68,13 +68,13 @@ namespace Up4All.Framework.MessageBus.Abstractions.Consumers
             try
             {
                 _logger.LogInformation("Received message in {Entitypath}", _consumer.EntityPath);
-                _logger.LogDebug("Calling {HandlerName}", nameof(THandler));
+                _logger.LogDebug("Calling {HandlerName}", typeof(THandler).Name);
                 await _handler.OnMessageReceivedAsync(_consumer.EntityPath, message, cancellationToken);
                 return MessageReceivedStatus.Completed;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while running {HandlerName}", nameof(THandler));
+                _logger.LogError(ex, "Error while running {HandlerName}", typeof(THandler).Name);
                 await _handler.OnErrorAsync(ex, cancellationToken);
                 return MessageReceivedStatus.Abandoned;
             }
